@@ -1990,20 +1990,20 @@ function subCash(){
 }
 const md=d=>`${+d.slice(5,7)}/${+d.slice(8)}`;
 function cashCard(b){
-  const l=lastSettle(b,'cash'), list=cashPending(b), carry=l?(+l.keep||0):0, exp=carry+sum(list.map(r=>(+r.cash||0)-(+r.deposit||0))), first=list[0];
+  const l=lastSettle(b,'cash'), list=cashPending(b), carry=0, exp=carry+sum(list.map(r=>(+r.cash||0)-(+r.deposit||0))), first=list[0];
   const dr=C.draft.cash[b]||{}, counted=dr.counted===undefined||dr.counted===''?null:+dr.counted, dep=+(dr.deposit||0)||0;
   const diff=counted==null?null:counted-exp, keep=counted==null?null:counted-dep;
   return `<section class="cs-card">
-    <div class="cs-h"><span class="cs-ic">${ICON.daily}</span><div><h3>營收現金結帳</h3><p class="hint">${l?`上次 ${md(l.date)} 由 ${esc(l.by||'')} 結帳・留店 ${fmt(carry)} 元`:`尚未結帳過，從 ${first?md(first.date):'有紀錄的第一天'} 起算`}</p></div></div>
+    <div class="cs-h"><span class="cs-ic">${ICON.daily}</span><div><h3>營收現金結帳</h3><p class="hint">${l?`上次 ${md(l.date)} 由 ${esc(l.by||'')} 清點結算，營業現金已歸 0`:`尚未結帳過，從 ${first?md(first.date):'有紀錄的第一天'} 起算`}</p></div></div>
     <div class="cs-list">${carry?`<div class="cs-li"><span>上次留店現金</span><b class="num">${fmt(carry)}</b></div>`:''}
       ${list.length?list.map(r=>((+r.cash||0)?`<div class="cs-li"><span>${md(r.date)}（${wk(r.date)}）現金營收${r.staff?`<small>${esc(r.staff)}</small>`:''}</span><b class="num">${fmt(+r.cash||0)}</b></div>`:'')+((+r.deposit||0)?`<div class="cs-li dep"><span>${md(r.date)}（${wk(r.date)}）存入台新${r.staff?`<small>${esc(r.staff)}</small>`:''}</span><b class="num">−${fmt(+r.deposit)}</b></div>`:'')).join(''):'<div class="cs-li empty"><span>上次結帳後沒有新的現金營收</span></div>'}
       <div class="cs-li tot"><span>應有現金</span><b class="num">${fmt(exp)}</b></div></div>
     <div class="cs-form"${isBoss()?'':' hidden'}>
       <label class="dfield"><span class="fl">實點現金</span><span class="din"><input id="cs-${b}-cash-counted" data-cs="cash" data-b="${b}" data-k="counted" type="number" inputmode="numeric" min="0" value="${esc(dr.counted??'')}" placeholder="${exp}"><small>元</small></span></label>
-      <label class="dfield"><span class="fl">本次存入台新</span><span class="din"><input id="cs-${b}-cash-deposit" data-cs="cash" data-b="${b}" data-k="deposit" type="number" inputmode="numeric" min="0" value="${esc(dr.deposit??'')}" placeholder="0"><small>元</small></span></label>
+      <label class="dfield"><span class="fl">其中存入台新（可不填）</span><span class="din"><input id="cs-${b}-cash-deposit" data-cs="cash" data-b="${b}" data-k="deposit" type="number" inputmode="numeric" min="0" value="${esc(dr.deposit??'')}" placeholder="0"><small>元</small></span></label>
       <label class="dfield wide"><span class="fl">備註</span><input class="tin" id="cs-${b}-cash-note" data-cs="cash" data-b="${b}" data-k="note" maxlength="60" value="${esc(dr.note??'')}" placeholder="可不填"></label>
     </div>
-    <div class="cs-res num" id="csr-${b}-cash"${isBoss()?'':' hidden'}>${counted==null?'<span class="hint">填入實點現金後會自動對帳</span>':`<span class="${diff===0?'ok':'bad'}">${diff===0?'✓ 現金相符':`現金${diff>0?'多':'少'} ${fmt(Math.abs(diff))} 元`}</span><span>留店 ${fmt(keep)} 元</span>`}</div>
+    <div class="cs-res num" id="csr-${b}-cash"${isBoss()?'':' hidden'}>${counted==null?'<span class="hint">填入實點現金後會自動對帳</span>':`<span class="${diff===0?'ok':'bad'}">${diff===0?'✓ 現金相符':`現金${diff>0?'多':'少'} ${fmt(Math.abs(diff))} 元`}</span><span>結算後營業現金歸 0</span>`}</div>
     ${isBoss()?`<button class="btn primary cs-go" data-csave="cash" data-b="${b}">完成營收現金結帳</button>`:`<p class="cs-lock">🔒 只有${BOSS}可以完成清點結算</p>`}
   </section>`;
 }
@@ -2028,7 +2028,7 @@ function historyHTML(b){
   const all=Object.entries(S.settle).filter(([,x])=>x.branch===b).sort((a,c)=>a[1].at<c[1].at?1:-1).slice(0,12);
   if(!all.length) return '';
   const latest={cash:(lastSettle(b,'cash')||{}).at,petty:(lastSettle(b,'petty')||{}).at};
-  return `<div class="panel"><div class="ph"><h2>結帳紀錄</h2><span class="hint">最近 12 筆</span></div><ul class="sp-list cs-hist">${all.map(([id,x])=>`<li><span class="spl-c">${x.type==='cash'?'營收現金':'零用金'}</span><span class="spl-i">${md(x.date)} ・ ${esc(x.by||'')}<small>${x.type==='cash'?`應有 ${fmt(x.expected)}・實點 ${fmt(x.counted)}・存入 ${fmt(x.deposit||0)}・留店 ${fmt(x.keep||0)}`:`應剩 ${fmt(x.expected)}・實點 ${fmt(x.counted)}・補回 ${fmt(x.refill||0)}`}${x.note?'・'+esc(x.note):''}</small></span><b class="num ${x.diff?'neg':'pos'}">${x.diff?sgn(x.diff):'✓'}</b>${isBoss()&&latest[x.type]===x.at?`<button class="ibtn ${C.confirm===id?'danger':''}" data-cundo="${id}">${C.confirm===id?'確定撤銷':'撤銷'}</button>`:'<span></span>'}</li>`).join('')}</ul></div>`;
+  return `<div class="panel"><div class="ph"><h2>結帳紀錄</h2><span class="hint">最近 12 筆</span></div><ul class="sp-list cs-hist">${all.map(([id,x])=>`<li><span class="spl-c">${x.type==='cash'?'營收現金':'零用金'}</span><span class="spl-i">${md(x.date)} ・ ${esc(x.by||'')}<small>${x.type==='cash'?`應有 ${fmt(x.expected)}・實點 ${fmt(x.counted)}・${x.deposit?`其中存入台新 ${fmt(x.deposit)}・`:''}結算後歸 0`:`應剩 ${fmt(x.expected)}・實點 ${fmt(x.counted)}・補回 ${fmt(x.refill||0)}`}${x.note?'・'+esc(x.note):''}</small></span><b class="num ${x.diff?'neg':'pos'}">${x.diff?sgn(x.diff):'✓'}</b>${isBoss()&&latest[x.type]===x.at?`<button class="ibtn ${C.confirm===id?'danger':''}" data-cundo="${id}">${C.confirm===id?'確定撤銷':'撤銷'}</button>`:'<span></span>'}</li>`).join('')}</ul></div>`;
 }
 function drawCash(){
   if(!W.name){ renderLogin(); return; }
@@ -2047,9 +2047,9 @@ async function saveSettle(type,b){
   const dr=(C.draft[type][b])||{}; if(dr.counted===undefined||dr.counted===''){toast('請先填入實點金額');$(`#cs-${b}-${type}-counted`)?.focus();return;}
   const counted=Math.round(+dr.counted), at=new Date().toISOString(), date=todayStr();
   let doc;
-  if(type==='cash'){ const l=lastSettle(b,'cash'), list=cashPending(b), carry=l?(+l.keep||0):0, expected=carry+sum(list.map(r=>(+r.cash||0)-(+r.deposit||0))), deposit=Math.round(+dr.deposit||0);
+  if(type==='cash'){ const l=lastSettle(b,'cash'), list=cashPending(b), carry=0, expected=carry+sum(list.map(r=>(+r.cash||0)-(+r.deposit||0))), deposit=Math.round(+dr.deposit||0);
     if(deposit>counted){toast('存入金額不能大於實點現金');return;}
-    doc={branch:b,type,date,at,by:W.name,uid:W.uid||'',expected,counted,deposit,keep:counted-deposit,diff:counted-expected,note:(dr.note||'').trim(),covered:list.map(r=>r.id)};
+    doc={branch:b,type,date,at,by:W.name,uid:W.uid||'',expected,counted,deposit,keep:0,diff:counted-expected,note:(dr.note||'').trim(),covered:list.map(r=>r.id)};
   } else { const list=pettyPending(b), used=sum(list.map(e=>+e.amt||0)), expected=PETTY[b]-used;
     doc={branch:b,type,date,at,by:W.name,uid:W.uid||'',limit:PETTY[b],used,expected,counted,refill:PETTY[b]-counted,diff:counted-expected,note:(dr.note||'').trim(),covered:list.map(e=>e.id)}; }
   const id=`${b}-${type}-${Date.now()}`;
