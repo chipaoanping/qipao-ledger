@@ -1343,7 +1343,8 @@ function subDaily(){
 const val=(b,k)=>{const dirty=D.dirty[b]||{};if(dirty[k]!==undefined) return dirty[k];const d=dDoc(b)||{};return d[k]??'';};
 const nval=(b,k)=>+val(b,k)||0;
 const DSTAT=[['營業','營業日'],['店休','店休'],['颱風假','颱風假']];
-const dStatusOf=d=>d?(d.status||'營業'):null;
+/* 有明確狀態就用狀態；沒有狀態時，有營收／收款／來客或是匯入的舊資料才算「已結帳（營業）」；只記了顧客或存款的日子算「尚未結帳」 */
+const dStatusOf=d=>{ if(!d) return null; if(d.status) return d.status; if(d.closed||d.source||(+d.revenue||0)||(+d.visitors||0)||PAYK.some(k=>+d[k]||0)) return '營業'; return null; };
 function statusCount(b,ym,docs){
   const [y,m]=ym.split('-').map(Number), days=new Date(y,m,0).getDate(), t=todayStr(); const c={營業:0,店休:0,颱風假:0,未記錄:0};
   for(let i=1;i<=days;i++){ const day=`${ym}-${pad(i)}`; if(day>t) break; const st=dStatusOf(docs[dId(b,day)]); if(st&&c[st]!=null) c[st]++; else if(st) c[st]=(c[st]||0)+1; else c.未記錄++; }
@@ -1355,7 +1356,7 @@ const statusLine=c=>`<span class="sl-i op">營業 <b>${c.營業}</b> 天</span><
 function renderChooser(){
   const today=todayStr();
   const card=b=>{
-    const d=D.docs[dId(b,today)], mrows=Object.values(D.docs).filter(x=>x.branch===b&&x.month===today.slice(0,7));
+    const d=dStatusOf(D.docs[dId(b,today)])?D.docs[dId(b,today)]:null, mrows=Object.values(D.docs).filter(x=>x.branch===b&&x.month===today.slice(0,7));
     const mrev=sum(mrows.map(r=>+r.revenue||0)), mvis=sum(mrows.map(r=>+r.visitors||0));
     return `<button class="pick" data-pick="${b}" style="--bc:var(${B[b].color})">
       <span class="pk-top"><span class="pk-name">${b==='qp'?'旗跑':'旗時'}</span><span class="pk-sub">${B[b].name}</span></span>
@@ -1423,7 +1424,7 @@ function monthTable(b){
   return h;
 }
 function renderSheet(b){
-  const d=dDoc(b), editable=S.canWrite!==false&&S.db;
+  const d=dStatusOf(dDoc(b))?dDoc(b):null, editable=S.canWrite!==false&&S.db;
   return `<div class="sheet-top" style="--bc:var(${B[b].color})">
       <div class="st-l"><button class="btn ghost" data-dback="1">‹ 選擇分店</button><div><div class="st-name">${b==='qp'?'旗跑':'旗時'} <small>${B[b].name}</small></div><div class="st-state">${d&&dStatusOf(d)!=='營業'?`${esc(dStatusOf(d))}${d.staff?`・${esc(d.staff)} 記錄`:''}`:d?`已結帳・${esc(String(d.updatedAt||'').slice(5,10).replace('-','/'))} ${esc(String(d.updatedAt||'').slice(11,16))} 更新${d.staff?`・${esc(d.staff)}`:''}`:'尚未結帳'}</div></div></div>
       <div class="dnav"><button class="btn" data-dshift="-1" aria-label="前一天">‹</button>
@@ -1470,7 +1471,7 @@ async function saveDaily(b){
   const data={branch:b,date:D.day,month:dMonth()}; { const pg=(dDoc(b)||{}).guests; if(pg) data.guests=pg; }
   for(const [k] of DF){const el=$(`#d-${b}-${k}`);data[k]=el&&el.value!==''?Math.round(+el.value):0;}
   data.staff=W.name||''; data.by=W.uid||''; {const el=$(`#d-${b}-deposit`); data.deposit=el&&el.value!==''?Math.round(+el.value):0;} data.note=($(`#d-${b}-note`).value||'').trim(); data.updatedAt=new Date().toISOString();
-  data.status=val(b,'status')||'營業';
+  data.status=val(b,'status')||'營業'; data.closed=true;
   if(data.status==='營業'&&DF.every(([k])=>!data[k])&&!data.deposit){toast('請先填入營收或收款');return;}
   const btn=document.querySelector('.big-save'); if(btn) btn.disabled=true;
   try{ await S.db.doc('daily/'+dId(b,D.day)).set(data); D.docs[dId(b,D.day)]=data; delete D.dirty[b];
@@ -1838,7 +1839,7 @@ function renderHome(){
   if(D.day.slice(0,7)!==today.slice(0,7)){ D.day=today; }
   subDaily();
   const name=b=>b==='qp'?'旗跑':'旗時';
-  const dRow=b=>{const d=D.docs[dId(b,today)];return `<li><i style="background:var(${B[b].color})"></i>${name(b)}<span class="${d?(dStatusOf(d)==='營業'?'ok':'off'):''}">${d?(dStatusOf(d)==='營業'?`已結帳・${fmt(+d.revenue||0)} 元`:dStatusOf(d)):'尚未結帳'}</span></li>`;};
+  const dRow=b=>{const d=dStatusOf(D.docs[dId(b,today)])?D.docs[dId(b,today)]:null;return `<li><i style="background:var(${B[b].color})"></i>${name(b)}<span class="${d?(dStatusOf(d)==='營業'?'ok':'off'):''}">${d?(dStatusOf(d)==='營業'?`已結帳・${fmt(+d.revenue||0)} 元`:dStatusOf(d)):'尚未結帳'}</span></li>`;};
   const sRow=b=>{const l=spList(b,today);return `<li><i style="background:var(${B[b].color})"></i>${name(b)}<span>${l.length?`今天 ${l.length} 筆・${fmt(sum(l.map(e=>+e.amt||0)))} 元`:'今天還沒有支出'}<small class="${pettyLeft(b,today)<0?'neg':''}">零用金剩 ${fmt(pettyLeft(b,today))}</small></span></li>`;};
   const lRow=b=>{const r=sum(listOf(b,m,'rev',y).map(e=>+e.amt||0)), x=sum(listOf(b,m,'exp',y).map(e=>+e.amt||0));return `<li><i style="background:var(${B[b].color})"></i>${name(b)}<span>${m} 月營收 ${fmt(r)}・支出 ${fmt(x)}</span></li>`;};
   const card=(k,t,sub,rows,go)=>`<button class="hcard" data-home="${k}"><span class="hc-ic">${ICON[k]}</span><span class="hc-t">${t}</span><span class="hc-s">${sub}</span><ul class="hc-l">${rows}</ul><span class="hc-go">${go} →</span></button>`;
