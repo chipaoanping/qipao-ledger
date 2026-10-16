@@ -921,9 +921,36 @@ const pad=m=>String(m).padStart(2,'0');
 const didY=(b,y,m)=>`${b}-${y}-${pad(m)}`;
 const did=(b,m)=>didY(b,YEAR,m);
 const doc=(b,m)=>S.docs[did(b,m)];
-const listOf=(b,m,k,y=YEAR)=>((S.docs[didY(b,y,m)]||{})[k])||[];
+const listOfRaw=(b,m,k,y=YEAR)=>((S.docs[didY(b,y,m)]||{})[k])||[];
+/* 每日結帳自動帶入：那個月沒有手動營收／顧客紀錄時，用每日結帳的資料計算（不會存進資料庫） */
+const AUTO={};
+function dailyOf(b,y,m){ const ym=`${y}-${pad(m)}`; return Object.values(S.allDaily||{}).filter(d=>d&&d.branch===b&&String(d.date||'').startsWith(ym)); }
+function autoRev(b,y,m){
+  const ds=dailyOf(b,y,m).filter(d=>dStatusOf(d)==='營業'); if(!ds.length) return [];
+  const id=k=>`auto-rev-${b}-${y}${pad(m)}-${k}`, rev=sum(ds.map(d=>+d.revenue||0)); const out=[];
+  for(const k of PAYK){ const v=sum(ds.map(d=>+d[k]||0)); if(v) out.push({id:id(k),cat:'每日結帳（自動）',item:DF.find(f=>f[0]===k)[1],amt:v,note:`${ds.filter(d=>+d[k]).length} 天`,auto:true}); }
+  const paid=sum(out.map(e=>e.amt)); if(rev!==paid) out.push({id:id('diff'),cat:'每日結帳（自動）',item:'營收與收款差額',amt:rev-paid,note:'每日結帳營收和收款方式合計的差額',auto:true});
+  return out;
+}
+function autoCust(b,y,m){
+  const gs=dailyOf(b,y,m).flatMap(d=>Array.isArray(d.guests)?d.guests:[]); if(!gs.length) return [];
+  const cnt={}; const add=(cat,v)=>{ if(v==null||v==='') return; const k=cat+'|'+v; cnt[k]=(cnt[k]||0)+1; };
+  for(const g of gs){ add('預約方式',g.type); add('得知管道',g.source); add('客源地',g.origin); add('同行關係',g.relation); [].concat(g.items||[]).forEach(x=>add('體驗項目',x)); add('來台南目的',g.purpose); }
+  return Object.entries(cnt).map(([k,n],i)=>{const [cat,item]=k.split('|');return {id:`auto-cust-${b}-${y}${pad(m)}-${i}`,cat,item,amt:n,note:'每日結帳顧客紀錄',auto:true};});
+}
+function autoQty(b,y,m,raw){
+  const ds=dailyOf(b,y,m).filter(d=>dStatusOf(d)==='營業'); if(!ds.length) return [];
+  const have=new Set(raw.map(e=>e.item)), out=[];
+  for(const [item,k] of [['來客數','visitors'],['外國客','foreign'],['回流客','returning']]){ const v=sum(ds.map(d=>+d[k]||0)); if(v&&!have.has(item)) out.push({id:`auto-qty-${b}-${y}${pad(m)}-${k}`,cat:'來客',item,amt:v,note:'每日結帳',auto:true}); }
+  return out;
+}
+const listOf=(b,m,k,y=YEAR)=>{ const raw=listOfRaw(b,m,k,y);
+  if(k==='rev') return raw.length?raw:autoRev(b,y,m);
+  if(k==='cust') return raw.length?raw:autoCust(b,y,m);
+  if(k==='qty'){ const a=autoQty(b,y,m,raw); return a.length?raw.concat(a):raw; }
+  return raw; };
 const tot=(b,m,k)=>sum(listOf(b,m,k).map(e=>+e.amt||0));
-const has=(b,m)=>{const d=doc(b,m);return !!d&&((d.rev||[]).length+(d.exp||[]).length)>0};
+const has=(b,m)=>(listOf(b,m,'rev').length+listOf(b,m,'exp').length)>0;
 const branches=()=>S.branch==='all'?['qp','yl']:[S.branch];
 const T=(m,k)=>sum(branches().map(b=>tot(b,m,k)));
 const anyData=m=>branches().some(b=>has(b,m));
@@ -1013,7 +1040,7 @@ function bookHTML(b,m,kind,ro){
   const editable=!ro && S.canWrite!==false && S.db;
   const title=(S.branch==='all'&&!K.money)?`${B[b].short} ・ ${K.label}`:K.label;
   const head=K.nosum?`<span class="hint">依類別統計</span>`:`<span class="sum num">${fmt(total)}<small class="u"> ${K.unit}</small></span>`;
-  let h=`<section class="book" data-kind="${kind}"><div class="book-h"><div class="t"><h2>${title}</h2><span class="hint">${list.length} 筆</span></div>${head}</div>`;
+  let h=`<section class="book" data-kind="${kind}"><div class="book-h"><div class="t"><h2>${title}</h2><span class="hint">${list.length} 筆${list.length&&list.every(e=>e.auto)?'・由每日結帳自動計算':list.some(e=>e.auto)?'・含每日結帳來客':''}</span></div>${head}</div>`;
   if(!list.length) h+=`<div class="emptyb">${m} 月沒有${K.label}紀錄${editable?'，用下方按鈕新增第一筆':''}。</div>`;
   if(kind==='plat'&&list.length){ h+=platSummary(list)+`<details class="orders"${S.editing&&S.editing.kind==='plat'||S.confirmDel&&list.some(e=>e.id===S.confirmDel)?' open':''}><summary>訂單明細（${list.length} 筆）</summary>`; }
   for(const [c,items,ct] of groupBy(list,cats)){
@@ -1025,7 +1052,7 @@ function bookHTML(b,m,kind,ro){
       const meta=[e.date?String(e.date).slice(5).replace('-','/'):'',kind==='plat'?pcText(e):'',e.fee?`抽成 ${fmt(e.fee)}`:'',e.note,e.by?`${e.by} 記錄`:''].filter(Boolean).join(' ・ ');
       const del=S.confirmDel===e.id;
       h+=`<div class="row"><div class="it"><div>${esc(e.item)}</div>${meta||e.receipt?`<div class="meta">${esc(meta)}${e.receipt?` <a class="rlink" href="${rcptURL(e.receipt)}" target="_blank" rel="noopener">收據</a>`:''}</div>`:''}</div>
-        <span class="acts${del?' on':''}">${editable?`<button class="ibtn" data-edit="${e.id}" data-kind="${kind}" aria-label="修改 ${esc(e.item)}">修改</button><button class="ibtn danger" data-del="${e.id}" data-kind="${kind}">${del?'確定刪除？':'刪除'}</button>`:''}</span>
+        <span class="acts${del?' on':''}">${editable&&!e.auto?`<button class="ibtn" data-edit="${e.id}" data-kind="${kind}" aria-label="修改 ${esc(e.item)}">修改</button><button class="ibtn danger" data-del="${e.id}" data-kind="${kind}">${del?'確定刪除？':'刪除'}</button>`:''}</span>
         <span class="num">${fmt(+e.amt||0)}</span></div>`;
     }
     h+='</div>';
