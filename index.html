@@ -776,6 +776,12 @@ table.opdays tr.off td{color:#8a7356}table.opdays tr.ty td{color:#4a6f8a}table.o
 table.opdays tr.na td{border-bottom:2px solid var(--rule)}
 
 .pk-status.off{background:#efe7dc;color:#8a7356}.hc-l span.off{color:#8a7356;font-weight:500}
+.reload-btn{width:34px;height:34px;border-radius:50%;border:1px solid rgba(241,208,138,.45);background:transparent;color:rgba(255,250,242,.85);display:grid;place-items:center;cursor:pointer;flex:none;padding:0}
+.reload-btn svg{width:17px;height:17px}
+.reload-btn:hover{background:rgba(255,250,242,.12);color:#fff}
+.reload-btn.spin svg{animation:rspin .7s linear infinite}
+@keyframes rspin{to{transform:rotate(360deg)}}
+
 .masthead .controls:not(:has(.seg:not([hidden]))){display:none}
 .masthead{background:linear-gradient(160deg,#7d3330 0%,var(--wine) 100%)}
 .masthead::before{border-color:rgba(241,208,138,.28)}
@@ -790,7 +796,7 @@ table.opdays tr.na td{border-bottom:2px solid var(--rule)}
       <div class="eyebrow">南風俱樂部 ・ 經營管理</div>
       <h1>旗跑・旗時 收支總覽</h1>
     </div>
-    <div class="hright"><div class="seg mode" role="group" aria-label="頁面" id="modeSeg"><button data-mode="home">首頁</button><button data-mode="daily">每日結帳</button><button data-mode="spend">當日支出</button><button data-mode="ledger">營業分析</button><button data-mode="cash" class="boss-only">現金結算</button></div><span class="who" id="who" hidden></span><span class="status" id="status"><i></i><span>連線中…</span></span></div>
+    <div class="hright"><div class="seg mode" role="group" aria-label="頁面" id="modeSeg"><button data-mode="home">首頁</button><button data-mode="daily">每日結帳</button><button data-mode="spend">當日支出</button><button data-mode="ledger">營業分析</button><button data-mode="cash" class="boss-only">現金結算</button></div><span class="who" id="who" hidden></span><button class="reload-btn" id="reloadBtn" type="button" aria-label="重新整理" title="重新整理（載入最新版本）"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button><span class="status" id="status"><i></i><span>連線中…</span></span></div>
   </header>
 
   <div class="controls">
@@ -2098,6 +2104,13 @@ function render(){
 document.querySelectorAll('#modeSeg button,#bnav button').forEach(b=>b.onclick=()=>{ if(!W.name){ render(); return; } if(b.dataset.mode==='daily'||b.dataset.mode==='spend'){ openPick(b.dataset.mode); return; } S.mode=b.dataset.mode;S.editing=S.adding=S.confirmDel=null;saveUI();render();scrollTo({top:0});});
 $('#pickModal').addEventListener('click',ev=>{ const t=ev.target.closest('button'); if(t&&t.dataset.pick) return choosePick(t.dataset.pick); if((t&&t.dataset.mclose)||ev.target.id==='pickModal') closePick(); });
 document.addEventListener('keydown',ev=>{ if(ev.key==='Escape'&&!$('#pickModal').hidden) closePick(); });
+
+document.getElementById('reloadBtn')?.addEventListener('click',async()=>{
+  const b=document.getElementById('reloadBtn'); b.classList.add('spin');
+  try{ if(window.caches){ const ks=await caches.keys(); await Promise.all(ks.map(k=>caches.delete(k))); } }catch(e){}
+  try{ const r=await navigator.serviceWorker?.getRegistration(); await r?.update(); }catch(e){}
+  location.reload();
+});
 bindDaily(); bindGuests(); bindGL(); bindSpend(); bindLogin(); bindCash(); renderWho();
 document.querySelectorAll('.seg button[data-b]').forEach(b=>b.onclick=()=>{S.branch=b.dataset.b;S.editing=S.adding=S.confirmDel=null;saveUI();render();});
 
