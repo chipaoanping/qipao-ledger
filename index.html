@@ -799,6 +799,32 @@ table.opdays tr.na td{border-bottom:2px solid var(--rule)}
 .g-sum{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--ink-2);background:var(--soft);border-radius:10px;padding:9px 12px}.g-sum b{color:var(--ink);font-size:15px}
 @media (max-width:640px){.cl-main{grid-template-columns:1fr}.cl-nums{grid-template-columns:repeat(2,minmax(0,1fr))}.cl-card{padding:18px 16px}}
 
+/* crew */
+.cr-month{display:flex;align-items:center;justify-content:center;gap:14px}.cr-month b{font-family:var(--f-display);font-size:19px;letter-spacing:.06em}
+.cr-ppl{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+.cr-p{background:var(--soft);border-radius:12px;padding:12px 14px;display:grid;gap:2px}.cr-p b{font-size:16px}.cr-p span{font-size:12px;color:var(--ink-3)}.cr-p em{font-style:normal;font-size:22px;font-weight:700;color:var(--wine)}.cr-p small{font-size:11.5px;color:var(--ink-3)}
+.cr-role{font-size:11.5px!important;color:var(--accent)!important}
+.cr-new{justify-self:start;padding:11px 20px}
+.cr-list{display:grid;grid-template-columns:minmax(0,1fr);border:1px solid var(--rule);border-radius:14px;overflow:hidden;background:var(--paper)}
+.cr-card+.cr-card{border-top:1px solid var(--soft)}
+.cr-head{all:unset;box-sizing:border-box;width:100%;cursor:pointer;display:grid;grid-template-columns:54px minmax(0,1fr) auto 16px;gap:12px;align-items:center;padding:11px 16px}
+.cr-head:hover{background:var(--hover)}
+.cr-d{display:grid;font-size:16px;font-weight:700}.cr-d small{font-size:11px;color:var(--ink-3);font-weight:400}
+.cr-who{display:grid}.cr-who small{font-size:12px;color:var(--ink-3)}
+.cr-amt{font-size:17px;font-weight:700;text-align:right;display:grid}.cr-amt small{font-size:11px;color:var(--ink-3);font-weight:400}
+.cr-chev{color:var(--ink-3);font-size:12px;text-align:center}.cr-det{padding:4px 16px 16px;display:grid;grid-template-columns:minmax(0,1fr);gap:10px}.cr-tw{overflow-x:auto}
+.cr-tab td,.cr-tab th{font-size:13px;padding:6px 8px;text-align:left}
+.cr-sum{display:flex;flex-wrap:wrap;gap:8px 20px;align-items:center;font-size:14px;background:var(--soft);border-radius:10px;padding:10px 12px}.cr-fin b{color:var(--wine);font-size:18px}
+.cr-min{width:90px;display:inline-block;padding:6px 8px;margin-left:4px}
+.cr-act{display:flex;gap:8px}.btn.danger{color:#fff;background:var(--accent);border-color:var(--accent)}
+.cr-form{display:grid;gap:12px}
+.cr-top{display:grid;grid-template-columns:180px auto minmax(0,1fr);gap:12px;align-items:end}
+.cr-rows{display:grid;gap:8px}
+.cr-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.6fr) 80px 130px 30px;gap:8px;align-items:center}
+.cr-row .din{padding:0 10px}.cr-row .din input{font-size:15px;padding:9px 0}
+.cr-ref summary{cursor:pointer;font-weight:700}.cr-ref table td{font-size:13.5px;padding:5px 8px}
+@media (max-width:640px){.cr-head{grid-template-columns:42px minmax(0,1fr) auto 12px;gap:8px;padding:11px 12px}.cr-det{padding:4px 12px 14px}.cr-tab td,.cr-tab th{font-size:12px;padding:5px}.cr-top{grid-template-columns:1fr}.cr-row{grid-template-columns:1fr 1fr;padding:10px;border:1px solid var(--soft);border-radius:10px}.cr-row select{grid-column:1/-1;order:-1}.cr-row .ibtn{justify-self:end}}
+
 .masthead .controls:not(:has(.seg:not([hidden]))){display:none}
 .masthead{background:linear-gradient(160deg,#7d3330 0%,var(--wine) 100%)}
 .masthead::before{border-color:rgba(241,208,138,.28)}
@@ -813,7 +839,7 @@ table.opdays tr.na td{border-bottom:2px solid var(--rule)}
       <div class="eyebrow">南風俱樂部 ・ 經營管理</div>
       <h1>旗跑・旗時 收支總覽</h1>
     </div>
-    <div class="hright"><div class="seg mode" role="group" aria-label="頁面" id="modeSeg"><button data-mode="home">首頁</button><button data-mode="daily">每日結帳</button><button data-mode="spend">當日支出</button><button data-mode="ledger">營業分析</button><button data-mode="cash" class="boss-only">現金結算</button></div><span class="who" id="who" hidden></span><button class="reload-btn" id="reloadBtn" type="button" aria-label="重新整理" title="重新整理（載入最新版本）"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button><span class="status" id="status"><i></i><span>連線中…</span></span></div>
+    <div class="hright"><div class="seg mode" role="group" aria-label="頁面" id="modeSeg"><button data-mode="home">首頁</button><button data-mode="daily">每日結帳</button><button data-mode="spend">當日支出</button><button data-mode="ledger">營業分析</button><button data-mode="cash" class="boss-only">現金結算</button><button data-mode="crew" hidden>造型・攝影</button></div><span class="who" id="who" hidden></span><button class="reload-btn" id="reloadBtn" type="button" aria-label="重新整理" title="重新整理（載入最新版本）"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button><span class="status" id="status"><i></i><span>連線中…</span></span></div>
   </header>
 
   <div class="controls">
@@ -947,6 +973,7 @@ function autoQty(b,y,m,raw){
 const listOf=(b,m,k,y=YEAR)=>{ const raw=listOfRaw(b,m,k,y);
   if(k==='rev') return raw.length?raw:autoRev(b,y,m);
   if(k==='cust') return raw.length?raw:autoCust(b,y,m);
+  if(k==='crew') return raw.length?raw:(typeof autoCrew==='function'?autoCrew(b,y,m):[]);
   if(k==='qty'){ const a=autoQty(b,y,m,raw); return a.length?raw.concat(a):raw; }
   return raw; };
 const tot=(b,m,k)=>sum(listOf(b,m,k).map(e=>+e.amt||0));
@@ -1742,6 +1769,106 @@ function bindGL(){
   });
 }
 
+/* ---------- 造型・攝影結案（師資費用） ---------- */
+const FEES={
+  yl:{ '攝影':{items:[['台式證件照',575],['雙人證件照',1150],['個人沙龍照',2000],['情侶沙龍照',2600],['閨蜜沙龍照',2600],['照片買斷',2500],['毛片全包',1800]],extras:[['精修加挑',180]],minimum:1500},
+       '造型':{items:[['整體造型',2000],['快速妝髮',1000],['指推波',300],['小童／男士',600],['指定費',780]],extras:[],minimum:0} },
+  qp:{ '攝影':{items:[['雙套寫真・單人',4300],['雙套寫真・雙人',5000],['雙套加拍',2000],['雙套毛片全包（150張）',3000],['單套／生日寫真・單人',2700],['單套／生日寫真・雙人',3500],['單套加拍',1500],['單套毛片全包（70-80張）',1800],['旅遊平台寫真・單人',4900],['旅遊平台寫真・情侶',6700],['照片買斷',2500],['特急件出圖・個人',2200],['特急件出圖・雙人',3200],['非寫真跟拍・3-4人',2700],['非寫真跟拍・5-8人',3500],['攝影師指定費',780],['加拍空間指定（每小時）',1000]],extras:[['精修加挑（寫真）',180],['精修加挑（非寫真）',300]],minimum:0},
+       '造型':{items:[['整體造型',2000],['快速妝髮',1000],['指推波',300],['小童／男士',600],['指定費',780]],extras:[],minimum:0} }
+};
+const CR={branch:'yl',ym:todayStr().slice(0,7),editing:null,draft:null,confirm:null,open:null};
+const crewOK=()=>typeof canImport==='function'?canImport():isBoss();
+const crewDocs=(b,ym)=>Object.entries(S.crewlog||{}).filter(([,d])=>d.branch===b&&d.month===ym).map(([id,d])=>({id,...d})).sort((a,c)=>a.date<c.date?-1:a.date>c.date?1:0);
+const crewSettle=d=>d.settle!=null&&d.settle!==''?+d.settle:Math.max(+d.minimum||0,sum((d.rows||[]).map(r=>+r.amt||0)));
+const ymShift=(ym,n)=>{const [y,m]=ym.split('-').map(Number);const x=new Date(y,m-1+n,1);return `${x.getFullYear()}-${pad(x.getMonth()+1)}`;};
+function crewNewDraft(){ const b=CR.branch, role='攝影'; return {date:todayStr().slice(0,7)===CR.ym?todayStr():CR.ym+'-01',role,person:'',rows:[{customer:'',item:'',amt:''}],minimum:FEES[b][role].minimum,note:'',settle:''}; }
+function crewRowsSum(dr){ return sum((dr.rows||[]).map(r=>+r.amt||0)); }
+function crewFormHTML(){
+  const b=CR.branch, dr=CR.draft, f=FEES[b][dr.role]||{items:[],extras:[]};
+  const persons=[...new Set(Object.values(S.crewlog||{}).filter(d=>d.branch===b&&d.role===dr.role).map(d=>d.person).filter(Boolean))];
+  const sub=crewRowsSum(dr), fin=Math.max(+dr.minimum||0,sub);
+  return `<div class="panel cr-form" id="crForm"><div class="ph"><h2>${CR.editing==='new'?'新增結案單':'修改結案單'}</h2><button class="ibtn" data-crcancel="1">取消</button></div>
+    <div class="cr-top">
+      <label class="dfield"><span class="fl">日期</span><input class="tin" type="date" data-crf="date" value="${esc(dr.date)}"></label>
+      <div class="gf"><span class="fl">角色</span><div class="chips">${['攝影','造型'].map(r=>`<button type="button" class="chip ${dr.role===r?'on':''}" data-crrole="${r}">${r}師</button>`).join('')}</div></div>
+      <label class="dfield"><span class="fl">${dr.role}師</span><input class="tin" list="crPersons" data-crf="person" value="${esc(dr.person)}" placeholder="名字"><datalist id="crPersons">${persons.map(p=>`<option value="${esc(p)}">`).join('')}</datalist></label>
+    </div>
+    <div class="cr-rows">${dr.rows.map((r,i)=>`<div class="cr-row">
+        <input class="tin" data-crr="${i}" data-k="customer" value="${esc(r.customer||'')}" placeholder="客人">
+        <select class="tin" data-crr="${i}" data-k="item"><option value="">選擇項目…</option>${f.items.concat(f.extras).map(([n,a])=>`<option value="${esc(n)}" data-amt="${a}" ${r.item===n?'selected':''}>${esc(n)}（${fmt(a)}）</option>`).join('')}${r.item&&!f.items.concat(f.extras).some(x=>x[0]===r.item)?`<option selected value="${esc(r.item)}">${esc(r.item)}</option>`:''}</select>
+        <input class="tin" data-crr="${i}" data-k="qty" type="number" inputmode="numeric" min="1" value="${esc(r.qty||'')}" placeholder="數量">
+        <span class="din"><input data-crr="${i}" data-k="amt" type="number" inputmode="numeric" value="${esc(r.amt)}" placeholder="0"><small>元</small></span>
+        <button class="ibtn" data-crdelrow="${i}" aria-label="刪除這列">✕</button></div>`).join('')}</div>
+    <button class="btn" data-craddrow="1">＋ 加一列</button>
+    <div class="cr-sum num"><span>小計 <b>${fmt(sub)}</b></span><label>保底 <input class="tin cr-min" type="number" data-crf="minimum" value="${esc(dr.minimum)}"></label><span class="cr-fin">應付 <b>${fmt(fin)}</b></span></div>
+    <label class="dfield"><span class="fl">備註</span><input class="tin" data-crf="note" value="${esc(dr.note||'')}" maxlength="120"></label>
+    <p class="sp-err" id="crErr"></p>
+    <button class="btn primary g-save" data-crsave="1">${CR.editing==='new'?'新增結案單':'儲存修改'}</button></div>`;
+}
+function crewSheetHTML(d){
+  const fin=crewSettle(d), sub=sum((d.rows||[]).map(r=>+r.amt||0)), op=CR.open===d.id;
+  return `<div class="cr-card"><button class="cr-head" data-cropen="${d.id}"><span class="cr-d num">${+d.date.slice(5,7)}/${+d.date.slice(8)}<small>${wk(d.date)}</small></span><span class="cr-who"><b>${esc(d.person||'—')}</b><small>${esc(d.role)}師・${(d.rows||[]).length} 件</small></span><span class="cr-amt num">${fmt(fin)}${fin>sub&&sub>=0?'<small>含保底</small>':''}</span><span class="cr-chev">${op?'▴':'▾'}</span></button>
+    ${op?`<div class="cr-det">${(d.rows||[]).length?`<div class="cr-tw"><table class="plain cr-tab"><tr><th>客人</th><th>項目</th><th>張數／數量</th><th>加價</th><th class="num">金額</th></tr>${d.rows.map(r=>`<tr><td>${esc(r.customer||'')}</td><td>${esc(r.item||(r.extra?'加購':''))||'<span class="hint">（同上）</span>'}</td><td>${r.tone||r.retouch?`調色 ${r.tone||0}／精修 ${r.retouch||0}`:esc(r.qty||'')}</td><td>${esc(r.extra||'')}</td><td class="num">${fmt(+r.amt||0)}</td></tr>`).join('')}</table></div>`:'<p class="hint">這天沒有拍攝項目</p>'}
+      <div class="cr-sum num"><span>小計 <b>${fmt(sub)}</b></span>${+d.minimum?`<span>保底 ${fmt(+d.minimum)}</span>`:''}<span class="cr-fin">應付 <b>${fmt(fin)}</b></span></div>
+      ${d.note?`<p class="hint">備註：${esc(d.note)}</p>`:''}<p class="hint">${d.source?'從舊結案單匯入':esc(d.by||'')+' 記錄'}</p>
+      <div class="cr-act"><button class="btn" data-credit="${d.id}">修改</button><button class="btn ${CR.confirm===d.id?'danger':''}" data-crdel="${d.id}">${CR.confirm===d.id?'確定刪除':'刪除'}</button></div></div>`:''}</div>`;
+}
+function drawCrew(){
+  if(!W.name){ renderLogin(); return; }
+  if(!crewOK()){ $('#main').innerHTML=`<div class="panel emptyb">這個頁面只有${esc(BOSS)}和指定人員可以使用。</div>`; return; }
+  const b=CR.branch, ym=CR.ym, list=crewDocs(b,ym), [y,m]=ym.split('-').map(Number);
+  const by={}; list.forEach(d=>{const k=d.role+'|'+(d.person||'—'); (by[k]??={role:d.role,person:d.person||'—',days:0,jobs:0,sub:0,fin:0}); by[k].days++; by[k].jobs+=(d.rows||[]).filter(r=>r.item||r.customer).length; by[k].sub+=sum((d.rows||[]).map(r=>+r.amt||0)); by[k].fin+=crewSettle(d);});
+  const ppl=Object.values(by).sort((a,c)=>c.fin-a.fin), tot=sum(ppl.map(p=>p.fin));
+  const f=FEES[b];
+  $('#main').innerHTML=`<div class="sheet-top"><div class="st-l"><div><div class="st-name">造型・攝影結案 <small>師資費用</small></div><div class="st-state">每位造型師、攝影師每天一張結案單</div></div></div>
+      <div class="seg cs-seg">${['qp','yl'].map(x=>`<button data-crb="${x}" aria-pressed="${x===b}"><i class="sw" style="background:var(${B[x].color})"></i>${x==='qp'?'旗跑':'旗時'}</button>`).join('')}</div></div>
+    <div class="cr-month"><button class="btn" data-crym="-1" aria-label="上個月">‹</button><b>${y} 年 ${m} 月</b><button class="btn" data-crym="1" aria-label="下個月">›</button></div>
+    <div class="panel"><div class="ph"><h2>${m} 月應付費用</h2><span class="hint num">合計 ${fmt(tot)} 元・${list.length} 張結案單</span></div>
+      ${ppl.length?`<div class="cr-ppl">${ppl.map(p=>`<div class="cr-p"><span class="cr-role">${esc(p.role)}師</span><b>${esc(p.person)}</b><span class="num">${p.days} 天・${p.jobs} 件</span><em class="num">${fmt(p.fin)}</em>${p.fin!==p.sub?`<small class="num">項目小計 ${fmt(p.sub)}</small>`:''}</div>`).join('')}</div>`:'<p class="hint">這個月還沒有結案單。</p>'}
+      <p class="hint">這些金額會自動帶到「營業分析 → 師資・人事」（那個月沒有手動填師資費用時）。</p></div>
+    ${CR.editing==='new'?crewFormHTML():`<button class="btn primary cr-new" data-crnew="1">＋ 新增結案單</button>`}
+    <div class="cr-list">${list.map(d=>CR.editing===d.id?crewFormHTML():crewSheetHTML(d)).join('')}</div>
+    <details class="panel cr-ref"><summary>💡 ${b==='qp'?'旗跑':'旗時'}費用參考表</summary><div class="two">${['攝影','造型'].map(r=>`<div><div class="rk-t">${r}師</div><table class="plain">${f[r].items.concat(f[r].extras).map(([n,a])=>`<tr><td>${esc(n)}</td><td class="num">${fmt(a)}</td></tr>`).join('')}${f[r].minimum?`<tr><td>每日保底</td><td class="num">${fmt(f[r].minimum)}</td></tr>`:''}</table></div>`).join('')}</div><p class="hint">選項目時會自動帶入參考金額，可以再手動改。</p></details>`;
+}
+async function crewSave(){
+  const dr=CR.draft; const err=t=>{const e=$('#crErr'); if(e) e.textContent=t;};
+  if(!dr.date) return err('請選日期'); if(!dr.person.trim()) return err('請填人員名字');
+  const rows=dr.rows.filter(r=>r.customer||r.item||+r.amt).map(r=>({customer:(r.customer||'').trim(),item:r.item||'',qty:r.qty?+r.qty:'',amt:Math.round(+r.amt||0)}));
+  const sub=sum(rows.map(r=>r.amt)), doc={branch:CR.branch,date:dr.date,month:dr.date.slice(0,7),role:dr.role,person:dr.person.trim(),rows,subtotal:sub,minimum:Math.round(+dr.minimum||0),settle:Math.max(Math.round(+dr.minimum||0),sub),note:(dr.note||'').trim(),by:W.name||'',updatedAt:new Date().toISOString()};
+  const id=CR.editing==='new'?`${CR.branch}-${dr.date}-${uid()}`:CR.editing;
+  try{ await S.db.doc('crewlog/'+id).set(doc); S.crewlog={...S.crewlog,[id]:doc}; CR.ym=doc.month; CR.editing=null; CR.draft=null; CR.open=id; drawCrew(); toast('結案單已儲存'); }
+  catch(e){ err('儲存失敗，請稍後再試'); }
+}
+function bindCrew(){
+  const main=$('#main');
+  main.addEventListener('input',ev=>{ if(S.mode!=='crew'||!CR.draft) return; const t=ev.target;
+    if(t.dataset.crf){ CR.draft[t.dataset.crf]=t.value; if(t.dataset.crf==='minimum') crewRefreshSum(); }
+    else if(t.dataset.crr!=null){ const r=CR.draft.rows[+t.dataset.crr]; r[t.dataset.k]=t.value; if(t.dataset.k==='qty'&&r.item){ const a=crewFeeOf(r.item); if(a) { r.amt=a*(+t.value||1); const ai=main.querySelector(`[data-crr="${t.dataset.crr}"][data-k="amt"]`); if(ai) ai.value=r.amt; } } crewRefreshSum(); } });
+  main.addEventListener('change',ev=>{ if(S.mode!=='crew'||!CR.draft) return; const t=ev.target;
+    if(t.dataset.crr!=null&&t.dataset.k==='item'){ const r=CR.draft.rows[+t.dataset.crr]; r.item=t.value; const a=crewFeeOf(t.value); if(a){ r.amt=a*(+r.qty||1); const ai=main.querySelector(`[data-crr="${t.dataset.crr}"][data-k="amt"]`); if(ai) ai.value=r.amt; } crewRefreshSum(); }
+    if(t.dataset.crf==='date') CR.draft.date=t.value; });
+  main.addEventListener('click',ev=>{ if(S.mode!=='crew') return; const t=ev.target.closest('button'); if(!t) return;
+    if(t.dataset.crb){ CR.branch=t.dataset.crb; CR.editing=null; CR.draft=null; drawCrew(); }
+    else if(t.dataset.crym){ CR.ym=ymShift(CR.ym,+t.dataset.crym); CR.open=null; drawCrew(); }
+    else if(t.dataset.crnew){ CR.editing='new'; CR.draft=crewNewDraft(); drawCrew(); }
+    else if(t.dataset.crcancel){ CR.editing=null; CR.draft=null; drawCrew(); }
+    else if(t.dataset.crrole){ CR.draft.role=t.dataset.crrole; CR.draft.minimum=FEES[CR.branch][t.dataset.crrole].minimum; drawCrew(); }
+    else if(t.dataset.craddrow){ CR.draft.rows.push({customer:'',item:'',amt:''}); drawCrew(); }
+    else if(t.dataset.crdelrow){ CR.draft.rows.splice(+t.dataset.crdelrow,1); if(!CR.draft.rows.length) CR.draft.rows.push({customer:'',item:'',amt:''}); drawCrew(); }
+    else if(t.dataset.crsave) crewSave();
+    else if(t.dataset.cropen){ CR.open=CR.open===t.dataset.cropen?null:t.dataset.cropen; CR.confirm=null; drawCrew(); }
+    else if(t.dataset.credit){ const d=(S.crewlog||{})[t.dataset.credit]; if(!d) return; CR.editing=t.dataset.credit; CR.draft={date:d.date,role:d.role,person:d.person||'',rows:(d.rows||[]).map(r=>({customer:r.customer||'',item:r.item||'',qty:r.qty||'',amt:r.amt??''})),minimum:d.minimum||0,note:d.note||''}; if(!CR.draft.rows.length) CR.draft.rows.push({customer:'',item:'',amt:''}); drawCrew(); }
+    else if(t.dataset.crdel){ const id=t.dataset.crdel; if(CR.confirm!==id){CR.confirm=id;drawCrew();return;} CR.confirm=null; S.db.doc('crewlog/'+id).delete().then(()=>{const o={...S.crewlog}; delete o[id]; S.crewlog=o; drawCrew(); toast('已刪除');}).catch(()=>toast('刪除失敗')); }
+  });
+}
+function crewFeeOf(name){ for(const r of ['攝影','造型']){ const f=FEES[CR.branch][r]; const hit=f.items.concat(f.extras).find(x=>x[0]===name); if(hit) return hit[1]; } return 0; }
+function crewRefreshSum(){ const el=$('#crForm .cr-sum'); if(!el) return; const sub=crewRowsSum(CR.draft), fin=Math.max(+CR.draft.minimum||0,sub); el.querySelector('b').textContent=fmt(sub); el.querySelector('.cr-fin b').textContent=fmt(fin); }
+function autoCrew(b,y,m){
+  const ym=`${y}-${pad(m)}`, ds=Object.values(S.crewlog||{}).filter(d=>d.branch===b&&d.month===ym); if(!ds.length) return [];
+  const g={}; ds.forEach(d=>{const k=(d.role==='造型'?'造型師':'攝影師')+'|'+(d.person||'—'); (g[k]??={n:0,a:0}); g[k].n++; g[k].a+=crewSettle(d);});
+  return Object.entries(g).map(([k,v],i)=>{const [cat,item]=k.split('|');return {id:`auto-crew-${b}-${ym}-${i}`,cat,item,amt:v.a,note:`${v.n} 張結案單`,auto:true};});
+}
+
 
 /* ---------- 登入（Firebase 帳號密碼） ---------- */
 const W={name:null,uid:'',email:'',admin:false,ready:false};
@@ -1868,7 +1995,7 @@ const fsDec=d=>d&&typeof d.__json==='string'?JSON.parse(d.__json):d;
 async function importData(file){
   const set=t=>{IMP.msg=t; const m=$('#impMsg'); if(m) m.textContent=t;};
   try{
-    const j=JSON.parse(await file.text()); const cols=isBoss()?['months','daily','misc','settle']:['months','daily','misc'];
+    const j=JSON.parse(await file.text()); const cols=isBoss()?['months','daily','misc','settle','crewlog']:['months','daily','misc','crewlog'];
     const ops=[]; for(const c of cols) for(const [id,d] of Object.entries(j[c]||{})) ops.push([c,id,d]);
     const sm=Object.entries(j.status||{}); let sn=0;
     for(const [id,v] of sm){ const m=id.match(/^(qp|yl)-(\d{4}-\d{2}-\d{2})$/); if(!m) continue; const ref=FB.fs.doc('daily/'+id), cur=await ref.get();
@@ -1890,7 +2017,7 @@ async function importData(file){
 }
 async function exportData(){
   const out={_meta:{exportedAt:new Date().toISOString(),by:W.name}};
-  for(const c of ['months','daily','misc','settle']){ const s=await FB.fs.collection(c).get(); out[c]={}; s.docs.forEach(d=>out[c][d.id]=fsDec(d.data())); }
+  for(const c of ['months','daily','misc','settle','crewlog']){ const s=await FB.fs.collection(c).get(); out[c]={}; s.docs.forEach(d=>out[c][d.id]=fsDec(d.data())); }
   const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(out)],{type:'application/json'})); a.download=`旗跑旗時-備份-${todayStr()}.json`; document.body.appendChild(a); a.click(); a.remove();
 }
 document.addEventListener('change',ev=>{ if(ev.target.id==='impFile'&&ev.target.files[0]) importData(ev.target.files[0]); });
@@ -1911,7 +2038,7 @@ const ICON0={
   spend:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>',
   ledger:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2 2 2 0 0 0 2 2h13"/><path d="M8 13l3-3 2 2 3-4"/></svg>'
 };
-const ICON=new Proxy(ICON0,{get:(o,k)=>o[k]||(k==='cash'?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="2"/><circle cx="12" cy="12" r="2.6"/><path d="M6 9.5v5M18 9.5v5"/></svg>':'')});
+const ICON=new Proxy(ICON0,{get:(o,k)=>o[k]||(k==='crew'?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>':k==='cash'?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="2"/><circle cx="12" cy="12" r="2.6"/><path d="M6 9.5v5M18 9.5v5"/></svg>':'')});
 function renderHome(){
   subCash();
   if(!W.name){ renderLogin(); return; }
@@ -1929,6 +2056,7 @@ function renderHome(){
       ${card('daily','每日結帳','營收、來客、收款方式',dRow('qp')+dRow('yl'),'選擇分店結帳')}
       ${card('spend','當日支出','零用金、採購、雜支',sRow('qp')+sRow('yl'),'選擇分店記支出')}
       ${card('ledger','營業分析','每月收支・銷售・顧客・師資',lRow('qp')+lRow('yl'),'打開營業分析')}
+      ${crewOK()?card('crew','造型・攝影結案','每月造型師、攝影師費用',['qp','yl'].map(b=>{const l=crewDocs(b,todayStr().slice(0,7));return `<li><i style="background:var(${B[b].color})"></i>${b==='qp'?'旗跑':'旗時'}<span>${todayStr().slice(5,7)*1} 月 ${l.length} 張・${fmt(sum(l.map(crewSettle)))} 元</span></li>`;}).join(''),'開始記錄'):''}
       ${card('cash','現金結算',`營收現金・零用金（僅${BOSS}可完成結算）`,['qp','yl'].map(b=>{const l=lastSettle(b,'cash'),p=lastSettle(b,'petty');return `<li><i style="background:var(${B[b].color})"></i>${b==='qp'?'旗跑':'旗時'}<span>現金 ${l?md(l.date):'未結'}・零用金 ${p?md(p.date):'未結'}</span></li>`;}).join(''),isBoss()?'開始結算':'查看結算')}
     </div>
     ${adminHTML()}
@@ -2035,7 +2163,7 @@ function bindSpend(){
   main.addEventListener('submit',ev=>{ if(S.mode==='spend'){ev.preventDefault();ev.stopImmediatePropagation();} },true);
   main.addEventListener('click',ev=>{
     const t=ev.target.closest('button'); if(!t) return;
-    if(S.mode==='home'&&t.dataset.home){ const k=t.dataset.home; if(k==='ledger'||k==='cash'){S.mode=k;saveUI();render();scrollTo({top:0});} else openPick(k); return; }
+    if(S.mode==='home'&&t.dataset.home){ const k=t.dataset.home; if(k==='ledger'||k==='cash'||k==='crew'){S.mode=k;saveUI();render();scrollTo({top:0});} else openPick(k); return; }
     if(S.mode!=='spend') return;
     if(t.dataset.sback) openPick('spend');
     else if(t.dataset.sshift) setSpendDay(addDays(SP.day,+t.dataset.sshift));
@@ -2154,11 +2282,13 @@ function bindCash(){
 /* ---------- render & events ---------- */
 function render(){
   document.querySelectorAll('#modeSeg button,#bnav button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.mode===S.mode));
+  { const cb=document.querySelector('#modeSeg button[data-mode="crew"]'); if(cb) cb.hidden=!(W.name&&crewOK()); }
   if(!W.name){ document.body.classList.add('locked'); ['#yearSeg','#branchSeg'].forEach(q=>$(q).hidden=true); document.querySelector('.controls2').hidden=true; document.querySelector('details.notes').hidden=true; renderLogin(); return; }
   document.body.classList.remove('locked');
   const daily=S.mode==='daily', led=S.mode==='ledger';
   $('#yearSeg').hidden=!led; $('#branchSeg').hidden=!led; document.querySelector('.controls2').hidden=!led; document.querySelector('details.notes').hidden=!led;
   if(S.mode==='home'){ renderHome(); return; }
+  if(S.mode==='crew'){ drawCrew(); return; }
   if(S.mode==='cash'){ if(!S.loaded){ $('#main').innerHTML=`<div class="panel emptyb">正在讀取…</div>`; return; } drawCash(); return; }
   if(S.mode==='spend'){ if(!SP.branch){ S.mode='home'; return render(); } if(!S.loaded){ $('#main').innerHTML=`<div class="panel emptyb">正在讀取…</div>`; return; } drawSpend(); return; }
   if(daily&&!D.branch){ S.mode='home'; return render(); }
@@ -2185,7 +2315,7 @@ document.getElementById('reloadBtn')?.addEventListener('click',async()=>{
   try{ const r=await navigator.serviceWorker?.getRegistration(); await r?.update(); }catch(e){}
   location.reload();
 });
-bindDaily(); bindGuests(); bindGL(); bindSpend(); bindLogin(); bindCash(); renderWho();
+bindDaily(); bindGuests(); bindCrew(); bindGL(); bindSpend(); bindLogin(); bindCash(); renderWho();
 document.querySelectorAll('.seg button[data-b]').forEach(b=>b.onclick=()=>{S.branch=b.dataset.b;S.editing=S.adding=S.confirmDel=null;saveUI();render();});
 
 $('#main').addEventListener('click',async ev=>{
@@ -2278,7 +2408,7 @@ document.addEventListener('click',ev=>{
 function showLoadErr(){ let el=$('#loadErr'); if(!el){ el=document.createElement('div'); el.id='loadErr'; el.className='load-err'; document.querySelector('.wrap')?.insertBefore(el,$('#main')); }
   el.innerHTML=S.loadErr?`⚠️ 讀取資料失敗（${esc(S.loadErr)}）。${S.loadErr==='permission-denied'?'這個帳號目前沒有讀取權限，請找妃妃確認人員名單，或登出後重新登入。':'請檢查網路後重新整理頁面。'} <button class="btn" onclick="location.reload()">重新整理</button>`:''; el.hidden=!S.loadErr; }
 function stopData(){ FB.unsubs.forEach(u=>{try{u()}catch(e){}}); FB.unsubs=[]; if(D.unsub){try{D.unsub()}catch(e){}} D.unsub=null; D.subMonth=null; if(C.unsub){try{C.unsub()}catch(e){}} C.unsub=null; C.subB=null;
-  S.db=null; S.docs={}; S.allDaily={}; S.loadErr=null; showLoadErr(); S.misc={}; S.settle={}; D.docs={}; C.daily={}; S.loaded=false; FB.dataOn=false; }
+  S.db=null; S.docs={}; S.allDaily={}; S.loadErr=null; showLoadErr(); S.misc={}; S.settle={}; S.crewlog={}; D.docs={}; C.daily={}; S.loaded=false; FB.dataOn=false; }
 function startData(){
   if(FB.dataOn) return; FB.dataOn=true; const db=FB.fs; S.db=db; S.canWrite=true;
   setTimeout(()=>{ if(FB.dataOn&&!S.loaded){ S.loadErr='讀取超過 15 秒'; showLoadErr(); } },15000);
@@ -2291,6 +2421,7 @@ function startData(){
   },e=>{ const c=(e&&e.code)||'unknown'; setStatus('ro',c==='permission-denied'?'沒有權限':'連線中斷'); S.loaded=true; S.loadErr=c; showLoadErr(); render(); }));
   FB.unsubs.push(db.collection('daily').onSnapshot(snap=>{ const o={}; snap.docs.forEach(d=>{o[d.id]=d.data();}); S.allDaily=o; if(S.mode==='ledger'&&S.sec==='cust'&&!S.editing&&!S.adding) render(); },()=>{}));
   FB.unsubs.push(db.collection('settle').onSnapshot(snap=>{ const o={}; snap.docs.forEach(d=>{o[d.id]=d.data();}); S.settle=o; if(S.mode==='cash') drawCash(); else if(S.mode==='spend') drawSpend(); else if(S.mode==='home') renderHome(); },()=>{}));
+  FB.unsubs.push(db.collection('crewlog').onSnapshot(snap=>{ const o={}; snap.docs.forEach(d=>{o[d.id]=d.data();}); S.crewlog=o; if(S.mode==='crew'&&!CR.editing) drawCrew(); else if(S.mode==='home') renderHome(); },()=>{}));
   FB.unsubs.push(db.collection('misc').onSnapshot(snap=>{ const m={}; snap.docs.forEach(d=>{m[d.id]=fsDec(d.data());}); S.misc=m; S.miscLoaded=true; if(S.loaded&&!S.editing&&!S.adding&&S.mode==='ledger'&&S.month===0&&S.sec==='chan') render(); },()=>{}));
 }
 function applyAuth(){
