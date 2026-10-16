@@ -24,6 +24,8 @@ body::before{content:"";display:block;height:env(safe-area-inset-top,0px)}
 .rviewer button{position:absolute;top:max(14px,env(safe-area-inset-top));right:14px;width:40px;height:40px;border-radius:50%;border:0;background:rgba(255,255,255,.18);color:#fff;font-size:24px}
 .lg-pw{width:100%!important;max-width:340px;min-width:0;grid-template-columns:minmax(0,1fr)}
 .lg-pw input{width:100%;min-width:0}
+.load-err{background:#fbe9e7;color:#8e2733;border:1px solid #f0c4bd;border-radius:12px;padding:12px 16px;font-size:14px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.load-err[hidden]{display:none}
 .adm{display:grid;gap:14px}
 .adm-people{display:flex;flex-wrap:wrap;gap:10px}
 .adm-p{display:flex;align-items:center;gap:8px;border:1px solid var(--rule);border-radius:999px;padding:5px 8px 5px 5px}
@@ -2078,7 +2080,7 @@ function render(){
   if(S.mode==='cash'){ if(!S.loaded){ $('#main').innerHTML=`<div class="panel emptyb">正在讀取…</div>`; return; } drawCash(); return; }
   if(S.mode==='spend'){ if(!SP.branch){ S.mode='home'; return render(); } if(!S.loaded){ $('#main').innerHTML=`<div class="panel emptyb">正在讀取…</div>`; return; } drawSpend(); return; }
   if(daily&&!D.branch){ S.mode='home'; return render(); }
-  if(daily){ if(!S.loaded){ $('#main').innerHTML=`<div class="panel emptyb">正在讀取…</div>`; return; } subDaily(); renderDaily(); return; }
+  if(daily){ subDaily(); renderDaily(); return; }
   if(S.month===null) S.month=latestMonth();
   document.querySelectorAll('.seg button[data-b]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.b===S.branch));
   $('#yearSeg').innerHTML=YEARS.map(y=>`<button data-y="${y}" aria-pressed="${y===YEAR}">${y}</button>`).join('');
@@ -2184,17 +2186,20 @@ document.addEventListener('click',ev=>{
 },true);
 
 /* ---------- start ---------- */
+function showLoadErr(){ let el=$('#loadErr'); if(!el){ el=document.createElement('div'); el.id='loadErr'; el.className='load-err'; document.querySelector('.wrap')?.insertBefore(el,$('#main')); }
+  el.innerHTML=S.loadErr?`⚠️ 讀取資料失敗（${esc(S.loadErr)}）。${S.loadErr==='permission-denied'?'這個帳號目前沒有讀取權限，請找妃妃確認人員名單，或登出後重新登入。':'請檢查網路後重新整理頁面。'} <button class="btn" onclick="location.reload()">重新整理</button>`:''; el.hidden=!S.loadErr; }
 function stopData(){ FB.unsubs.forEach(u=>{try{u()}catch(e){}}); FB.unsubs=[]; if(D.unsub){try{D.unsub()}catch(e){}} D.unsub=null; D.subMonth=null; if(C.unsub){try{C.unsub()}catch(e){}} C.unsub=null; C.subB=null;
-  S.db=null; S.docs={}; S.allDaily={}; S.misc={}; S.settle={}; D.docs={}; C.daily={}; S.loaded=false; FB.dataOn=false; }
+  S.db=null; S.docs={}; S.allDaily={}; S.loadErr=null; showLoadErr(); S.misc={}; S.settle={}; D.docs={}; C.daily={}; S.loaded=false; FB.dataOn=false; }
 function startData(){
   if(FB.dataOn) return; FB.dataOn=true; const db=FB.fs; S.db=db; S.canWrite=true;
+  setTimeout(()=>{ if(FB.dataOn&&!S.loaded){ S.loadErr='讀取超過 15 秒'; showLoadErr(); } },15000);
   FB.unsubs.push(db.collection('months').onSnapshot(snap=>{
     const docs={}; snap.docs.forEach(d=>{docs[d.id]=d.data();}); S.docs=docs;
-    const first=!S.loaded; S.loaded=true;
+    const first=!S.loaded; S.loaded=true; if(S.loadErr){ S.loadErr=null; showLoadErr(); }
     if(first&&S.month!==0&&!anyData(S.month)&&S.month!==latestMonth()) S.month=latestMonth();
     setStatus('ok','已同步');
     if(S.mode==='daily'){ if(first) render(); } else if(S.mode==='spend') drawSpend(); else if(S.mode==='cash') drawCash(); else if(S.mode==='home') renderHome(); else if(!S.editing&&!S.adding) render(); else renderRibbon();
-  },e=>{ setStatus('ro',e&&e.code==='permission-denied'?'沒有權限':'連線中斷，請重新整理'); }));
+  },e=>{ const c=(e&&e.code)||'unknown'; setStatus('ro',c==='permission-denied'?'沒有權限':'連線中斷'); S.loaded=true; S.loadErr=c; showLoadErr(); render(); }));
   FB.unsubs.push(db.collection('daily').onSnapshot(snap=>{ const o={}; snap.docs.forEach(d=>{o[d.id]=d.data();}); S.allDaily=o; if(S.mode==='ledger'&&S.sec==='cust'&&!S.editing&&!S.adding) render(); },()=>{}));
   FB.unsubs.push(db.collection('settle').onSnapshot(snap=>{ const o={}; snap.docs.forEach(d=>{o[d.id]=d.data();}); S.settle=o; if(S.mode==='cash') drawCash(); else if(S.mode==='spend') drawSpend(); else if(S.mode==='home') renderHome(); },()=>{}));
   FB.unsubs.push(db.collection('misc').onSnapshot(snap=>{ const m={}; snap.docs.forEach(d=>{m[d.id]=fsDec(d.data());}); S.misc=m; S.miscLoaded=true; if(S.loaded&&!S.editing&&!S.adding&&S.mode==='ledger'&&S.month===0&&S.sec==='chan') render(); },()=>{}));
