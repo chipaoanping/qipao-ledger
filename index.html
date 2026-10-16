@@ -1510,7 +1510,7 @@ function bindDaily(){
 const GF=[
   ['type','預約／現場','chips1',['預約','現場']],
   ['name','預約姓名','text'],
-  ['items','體驗項目','chipsN',{qp:['日租旗袍','2小時旗袍','馬褂體驗','整體造型','快速彩妝','寫真攝影','快閃寫真','生日寫真'],yl:['台式證件照','雙人證件照','沙龍寫真','旗袍短租','快速彩妝','整體造型','走讀活動']}],
+  ['items','體驗項目','chipsN',{qp:['日租體驗','短租體驗','整體造型','快速彩妝','雙套寫真'],yl:['台式證件照','雙人證件照','沙龍寫真','旗袍短租','快速彩妝','整體造型','走讀活動']}],
   ['count','人數','num'],
   ['origin','客源地','chips1',['台南','高雄','台中','台北','新北','桃園','其他縣市','日本','韓國','香港','中國','東南亞','歐美']],
   ['relation','同行關係','chips1',['朋友','閨蜜','情侶','夫妻','家人','親子','獨自','同事']],
@@ -1525,7 +1525,7 @@ const G={editing:null,draft:{}};
 const gList=b=>((dDoc(b)||{}).guests)||[];
 const gBase=(f,b)=>Array.isArray(f[3])?f[3]:(f[3]||{})[b]||[];
 function gOpts(f,b){
-  const base=gBase(f,b), k=f[0]; if(k==='type') return base;
+  const base=gBase(f,b), k=f[0]; if(k==='type'||(k==='items'&&b==='qp')) return base;
   const cnt={}; const src=Object.values({...(S.allDaily||{}),...D.docs});
   for(const d of src) if(d&&d.branch===b&&Array.isArray(d.guests)) for(const g of d.guests){ const v=g[k]; if(v==null||v==='') continue;
     (Array.isArray(v)?v:String(v).split(f[2]==='chipsN'?/[、,，]/:/$^/)).map(x=>String(x).trim()).filter(x=>x&&x.length<=12).forEach(x=>cnt[x]=(cnt[x]||0)+(k!=='items'&&g.by==='舊資料匯入'?.5:1)); }
