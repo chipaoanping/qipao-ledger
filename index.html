@@ -782,6 +782,23 @@ table.opdays tr.na td{border-bottom:2px solid var(--rule)}
 .reload-btn.spin svg{animation:rspin .7s linear infinite}
 @keyframes rspin{to{transform:rotate(360deg)}}
 
+/* closed day view */
+.cl-card{background:var(--paper);border:1px solid var(--rule);border-radius:var(--r);box-shadow:var(--shadow);padding:20px 22px;display:grid;gap:16px;position:relative;overflow:hidden}
+.cl-card::before{content:"";position:absolute;left:0;right:0;top:0;height:4px;background:linear-gradient(90deg,var(--wine),var(--accent) 45%,var(--mustard))}
+.cl-main{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:18px;align-items:center}
+.cl-rev{display:grid;gap:2px}.cl-rev span{font-size:12.5px;color:var(--ink-3)}.cl-rev b{font-family:var(--f-display);font-size:40px;line-height:1.1;color:var(--wine)}
+.cl-rev em{font-style:normal;font-size:13px;font-weight:700}.cl-rev em.ok{color:var(--pos)}.cl-rev em.bad{color:#b07a12}
+.cl-nums{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.cl-nums div{background:var(--soft);border-radius:10px;padding:10px 12px;display:grid}.cl-nums span{font-size:11.5px;color:var(--ink-3)}.cl-nums b{font-size:20px}.cl-nums small{font-size:11px;color:var(--ink-3)}
+.cl-pays{display:flex;flex-wrap:wrap;gap:8px}
+.cl-pay{display:flex;align-items:center;gap:6px;border:1px solid var(--rule);border-radius:999px;padding:5px 12px;font-size:13px;color:var(--ink-2)}.cl-pay i{width:8px;height:8px;border-radius:50%}.cl-pay b{color:var(--ink)}
+.cl-extra{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13px;color:var(--ink-2)}
+.cl-edit{justify-self:start;font-weight:700;color:var(--wine);border-color:var(--mustard);background:var(--gold-soft);padding:9px 18px}
+.cl-off{display:grid;gap:6px}.cl-off p{margin:0}
+.cl-badge{justify-self:start;font-family:var(--f-display);font-size:20px;font-weight:900;border-radius:10px;padding:4px 14px;color:#fff}.cl-badge.off{background:#8a7356}.cl-badge.ty{background:#4a6f8a}
+.g-sum{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--ink-2);background:var(--soft);border-radius:10px;padding:9px 12px}.g-sum b{color:var(--ink);font-size:15px}
+@media (max-width:640px){.cl-main{grid-template-columns:1fr}.cl-nums{grid-template-columns:repeat(2,minmax(0,1fr))}.cl-card{padding:18px 16px}}
+
 .masthead .controls:not(:has(.seg:not([hidden]))){display:none}
 .masthead{background:linear-gradient(160deg,#7d3330 0%,var(--wine) 100%)}
 .masthead::before{border-color:rgba(241,208,138,.28)}
@@ -1334,7 +1351,7 @@ const dId=(b,day)=>`${b}-${day}`;
 const dDoc=(b,day=D.day)=>D.docs[dId(b,day)];
 const wk=d=>'日一二三四五六'[new Date(d+'T00:00:00').getDay()];
 const addDays=(day,n)=>{const d=new Date(day+'T00:00:00');d.setDate(d.getDate()+n);return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;};
-function setDay(day){G.editing=null;G.draft={};D.day=day;D.dirty={};saveD();subDaily();renderDaily();}
+function setDay(day){D.edit=false;G.editing=null;G.draft={};D.day=day;D.dirty={};saveD();subDaily();renderDaily();}
 function subDaily(){
   if(!S.db) return;
   const want=[dMonth(), addDays(D.day,-7).slice(0,7)];
@@ -1429,10 +1446,35 @@ function monthTable(b){
   if(led) h+=`<p class="hint" style="margin:-8px 4px 0">營業分析「收支」裡 ${y} 年 ${m} 月${B[b].short}營收是 ${fmt(led)} 元，每日結帳合計 ${fmt(tot('revenue'))} 元。</p>`;
   return h;
 }
+function closedHTML(b,d){
+  const st=dStatusOf(d), editable=S.canWrite!==false&&S.db;
+  const top=`<div class="sheet-top" style="--bc:var(${B[b].color})">
+      <div class="st-l"><button class="btn ghost" data-dback="1">‹ 選擇分店</button><div><div class="st-name">${b==='qp'?'旗跑':'旗時'} <small>${B[b].name}</small></div><div class="st-state">${st==='營業'?'✓ 已結帳':esc(st)}${d.staff?`・${esc(d.staff)}`:''}${d.updatedAt?`・${esc(String(d.updatedAt).slice(5,10).replace('-','/'))} ${esc(String(d.updatedAt).slice(11,16))}`:''}</div></div></div>
+      <div class="dnav"><button class="btn" data-dshift="-1" aria-label="前一天">‹</button>
+        <label class="ddate"><input type="date" id="dDate" value="${D.day}"><span>${+D.day.slice(5,7)} 月 ${+D.day.slice(8)} 日・星期${wk(D.day)}</span></label>
+        <button class="btn" data-dshift="1" aria-label="後一天">›</button>${D.day!==todayStr()?'<button class="btn" data-dtoday="1">今天</button>':''}</div>
+    </div>`;
+  let body;
+  if(st!=='營業'){
+    body=`<div class="cl-card off"><div class="cl-off"><span class="cl-badge ${st==='颱風假'?'ty':'off'}">${esc(st)}</span><p>這天${esc(st)}，沒有營業。</p>${d.note?`<p class="hint">備註：${esc(d.note)}</p>`:''}</div>${editable?`<button class="btn cl-edit" data-dedit="1">✎ 編輯</button>`:''}</div>`;
+  } else {
+    const rev=+d.revenue||0, paid=sum(PAYK.map(k=>+d[k]||0)), diff=paid-rev, vis=+d.visitors||0;
+    const pays=PAYK.filter(k=>+d[k]).map(k=>`<span class="cl-pay"><i style="background:${PAYC[k]}"></i>${DF.find(f=>f[0]===k)[1]}<b class="num">${fmt(+d[k])}</b></span>`).join('');
+    body=`<div class="cl-card">
+      <div class="cl-main"><div class="cl-rev"><span>今日營收</span><b class="num">${fmt(rev)}</b><em class="${diff?'bad':'ok'}">${diff?`收款${diff>0?'多':'少'} ${fmt(Math.abs(diff))} 元`:'✓ 對帳相符'}</em></div>
+        <div class="cl-nums num"><div><span>來客</span><b>${fmt(vis)}</b><small>人</small></div><div><span>外國旅客</span><b>${fmt(+d.foreign||0)}</b><small>人</small></div><div><span>回流客</span><b>${fmt(+d.returning||0)}</b><small>人</small></div><div><span>客單價</span><b>${vis?fmt(rev/vis):'—'}</b></div></div></div>
+      ${pays?`<div class="cl-pays">${pays}</div>`:''}
+      ${(+d.deposit||0)||d.note?`<div class="cl-extra">${+d.deposit?`<span>台新存款 <b class="num">${fmt(+d.deposit)}</b></span>`:''}${d.note?`<span>備註：${esc(d.note)}</span>`:''}</div>`:''}
+      ${editable?`<button class="btn cl-edit" data-dedit="1">✎ 編輯結帳</button>`:''}
+    </div>`;
+  }
+  return top+monthStrip(b)+body+guestsHTML(b,true);
+}
 function renderSheet(b){
   const d=dStatusOf(dDoc(b))?dDoc(b):null, editable=S.canWrite!==false&&S.db;
+  if(d&&!D.edit) return closedHTML(b,d);
   return `<div class="sheet-top" style="--bc:var(${B[b].color})">
-      <div class="st-l"><button class="btn ghost" data-dback="1">‹ 選擇分店</button><div><div class="st-name">${b==='qp'?'旗跑':'旗時'} <small>${B[b].name}</small></div><div class="st-state">${d&&dStatusOf(d)!=='營業'?`${esc(dStatusOf(d))}${d.staff?`・${esc(d.staff)} 記錄`:''}`:d?`已結帳・${esc(String(d.updatedAt||'').slice(5,10).replace('-','/'))} ${esc(String(d.updatedAt||'').slice(11,16))} 更新${d.staff?`・${esc(d.staff)}`:''}`:'尚未結帳'}</div></div></div>
+      <div class="st-l"><button class="btn ghost" data-dback="1">‹ 選擇分店</button>${d?'<button class="btn" data-dcancel="1">取消編輯</button>':''}<div><div class="st-name">${b==='qp'?'旗跑':'旗時'} <small>${B[b].name}</small></div><div class="st-state">${d&&dStatusOf(d)!=='營業'?`${esc(dStatusOf(d))}${d.staff?`・${esc(d.staff)} 記錄`:''}`:d?`已結帳・${esc(String(d.updatedAt||'').slice(5,10).replace('-','/'))} ${esc(String(d.updatedAt||'').slice(11,16))} 更新${d.staff?`・${esc(d.staff)}`:''}`:'尚未結帳'}</div></div></div>
       <div class="dnav"><button class="btn" data-dshift="-1" aria-label="前一天">‹</button>
         <label class="ddate"><input type="date" id="dDate" value="${D.day}"><span>${+D.day.slice(5,7)} 月 ${+D.day.slice(8)} 日・星期${wk(D.day)}</span></label>
         <button class="btn" data-dshift="1" aria-label="後一天">›</button>${D.day!==todayStr()?'<button class="btn" data-dtoday="1">今天</button>':''}</div>
@@ -1462,7 +1504,7 @@ function renderSheet(b){
 let PK='daily';
 function openPick(kind){ PK=kind||'daily'; if(!D.branch||D.day!==todayStr()){ D.day=todayStr(); } subDaily(); $('#pickBox').innerHTML=PK==='spend'?spendChooser():renderChooser(); $('#pickModal').hidden=false; document.body.classList.add('noscroll'); setTimeout(()=>{const f=$('#pickBox .pick');f&&f.focus();},30); }
 function closePick(){ $('#pickModal').hidden=true; document.body.classList.remove('noscroll'); }
-function choosePick(b){ closePick(); if(PK==='spend'){ S.mode='spend'; SP.branch=b; SP.day=todayStr(); SP.draft={}; SP.confirmDel=null; saveUI(); render(); scrollTo({top:0}); return; } S.mode='daily'; D.branch=b; D.day=todayStr(); D.dirty={}; saveD(); saveUI(); subDaily(); render(); scrollTo({top:0}); }
+function choosePick(b){ closePick(); if(PK==='spend'){ S.mode='spend'; SP.branch=b; SP.day=todayStr(); SP.draft={}; SP.confirmDel=null; saveUI(); render(); scrollTo({top:0}); return; } S.mode='daily'; D.edit=false; D.branch=b; D.day=todayStr(); D.dirty={}; saveD(); saveUI(); subDaily(); render(); scrollTo({top:0}); }
 function renderDaily(fromSnap){
   if(!W.name){ renderLogin(); return; }
   const main=$('#main');
@@ -1480,7 +1522,7 @@ async function saveDaily(b){
   data.status=val(b,'status')||'營業'; data.closed=true;
   if(data.status==='營業'&&DF.every(([k])=>!data[k])&&!data.deposit){toast('請先填入營收或收款');return;}
   const btn=document.querySelector('.big-save'); if(btn) btn.disabled=true;
-  try{ await S.db.doc('daily/'+dId(b,D.day)).set(data); D.docs[dId(b,D.day)]=data; delete D.dirty[b];
+  try{ await S.db.doc('daily/'+dId(b,D.day)).set(data); D.docs[dId(b,D.day)]=data; delete D.dirty[b]; D.edit=false;
     const diff=sum(PAYK.map(k=>data[k]))-data.revenue;
     toast(`${b==='qp'?'旗跑':'旗時'} ${+D.day.slice(5,7)}/${+D.day.slice(8)} ${data.status!=='營業'?`記錄為${data.status}`:'結帳完成'}${diff&&data.status==='營業'?`（收款${diff>0?'多':'少'} ${fmt(Math.abs(diff))} 元）`:''}`); renderDaily(); }
   catch(e){ if(btn) btn.disabled=false; if(e&&(e.code==='invalid_argument'||e.code==='permission-denied')){S.canWrite=false;toast('你沒有修改權限');} else toast('儲存失敗，請稍後再試'); }
@@ -1501,6 +1543,8 @@ function bindDaily(){
     else if(t.dataset.dtoday) setDay(todayStr());
     else if(t.dataset.dday){ setDay(t.dataset.dday); scrollTo({top:0,behavior:'smooth'}); }
     else if(t.dataset.dsave) saveDaily(t.dataset.dsave);
+    else if(t.dataset.dedit){ D.edit=true; renderDaily(); scrollTo({top:0,behavior:'smooth'}); }
+    else if(t.dataset.dcancel){ D.edit=false; D.dirty={}; G.editing=null; renderDaily(); }
     else if(t.dataset.dstat){ (D.dirty[D.branch]??={}).status=t.dataset.dstat; renderDaily(); }
   });
 }
@@ -1549,22 +1593,25 @@ function gFormHTML(b){
     <button class="btn primary g-save" data-gsave="${b}">${G.editing==='new'?'新增這位顧客':'儲存修改'}</button>
   </div>`;
 }
-function gCardHTML(g){
+function gCardHTML(g,ro){
   const tag=(k,v)=>v?`<span class="gt"><i>${k}</i>${esc(Array.isArray(v)?v.join('、'):v)}</span>`:'';
   const txt=(k,v)=>v?`<div class="gx"><i>${k}</i>${esc(v)}</div>`:'';
   return `<div class="gcard"><div class="gc-h"><span class="gc-type ${g.type==='預約'?'bk':'wk'}">${esc(g.type||'—')}</span><b>${esc(g.name||'（未填姓名）')}</b><span class="hint">${g.count?esc(g.count)+' 人':''}${g.by?' ・ '+esc(g.by)+' 記錄':''}</span>
-    <span class="gc-act"><button class="ibtn" data-gedit="${g.id}">修改</button><button class="ibtn ${G.confirm===g.id?'danger':''}" data-gdel="${g.id}">${G.confirm===g.id?'確定刪除':'刪除'}</button></span></div>
+    ${ro?'':`<span class="gc-act"><button class="ibtn" data-gedit="${g.id}">修改</button><button class="ibtn ${G.confirm===g.id?'danger':''}" data-gdel="${g.id}">${G.confirm===g.id?'確定刪除':'刪除'}</button></span>`}</div>
     <div class="gc-tags">${tag('項目',g.items)}${tag('客源',g.origin)}${tag('同行',g.relation)}${tag('得知',g.source)}${tag('目的',g.purpose)}</div>
     ${txt('選擇原因',g.reason)}${txt('印象深刻',g.memorable)}${txt('反饋',g.feedback)}${txt('備註',g.note)}</div>`;
 }
-function guestsHTML(b){
-  const list=gList(b), editable=S.canWrite!==false&&S.db, ppl=sum(list.map(g=>+g.count||0));
+function guestsHTML(b,ro){
+  const list=gList(b), editable=!ro&&S.canWrite!==false&&S.db, ppl=sum(list.map(g=>+g.count||0));
+  const tc=t=>list.filter(g=>g.type===t).length, org={}; list.forEach(g=>{if(g.origin)org[g.origin]=(org[g.origin]||0)+1;}); const topO=Object.entries(org).sort((a,c)=>c[1]-a[1]).slice(0,3).map(x=>`${x[0]} ${x[1]}`).join('、');
   return `<section class="panel guests" id="dGuests"><div class="ph"><h2>顧客紀錄</h2><span class="hint">${list.length?`${list.length} 組・${ppl} 人${nval(b,'visitors')?`（來客數 ${nval(b,'visitors')}）`:''}`:'這天還沒有顧客紀錄'}</span></div>
-    ${list.map(g=>G.editing===g.id?gFormHTML(b):gCardHTML(g)).join('')}
-    ${G.editing==='new'?gFormHTML(b):editable?`<button class="btn g-add" data-gnew="1">＋ 新增顧客</button>`:''}
+    ${ro&&list.length?`<div class="g-sum"><span>預約 <b>${tc('預約')}</b></span><span>現場 <b>${tc('現場')}</b></span>${topO?`<span>客源 ${esc(topO)}</span>`:''}</div>`:''}
+    ${list.length?'':ro?'<p class="hint">這天沒有顧客紀錄，按上方「編輯結帳」可以新增。</p>':''}
+    ${list.map(g=>G.editing===g.id&&!ro?gFormHTML(b):gCardHTML(g,ro)).join('')}
+    ${!ro&&G.editing==='new'?gFormHTML(b):editable?`<button class="btn g-add" data-gnew="1">＋ 新增顧客</button>`:''}
   </section>`;
 }
-function gRedraw(){ const el=$('#dGuests'); if(el) el.outerHTML=guestsHTML(D.branch); }
+function gRedraw(){ const el=$('#dGuests'); if(el) el.outerHTML=guestsHTML(D.branch,!!(dStatusOf(dDoc(D.branch))&&!D.edit)); }
 async function gWrite(b,mut,msg){
   if(!S.db){toast('資料庫沒有連線');return false;}
   const id=dId(b,D.day), base=D.docs[id]||{branch:b,date:D.day,month:dMonth()};
@@ -1664,7 +1711,7 @@ function bindGL(){
     else if(t.dataset.vw){ const [b,w]=t.dataset.vw.split('|'); if(w){ VW[b]=w; const y=scrollY; render(); scrollTo(0,y); } }
     else if(t.dataset.glexport){ glExport(); }
     else if(t.dataset.glmore){ GL.n+=40; $('#glBody').innerHTML=glBody(); }
-    else if(t.dataset.gljump){ const [b,d]=t.dataset.gljump.split('|'); S.mode='daily'; D.branch=b; G.editing=null; D.day=d; D.dirty={}; saveD(); saveUI(); subDaily(); render(); setTimeout(()=>$('#dGuests')?.scrollIntoView({block:'start'}),300); }
+    else if(t.dataset.gljump){ const [b,d]=t.dataset.gljump.split('|'); S.mode='daily'; D.edit=false; D.branch=b; G.editing=null; D.day=d; D.dirty={}; saveD(); saveUI(); subDaily(); render(); setTimeout(()=>$('#dGuests')?.scrollIntoView({block:'start'}),300); }
   });
 }
 
