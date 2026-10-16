@@ -775,6 +775,7 @@ table.opdays th[rowspan]{text-align:left;vertical-align:top;white-space:nowrap}
 table.opdays tr.off td{color:#8a7356}table.opdays tr.ty td{color:#4a6f8a}table.opdays tr.na td{color:var(--ink-3)}
 table.opdays tr.na td{border-bottom:2px solid var(--rule)}
 
+.pk-status.off{background:#efe7dc;color:#8a7356}.hc-l span.off{color:#8a7356;font-weight:500}
 .masthead .controls:not(:has(.seg:not([hidden]))){display:none}
 .masthead{background:linear-gradient(160deg,#7d3330 0%,var(--wine) 100%)}
 .masthead::before{border-color:rgba(241,208,138,.28)}
@@ -1358,7 +1359,7 @@ function renderChooser(){
     const mrev=sum(mrows.map(r=>+r.revenue||0)), mvis=sum(mrows.map(r=>+r.visitors||0));
     return `<button class="pick" data-pick="${b}" style="--bc:var(${B[b].color})">
       <span class="pk-top"><span class="pk-name">${b==='qp'?'旗跑':'旗時'}</span><span class="pk-sub">${B[b].name}</span></span>
-      <span class="pk-status ${d?'done':''}">${d?`今天已結帳・${fmt(+d.revenue||0)} 元`:'今天尚未結帳'}</span>
+      <span class="pk-status ${d?(dStatusOf(d)==='營業'?'done':'off'):''}">${d?(dStatusOf(d)==='營業'?`今天已結帳・${fmt(+d.revenue||0)} 元`:`今天${dStatusOf(d)}`):'今天尚未結帳'}</span>
       <span class="pk-month num"><span>${+today.slice(5,7)} 月累計</span><b>${fmt(mrev)} 元</b><span>${fmt(mvis)} 位來客・${mrows.length} 天</span></span>
       <span class="pk-go">開始結帳 →</span>
     </button>`;};
@@ -1424,7 +1425,7 @@ function monthTable(b){
 function renderSheet(b){
   const d=dDoc(b), editable=S.canWrite!==false&&S.db;
   return `<div class="sheet-top" style="--bc:var(${B[b].color})">
-      <div class="st-l"><button class="btn ghost" data-dback="1">‹ 選擇分店</button><div><div class="st-name">${b==='qp'?'旗跑':'旗時'} <small>${B[b].name}</small></div><div class="st-state">${d?`已結帳・${esc(String(d.updatedAt||'').slice(5,10).replace('-','/'))} ${esc(String(d.updatedAt||'').slice(11,16))} 更新${d.staff?`・${esc(d.staff)}`:''}`:'尚未結帳'}</div></div></div>
+      <div class="st-l"><button class="btn ghost" data-dback="1">‹ 選擇分店</button><div><div class="st-name">${b==='qp'?'旗跑':'旗時'} <small>${B[b].name}</small></div><div class="st-state">${d&&dStatusOf(d)!=='營業'?`${esc(dStatusOf(d))}${d.staff?`・${esc(d.staff)} 記錄`:''}`:d?`已結帳・${esc(String(d.updatedAt||'').slice(5,10).replace('-','/'))} ${esc(String(d.updatedAt||'').slice(11,16))} 更新${d.staff?`・${esc(d.staff)}`:''}`:'尚未結帳'}</div></div></div>
       <div class="dnav"><button class="btn" data-dshift="-1" aria-label="前一天">‹</button>
         <label class="ddate"><input type="date" id="dDate" value="${D.day}"><span>${+D.day.slice(5,7)} 月 ${+D.day.slice(8)} 日・星期${wk(D.day)}</span></label>
         <button class="btn" data-dshift="1" aria-label="後一天">›</button>${D.day!==todayStr()?'<button class="btn" data-dtoday="1">今天</button>':''}</div>
@@ -1445,7 +1446,7 @@ function renderSheet(b){
       </div>
       <aside class="sheet-side">
         <div id="dSummary">${summaryHTML(b)}</div>
-        ${editable?`<button class="btn primary big-save" data-dsave="${b}">${d?'更新結帳':'完成結帳'}</button>`:'<p class="hint">你目前只能檢視。</p>'}
+        ${editable?`<button class="btn primary big-save" data-dsave="${b}">${(val(b,'status')||'營業')!=='營業'?`記錄為${esc(val(b,'status'))}`:d?'更新結帳':'完成結帳'}</button>`:'<p class="hint">你目前只能檢視。</p>'}
       </aside>
     </div>
     ${guestsHTML(b)}
@@ -1474,7 +1475,7 @@ async function saveDaily(b){
   const btn=document.querySelector('.big-save'); if(btn) btn.disabled=true;
   try{ await S.db.doc('daily/'+dId(b,D.day)).set(data); D.docs[dId(b,D.day)]=data; delete D.dirty[b];
     const diff=sum(PAYK.map(k=>data[k]))-data.revenue;
-    toast(`${b==='qp'?'旗跑':'旗時'} ${+D.day.slice(5,7)}/${+D.day.slice(8)} 結帳完成${diff?`（收款${diff>0?'多':'少'} ${fmt(Math.abs(diff))} 元）`:''}`); renderDaily(); }
+    toast(`${b==='qp'?'旗跑':'旗時'} ${+D.day.slice(5,7)}/${+D.day.slice(8)} ${data.status!=='營業'?`記錄為${data.status}`:'結帳完成'}${diff&&data.status==='營業'?`（收款${diff>0?'多':'少'} ${fmt(Math.abs(diff))} 元）`:''}`); renderDaily(); }
   catch(e){ if(btn) btn.disabled=false; if(e&&(e.code==='invalid_argument'||e.code==='permission-denied')){S.canWrite=false;toast('你沒有修改權限');} else toast('儲存失敗，請稍後再試'); }
 }
 function bindDaily(){
@@ -1837,7 +1838,7 @@ function renderHome(){
   if(D.day.slice(0,7)!==today.slice(0,7)){ D.day=today; }
   subDaily();
   const name=b=>b==='qp'?'旗跑':'旗時';
-  const dRow=b=>{const d=D.docs[dId(b,today)];return `<li><i style="background:var(${B[b].color})"></i>${name(b)}<span class="${d?'ok':''}">${d?`已結帳・${fmt(+d.revenue||0)} 元`:'尚未結帳'}</span></li>`;};
+  const dRow=b=>{const d=D.docs[dId(b,today)];return `<li><i style="background:var(${B[b].color})"></i>${name(b)}<span class="${d?(dStatusOf(d)==='營業'?'ok':'off'):''}">${d?(dStatusOf(d)==='營業'?`已結帳・${fmt(+d.revenue||0)} 元`:dStatusOf(d)):'尚未結帳'}</span></li>`;};
   const sRow=b=>{const l=spList(b,today);return `<li><i style="background:var(${B[b].color})"></i>${name(b)}<span>${l.length?`今天 ${l.length} 筆・${fmt(sum(l.map(e=>+e.amt||0)))} 元`:'今天還沒有支出'}<small class="${pettyLeft(b,today)<0?'neg':''}">零用金剩 ${fmt(pettyLeft(b,today))}</small></span></li>`;};
   const lRow=b=>{const r=sum(listOf(b,m,'rev',y).map(e=>+e.amt||0)), x=sum(listOf(b,m,'exp',y).map(e=>+e.amt||0));return `<li><i style="background:var(${B[b].color})"></i>${name(b)}<span>${m} 月營收 ${fmt(r)}・支出 ${fmt(x)}</span></li>`;};
   const card=(k,t,sub,rows,go)=>`<button class="hcard" data-home="${k}"><span class="hc-ic">${ICON[k]}</span><span class="hc-t">${t}</span><span class="hc-s">${sub}</span><ul class="hc-l">${rows}</ul><span class="hc-go">${go} →</span></button>`;
