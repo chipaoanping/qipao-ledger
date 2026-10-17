@@ -834,6 +834,15 @@ table.opdays tr.na td{border-bottom:2px solid var(--rule)}
 .pr-in.off{opacity:.4}.chip.mini{padding:2px 8px;font-size:11px}
 .pr-x{display:grid;gap:8px}.pr-xr{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) 30px;gap:8px;align-items:center}.pr-addx{justify-self:start;font-size:13px;padding:6px 12px}
 .pr-foot{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px}.pr-acts{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.pr-paidtag{color:#4f7a52;font-weight:600;font-size:13px}
+.hstats{background:var(--paper);border:1px solid var(--rule);border-radius:16px;padding:16px 18px;display:grid;gap:12px;margin-bottom:18px}
+.hs-h{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:6px}.hs-h b{font-family:var(--f-display);font-size:17px;letter-spacing:.08em}.hs-h span{font-size:13px;color:var(--ink-3)}.hs-h em{font-style:normal;font-weight:700;color:var(--wine);font-size:17px}
+.hs-g{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.hs-c{border-radius:12px;background:var(--soft);padding:12px 14px;display:grid;gap:4px;border-left:4px solid var(--bc)}
+.hs-n{display:flex;align-items:center;gap:6px;font-weight:700}.hs-n i{width:9px;height:9px;border-radius:2px;background:var(--bc)}.hs-n small{font-weight:400;color:var(--ink-3);font-size:12px}
+.hs-rev{font-size:28px;font-weight:700;color:var(--wine);line-height:1.1}.hs-rev small{font-size:13px;font-weight:400;color:var(--ink-3);margin-left:3px}
+.hs-d{display:flex;flex-wrap:wrap;gap:2px 12px;font-size:13px}.hs-d b{font-size:15px}.hs-d .na{color:var(--ink-3)}
+.hs-x{font-size:12px;color:var(--ink-3)}
+@media (max-width:560px){.hs-g{gap:8px}.hs-c{padding:10px 11px}.hs-rev{font-size:22px}.hstats{padding:14px}}
 .pr-xh{display:flex;justify-content:space-between;align-items:baseline;font-size:13px}.pr-xh b{font-weight:600;color:var(--ink-2)}.pr-xh span{color:var(--ink-3);font-size:12.5px}
 .pr-prev{font-size:12px;color:var(--ink-3)}.pr-ref summary{cursor:pointer;font-weight:700}.pr-ref .rk-t{margin-top:12px}.pr-reft{overflow-x:auto}.pr-reft table{table-layout:fixed;min-width:680px;width:100%}.pr-reft th:nth-child(7),.pr-reft td:nth-child(7){width:30%;white-space:normal}.pr-reft td,.pr-reft th{font-size:13px;padding:6px 8px;white-space:nowrap}.pr-reft .num{text-align:right}
 .pr-miss{display:flex;flex-wrap:wrap;gap:8px}
@@ -2360,6 +2369,17 @@ const ICON0={
   ledger:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2 2 2 0 0 0 2 2h13"/><path d="M8 13l3-3 2 2 3-4"/></svg>'
 };
 const ICON=new Proxy(ICON0,{get:(o,k)=>o[k]||(k==='payroll'?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2.2"/><path d="M5.5 16.5c.6-1.7 2-2.6 3.5-2.6s2.9.9 3.5 2.6M14.5 10h4M14.5 13.5h3"/></svg>':k==='crew'?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>':k==='cash'?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="2"/><circle cx="12" cy="12" r="2.6"/><path d="M6 9.5v5M18 9.5v5"/></svg>':'')});
+function homeStatsHTML(today){
+  const ym=today.slice(0,7), m=+ym.slice(5), docs={...(S.allDaily||{}),...D.docs};
+  const one=b=>{ const ds=Object.values(docs).filter(d=>d&&d.branch===b&&String(d.date||'').startsWith(ym)&&dStatusOf(d)==='營業'), rev=sum(ds.map(d=>+d.revenue||0)), c=statusCount(b,ym,docs); if(c.未記錄&&!dStatusOf(docs[dId(b,today)])) c.未記錄--; const vis=sum(ds.map(d=>+d.visitors||0));
+    return {b,rev,c,vis,avg:c.營業?Math.round(rev/c.營業):0}; };
+  const st=['qp','yl'].map(one), tot=sum(st.map(x=>x.rev));
+  return `<div class="hstats"><div class="hs-h"><b>${m} 月營業概況</b><span class="num">兩館合計 <em>${fmt(tot)}</em> 元</span></div>
+    <div class="hs-g">${st.map(x=>`<div class="hs-c" style="--bc:var(${B[x.b].color})"><div class="hs-n"><i></i>${x.b==='qp'?'旗跑':'旗時'}<small>${esc(B[x.b].name.replace(/^.*・/,''))}</small></div>
+      <div class="hs-rev num">${fmt(x.rev)}<small>元</small></div>
+      <div class="hs-d num"><span>營業 <b>${x.c.營業}</b> 天</span><span>店休 <b>${x.c.店休}</b> 天</span>${x.c.颱風假?`<span>颱風假 <b>${x.c.颱風假}</b> 天</span>`:''}${x.c.未記錄?`<span class="na">未記錄 <b>${x.c.未記錄}</b> 天</span>`:''}</div>
+      <div class="hs-x num">日均 ${fmt(x.avg)} 元・來客 ${fmt(x.vis)} 人</div></div>`).join('')}</div></div>`;
+}
 function renderHome(){
   subCash();
   if(!W.name){ renderLogin(); return; }
@@ -2373,6 +2393,7 @@ function renderHome(){
   const card=(k,t,sub,rows,go)=>`<button class="hcard" data-home="${k}"><span class="hc-ic">${ICON[k]}</span><span class="hc-t">${t}</span><span class="hc-s">${sub}</span><ul class="hc-l">${rows}</ul><span class="hc-go">${go} →</span></button>`;
   $('#main').innerHTML=`<section class="home">
     <div class="home-h"><div class="home-date">${+today.slice(5,7)} 月 ${+today.slice(8)} 日・星期${wk(today)}</div><h2>今天要做什麼？</h2></div>
+    ${homeStatsHTML(today)}
     <div class="hcards">
       ${card('daily','每日結帳','營收、來客、收款方式',dRow('qp')+dRow('yl'),'選擇分店結帳')}
       ${card('spend','當日支出','零用金、採購、雜支',sRow('qp')+sRow('yl'),'選擇分店記支出')}
@@ -2742,7 +2763,7 @@ function startData(){
     setStatus('ok','已同步');
     if(S.mode==='daily'){ if(first) render(); } else if(S.mode==='spend') drawSpend(); else if(S.mode==='cash') drawCash(); else if(S.mode==='home') renderHome(); else if(!S.editing&&!S.adding) render(); else renderRibbon();
   },e=>{ const c=(e&&e.code)||'unknown'; setStatus('ro',c==='permission-denied'?'沒有權限':'連線中斷'); S.loaded=true; S.loadErr=c; showLoadErr(); render(); }));
-  FB.unsubs.push(db.collection('daily').onSnapshot(snap=>{ const o={}; snap.docs.forEach(d=>{o[d.id]=d.data();}); S.allDaily=o; if(S.mode==='ledger'&&S.sec==='cust'&&!S.editing&&!S.adding) render(); },()=>{}));
+  FB.unsubs.push(db.collection('daily').onSnapshot(snap=>{ const o={}; snap.docs.forEach(d=>{o[d.id]=d.data();}); S.allDaily=o; if(S.mode==='ledger'&&S.sec==='cust'&&!S.editing&&!S.adding) render(); else if(S.mode==='home') renderHome(); },()=>{}));
   FB.unsubs.push(db.collection('settle').onSnapshot(snap=>{ const o={}; snap.docs.forEach(d=>{o[d.id]=d.data();}); S.settle=o; if(S.mode==='cash') drawCash(); else if(S.mode==='spend') drawSpend(); else if(S.mode==='home') renderHome(); },()=>{}));
   FB.unsubs.push(db.collection('crewlog').onSnapshot(snap=>{ const o={}; snap.docs.forEach(d=>{o[d.id]=d.data();}); S.crewlog=o; if((S.mode==='crew'||S.mode==='daily')&&!CR.editing) crewRedraw(); else if(S.mode==='home') renderHome(); },()=>{}));
   FB.unsubs.push(db.collection('crewpay').onSnapshot(snap=>{ const o={}; snap.docs.forEach(d=>{o[d.id]=d.data();}); S.crewpay=o; if(S.mode==='crew'&&!CR.editing) drawCrew(); },()=>{}));
