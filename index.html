@@ -691,6 +691,7 @@ body.locked{padding-bottom:40px}
 .cs-res{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px;font-size:14px;border-radius:10px;padding:10px 12px;background:var(--soft)}
 .cs-res .ok{color:var(--pos);font-weight:700}.cs-res .bad{color:#b07a12;font-weight:700}
 .cs-lock{margin:0;text-align:center;font-size:13.5px;color:var(--ink-3);background:var(--soft);border-radius:12px;padding:12px}
+.cs-until{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:10px 12px;background:var(--soft);border-radius:10px}.cs-until .tin{width:auto;padding:7px 10px}.cs-until .fl{font-weight:600;font-size:13px}.cs-until .hint{flex-basis:100%;font-size:12px}.cs-at{font-style:normal;color:var(--ink-3);font-size:11.5px}
 .cs-go{padding:13px;font-size:15px;border-radius:12px}
 .cs-hist li{grid-template-columns:auto minmax(0,1fr) auto auto}
 @media (max-width:860px){.cs-grid{grid-template-columns:1fr}}
@@ -2531,21 +2532,25 @@ const lastSettle=(b,type)=>settles(b,type)[0]||null;
 const covered=(b,type)=>{const s=new Set();settles(b,type).forEach(x=>(x.covered||[]).forEach(i=>s.add(i)));return s;};
 const monthStart=()=>todayStr().slice(0,8)+'01';
 function allExp(b){const out=[];for(const d of Object.values(S.docs)){if(d.branch!==b||!Array.isArray(d.exp))continue;for(const e of d.exp) if(e.date) out.push(e);}return out;}
-function pettyPending(b){const l=lastSettle(b,'petty'), base=l?l.date:monthStart(), cv=covered(b,'petty'), t=todayStr();
+const csUntil=(type,b)=>{const u=((C.draft[type]||{})[b]||{}).until; return u&&u<=todayStr()?u:todayStr();};
+function pettyPending(b){const l=lastSettle(b,'petty'), base=l?l.date:monthStart(), cv=covered(b,'petty'), t=csUntil('petty',b);
   return allExp(b).filter(e=>/零用金/.test(e.note||'')&&e.date>=base&&e.date<=t&&!cv.has(e.id)).sort((a,c)=>a.date<c.date?-1:1);}
-function cashPending(b){const l=lastSettle(b,'cash'), base=l?l.date:'0000-00-00', cv=covered(b,'cash'), t=todayStr();
+function cashPending(b){const l=lastSettle(b,'cash'), base=l?l.date:'0000-00-00', cv=covered(b,'cash'), t=csUntil('cash',b);
   return Object.entries(C.daily).filter(([id,d])=>d.branch===b&&d.date>=base&&d.date<=t&&((+d.cash||0)>0||(+d.deposit||0)>0)&&!cv.has(id)).map(([id,d])=>({id,...d})).sort((a,c)=>a.date<c.date?-1:1);}
 function subCash(){
   if(!S.db||C.subB==='all') return; C.subB='all';
   C.unsub=S.db.collection('daily').where('month','in',(()=>{const a=[];const d=new Date();for(let i=0;i<3;i++){const x=new Date(d.getFullYear(),d.getMonth()-i,1);a.push(`${x.getFullYear()}-${pad(x.getMonth()+1)}`);}return a;})()).onSnapshot(snap=>{const o={};snap.docs.forEach(d=>{o[d.id]=d.data();});C.daily=o;if(S.mode==='cash')drawCash();else if(S.mode==='home')renderHome();},()=>{});
 }
 const md=d=>`${+d.slice(5,7)}/${+d.slice(8)}`;
+function csUntilHTML(type,b){ const u=csUntil(type,b), t=todayStr(), y=addDays(t,-1);
+  return `<div class="cs-until"><span class="fl">結算到</span><input type="date" class="tin" data-csu="${type}" data-b="${b}" value="${u}" max="${t}"><span class="chips"><button type="button" class="chip ${u===t?'on':''}" data-csq="${type}|${b}|${t}">今天</button><button type="button" class="chip ${u===y?'on':''}" data-csq="${type}|${b}|${y}">昨天</button></span>${u<t?`<span class="hint">${md(u)} 之後的${type==='cash'?'現金營收':'支出'}留到下次結算</span>`:''}</div>`; }
 function cashCard(b){
   const l=lastSettle(b,'cash'), list=cashPending(b), carry=0, exp=carry+sum(list.map(r=>(+r.cash||0)-(+r.deposit||0))), first=list[0];
   const dr=C.draft.cash[b]||{}, counted=dr.counted===undefined||dr.counted===''?null:+dr.counted, dep=+(dr.deposit||0)||0;
   const diff=counted==null?null:counted-exp, keep=counted==null?null:counted-dep;
   return `<section class="cs-card">
-    <div class="cs-h"><span class="cs-ic">${ICON.daily}</span><div><h3>營收現金結帳</h3><p class="hint">${l?`上次 ${md(l.date)} 由 ${esc(l.by||'')} 清點結算，營業現金已歸 0`:`尚未結帳過，從 ${first?md(first.date):'有紀錄的第一天'} 起算`}</p></div></div>
+    <div class="cs-h"><span class="cs-ic">${ICON.daily}</span><div><h3>營收現金結帳</h3><p class="hint">${l?`上次結算到 ${md(l.date)}（${esc(l.by||'')}），之前的營業現金已歸 0`:`尚未結帳過，從 ${first?md(first.date):'有紀錄的第一天'} 起算`}</p></div></div>
+    ${csUntilHTML('cash',b)}
     <div class="cs-list">${carry?`<div class="cs-li"><span>上次留店現金</span><b class="num">${fmt(carry)}</b></div>`:''}
       ${list.length?list.map(r=>((+r.cash||0)?`<div class="cs-li"><span>${md(r.date)}（${wk(r.date)}）現金營收${r.staff?`<small>${esc(r.staff)}</small>`:''}</span><b class="num">${fmt(+r.cash||0)}</b></div>`:'')+((+r.deposit||0)?`<div class="cs-li dep"><span>${md(r.date)}（${wk(r.date)}）存入台新${r.staff?`<small>${esc(r.staff)}</small>`:''}</span><b class="num">−${fmt(+r.deposit)}</b></div>`:'')).join(''):'<div class="cs-li empty"><span>上次結帳後沒有新的現金營收</span></div>'}
       <div class="cs-li tot"><span>應有現金</span><b class="num">${fmt(exp)}</b></div></div>
@@ -2563,7 +2568,8 @@ function pettyCard(b){
   const dr=C.draft.petty[b]||{}, counted=dr.counted===undefined||dr.counted===''?null:+dr.counted;
   const diff=counted==null?null:counted-should, refill=counted==null?PETTY[b]-should:PETTY[b]-counted;
   return `<section class="cs-card">
-    <div class="cs-h"><span class="cs-ic g">${ICON.spend}</span><div><h3>零用金結帳</h3><p class="hint">額度 ${fmt(PETTY[b])} 元・${l?`上次 ${md(l.date)} 由 ${esc(l.by||'')} 結帳並補滿`:`尚未結帳過，從 ${md(monthStart())} 起算`}</p></div></div>
+    <div class="cs-h"><span class="cs-ic g">${ICON.spend}</span><div><h3>零用金結帳</h3><p class="hint">額度 ${fmt(PETTY[b])} 元・${l?`上次結算到 ${md(l.date)}（${esc(l.by||'')}）並補滿`:`尚未結帳過，從 ${md(monthStart())} 起算`}</p></div></div>
+    ${csUntilHTML('petty',b)}
     <div class="cs-list">${list.length?list.map(e=>`<div class="cs-li"><span>${md(e.date)} ${esc(e.item)}<small>${esc(e.cat)}${e.by?'・'+esc(e.by):''}</small></span>${e.receipt?`<a class="cs-r" href="${rcptURL(e.receipt)}" target="_blank" rel="noopener">收據</a>`:'<em class="cs-nr">無收據</em>'}<b class="num">${fmt(+e.amt||0)}</b></div>`).join(''):'<div class="cs-li empty"><span>上次結帳後沒有零用金支出</span></div>'}
       <div class="cs-li tot"><span>已用 ${fmt(used)}・應剩</span><b class="num">${fmt(should)}</b></div></div>
     <div class="cs-form"${isBoss()?'':' hidden'}>
@@ -2579,7 +2585,7 @@ function historyHTML(b){
   const all=Object.entries(S.settle).filter(([,x])=>x.branch===b).sort((a,c)=>a[1].at<c[1].at?1:-1).slice(0,12);
   if(!all.length) return '';
   const latest={cash:(lastSettle(b,'cash')||{}).at,petty:(lastSettle(b,'petty')||{}).at};
-  return `<div class="panel"><div class="ph"><h2>結帳紀錄</h2><span class="hint">最近 12 筆</span></div><ul class="sp-list cs-hist">${all.map(([id,x])=>`<li><span class="spl-c">${x.type==='cash'?'營收現金':'零用金'}</span><span class="spl-i">${md(x.date)} ・ ${esc(x.by||'')}<small>${x.type==='cash'?`應有 ${fmt(x.expected)}・實點 ${fmt(x.counted)}・${x.deposit?`其中存入台新 ${fmt(x.deposit)}・`:''}結算後歸 0`:`應剩 ${fmt(x.expected)}・實點 ${fmt(x.counted)}・補回 ${fmt(x.refill||0)}`}${x.note?'・'+esc(x.note):''}</small></span><b class="num ${x.diff?'neg':'pos'}">${x.diff?sgn(x.diff):'✓'}</b>${isBoss()&&latest[x.type]===x.at?`<button class="ibtn ${C.confirm===id?'danger':''}" data-cundo="${id}">${C.confirm===id?'確定撤銷':'撤銷'}</button>`:'<span></span>'}</li>`).join('')}</ul></div>`;
+  return `<div class="panel"><div class="ph"><h2>結帳紀錄</h2><span class="hint">最近 12 筆</span></div><ul class="sp-list cs-hist">${all.map(([id,x])=>`<li><span class="spl-c">${x.type==='cash'?'營收現金':'零用金'}</span><span class="spl-i">結算到 ${md(x.date)} ・ ${esc(x.by||'')}${x.at&&x.at.slice(0,10)!==x.date?`<em class="cs-at">（${md(new Date(x.at).toLocaleDateString('sv'))} 清點）</em>`:''}<small>${x.type==='cash'?`應有 ${fmt(x.expected)}・實點 ${fmt(x.counted)}・${x.deposit?`其中存入台新 ${fmt(x.deposit)}・`:''}結算後歸 0`:`應剩 ${fmt(x.expected)}・實點 ${fmt(x.counted)}・補回 ${fmt(x.refill||0)}`}${x.note?'・'+esc(x.note):''}</small></span><b class="num ${x.diff?'neg':'pos'}">${x.diff?sgn(x.diff):'✓'}</b>${isBoss()&&latest[x.type]===x.at?`<button class="ibtn ${C.confirm===id?'danger':''}" data-cundo="${id}">${C.confirm===id?'確定撤銷':'撤銷'}</button>`:'<span></span>'}</li>`).join('')}</ul></div>`;
 }
 function drawCash(){
   if(!W.name){ renderLogin(); return; }
@@ -2596,7 +2602,7 @@ async function saveSettle(type,b){
   if(!isBoss()){toast(`只有${BOSS}可以結帳`);return;}
   if(!S.db){toast('資料庫沒有連線');return;}
   const dr=(C.draft[type][b])||{}; if(dr.counted===undefined||dr.counted===''){toast('請先填入實點金額');$(`#cs-${b}-${type}-counted`)?.focus();return;}
-  const counted=Math.round(+dr.counted), at=new Date().toISOString(), date=todayStr();
+  const counted=Math.round(+dr.counted), at=new Date().toISOString(), date=csUntil(type,b);
   let doc;
   if(type==='cash'){ const l=lastSettle(b,'cash'), list=cashPending(b), carry=0, expected=carry+sum(list.map(r=>(+r.cash||0)-(+r.deposit||0))), deposit=Math.round(+dr.deposit||0);
     if(deposit>counted){toast('存入金額不能大於實點現金');return;}
@@ -2614,8 +2620,10 @@ function bindCash(){
     if(t.dataset.k!=='note'){ const html=(t.dataset.cs==='cash'?cashCard:pettyCard)(t.dataset.b); const tmp=document.createElement('div'); tmp.innerHTML=html;
       const r=tmp.querySelector('.cs-res'); $(`#csr-${t.dataset.b}-${t.dataset.cs}`).innerHTML=r.innerHTML;
       const rf=tmp.querySelector(`#cs-${t.dataset.b}-petty-refill`); if(rf&&$(`#cs-${t.dataset.b}-petty-refill`)) $(`#cs-${t.dataset.b}-petty-refill`).value=rf.value; } });
+  main.addEventListener('change',ev=>{ if(S.mode!=='cash') return; const t=ev.target; if(t.dataset.csu&&t.value){ (C.draft[t.dataset.csu][t.dataset.b]??={}).until=t.value>todayStr()?todayStr():t.value; drawCash(); } });
   main.addEventListener('click',async ev=>{ if(S.mode!=='cash') return; const t=ev.target.closest('button'); if(!t) return;
     if(t.dataset.cb){ C.branch=t.dataset.cb; C.confirm=null; drawCash(); }
+    else if(t.dataset.csq){ const [ty,b,d]=t.dataset.csq.split('|'); (C.draft[ty][b]??={}).until=d; drawCash(); }
     else if(t.dataset.csave) saveSettle(t.dataset.csave,t.dataset.b);
     else if(t.dataset.cundo){ const id=t.dataset.cundo; if(C.confirm!==id){C.confirm=id;drawCash();return;} C.confirm=null;
       try{ await S.db.doc('settle/'+id).delete(); const o={...S.settle}; delete o[id]; S.settle=o; drawCash(); toast('已撤銷這次結帳'); }catch(e){ toast('撤銷失敗'); } }
