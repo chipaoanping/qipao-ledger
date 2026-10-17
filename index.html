@@ -1040,7 +1040,7 @@ function autoRev(b,y,m){
 function autoCust(b,y,m){
   const gs=dailyOf(b,y,m).flatMap(d=>Array.isArray(d.guests)?d.guests:[]); if(!gs.length) return [];
   const cnt={}; const add=(cat,v)=>{ if(v==null||v==='') return; const k=cat+'|'+v; cnt[k]=(cnt[k]||0)+1; };
-  for(const g of gs){ add('預約方式',g.type); add('得知管道',g.source); add('客源地',g.origin); add('同行關係',g.relation); [].concat(g.items||[]).forEach(x=>add('體驗項目',x)); add('來台南目的',g.purpose); }
+  for(const g of gs){ add('預約方式',g.type); add('得知管道',g.source); String(g.origin||'').split(/[、,，]/).map(x=>x.trim()).filter(Boolean).forEach(x=>add('客源地',x)); add('同行關係',g.relation); [].concat(g.items||[]).forEach(x=>add('體驗項目',x)); add('來台南目的',g.purpose); }
   return Object.entries(cnt).map(([k,n],i)=>{const [cat,item]=k.split('|');return {id:`auto-cust-${b}-${y}${pad(m)}-${i}`,cat,item,amt:n,note:'每日結帳顧客紀錄',auto:true};});
 }
 function autoQty(b,y,m,raw){
@@ -1230,7 +1230,7 @@ function guestStatsHTML(b,ms,label){
   if(!gs.length) return `<div class="panel emptyb">${B[b].name}：${label}還沒有每日結帳的顧客紀錄。</div>`;
   const cnt=(k,split)=>{const o={};gs.forEach(g=>{let v=g[k];if(v==null||v==='')return;const vs=Array.isArray(v)?v:split?String(v).split(/[、,，]/):[v];vs.map(x=>String(x).trim()).filter(Boolean).forEach(x=>o[x]=(o[x]||0)+1);});return Object.entries(o).sort((a,c)=>c[1]-a[1]).slice(0,8);};
   const ppl=sum(gs.map(g=>+g.count||0)), col=bcol(b);
-  const blocks=[['預約／現場','type'],['體驗項目','items',1],['客源地','origin'],['同行關係','relation'],['如何得知我們','source'],['來台南目的','purpose']];
+  const blocks=[['預約／現場','type'],['體驗項目','items',1],['客源地','origin',1],['同行關係','relation'],['如何得知我們','source'],['來台南目的','purpose']];
   let h=`<div class="panel"><div class="ph"><h2>${B[b].name} ・ 每日結帳顧客分析</h2><span class="hint">${label}・${gs.length} 組${ppl?`・${ppl} 人`:''}</span></div><div class="grid3">${blocks.map(([lb,k,sp])=>{const r=cnt(k,sp);return `<div><div class="hint" style="margin-bottom:6px">${lb}</div>${r.length?hbars(r,col,'組'):'<p class="hint">—</p>'}</div>`;}).join('')}</div></div>`;
   return h;
 }
@@ -1695,7 +1695,7 @@ const GF=[
   ['name','預約姓名','text'],
   ['items','體驗項目','chipsN',{qp:['日租體驗','短租體驗','整體造型','快速彩妝','雙套寫真'],yl:['台式證件照','雙人證件照','沙龍寫真','旗袍短租','快速彩妝','整體造型','走讀活動']}],
   ['count','人數','num'],
-  ['origin','客源地','chips1',['台南','高雄','台中','台北','新北','桃園','其他縣市','日本','韓國','香港','中國','東南亞','歐美']],
+  ['origin','客源地','chipsN',['台南','高雄','台中','台北','新北','桃園','其他縣市','日本','韓國','香港','中國','東南亞','歐美']],
   ['relation','同行關係','chips1',['朋友','閨蜜','情侶','夫妻','家人','親子','獨自','同事']],
   ['source','如何得知我們','chips1',['Instagram','Threads','Facebook','Google','旅遊平台','小紅書','親友介紹','回流客','路過']],
   ['purpose','來台南目的','chips1',['旅遊','專程拍照','慶生','紀念日','畢業','出差工作','住在台南']],
@@ -1742,7 +1742,7 @@ function gCardHTML(g,ro){
 }
 function guestsHTML(b,ro){
   const list=gList(b), editable=!ro&&S.canWrite!==false&&S.db, ppl=sum(list.map(g=>+g.count||0));
-  const tc=t=>list.filter(g=>g.type===t).length, org={}; list.forEach(g=>{if(g.origin)org[g.origin]=(org[g.origin]||0)+1;}); const topO=Object.entries(org).sort((a,c)=>c[1]-a[1]).slice(0,3).map(x=>`${x[0]} ${x[1]}`).join('、');
+  const tc=t=>list.filter(g=>g.type===t).length, org={}; list.forEach(g=>String(g.origin||'').split(/[、,，]/).map(x=>x.trim()).filter(Boolean).forEach(x=>org[x]=(org[x]||0)+1)); const topO=Object.entries(org).sort((a,c)=>c[1]-a[1]).slice(0,3).map(x=>`${x[0]} ${x[1]}`).join('、');
   return `<section class="panel guests" id="dGuests"><div class="ph"><h2>顧客紀錄</h2><span class="hint">${list.length?`${list.length} 組・${ppl} 人${nval(b,'visitors')?`（來客數 ${nval(b,'visitors')}）`:''}`:'這天還沒有顧客紀錄'}</span></div>
     ${ro&&list.length?`<div class="g-sum"><span>預約 <b>${tc('預約')}</b></span><span>現場 <b>${tc('現場')}</b></span>${topO?`<span>客源 ${esc(topO)}</span>`:''}</div>`:''}
     ${list.length?'':ro?'<p class="hint">這天沒有顧客紀錄，按上方「編輯結帳」可以新增。</p>':''}
