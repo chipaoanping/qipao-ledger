@@ -818,6 +818,32 @@ table.opdays tr.na td{border-bottom:2px solid var(--rule)}
 .cr-min{width:90px;display:inline-block;padding:6px 8px;margin-left:4px}
 .cr-act{display:flex;gap:8px}.btn.danger{color:#fff;background:var(--accent);border-color:var(--accent)}
 .cr-form{display:grid;gap:12px}.cr-pf{display:grid;gap:8px}
+.cr-pst{justify-self:start;margin-top:6px;padding:5px 12px;font-size:12.5px}
+.stmt-ov{position:fixed;inset:0;z-index:300;background:rgba(40,25,22,.55);display:flex;flex-direction:column;overflow:auto;padding:env(safe-area-inset-top) 0 24px}
+.stmt-bar{position:sticky;top:0;z-index:1;display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 14px;background:var(--paper);border-bottom:1px solid var(--rule)}.stmt-sp{flex:1}
+.stmt-wrap{padding:18px 12px;display:flex;justify-content:center}
+.stmt{background:#fffdf8;color:#2d2220;width:min(780px,100%);padding:34px 36px 28px;border-radius:6px;box-shadow:0 10px 40px rgba(0,0,0,.25);font-size:13.5px;position:relative;border-top:6px solid var(--wine)}
+.st-head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:16px;padding-bottom:16px;border-bottom:2px solid #2d2220}
+.st-brand{font-family:var(--f-display);font-size:24px;letter-spacing:.12em;color:var(--wine)}.st-brand small{font-size:12px;letter-spacing:.06em;margin-left:8px;color:#8a7a74;font-family:inherit}
+.st-title{font-size:18px;font-weight:700;letter-spacing:.2em;margin-top:6px}
+.st-meta{display:grid;gap:4px;font-size:13px;min-width:200px}.st-meta div{display:flex;justify-content:space-between;gap:14px}.st-meta span{color:#8a7a74}.st-meta b{font-weight:600}
+.st-tab{width:100%;border-collapse:collapse;margin-top:16px;min-width:0;font-size:inherit}.st-tab td,.st-tab th{text-align:left;white-space:normal}.st-tab th{white-space:nowrap}.st-tab td:nth-child(2):not(.st-d),.st-tab tr:not(.st-first) td:first-child{min-width:3.6em}.stmt{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.st-tab th{font-size:12px;color:#8a7a74;font-weight:600;text-align:left;padding:7px 6px;border-bottom:1px solid #d9cfc6}
+.st-tab td{padding:7px 6px;border-bottom:1px solid #efe7df;vertical-align:top}.st-tab .num{text-align:right}
+.st-tab tr.st-first td{border-top:1px solid #d9cfc6}
+.st-d{white-space:nowrap;font-weight:600}.st-d small{font-weight:400;color:#8a7a74;font-size:11px}
+.st-day{font-weight:700;white-space:nowrap}.st-day small{display:block;font-size:10.5px;color:#a0672a;font-weight:600}
+.st-mute{color:#9b8d87}
+.st-sum{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:12px;margin-top:16px;padding:14px 16px;background:#f6efe7;border-radius:8px}
+.st-sl{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:13px}.st-sl b{font-size:15px}
+.st-tot{display:grid;text-align:right}.st-tot span{font-size:12px;color:#8a7a74}.st-tot b{font-size:26px;color:var(--wine);letter-spacing:.02em}
+.st-foot{margin-top:18px;display:grid;gap:14px}
+.st-pay{display:flex;align-items:center;gap:12px;font-size:13px;color:#5d4f4a}
+.st-stamp{border:2px solid #b5362e;color:#b5362e;font-weight:700;letter-spacing:.2em;padding:3px 10px;border-radius:4px;transform:rotate(-6deg);display:inline-block}
+.st-sign{display:grid;grid-template-columns:1fr 1fr;gap:30px;margin-top:18px}.st-sign div{border-top:1px solid #2d2220;padding-top:6px;font-size:12px;color:#8a7a74;margin-top:34px}
+.st-note{font-size:12px;color:#8a7a74;margin:0}
+@media (max-width:640px){.stmt{padding:22px 16px 20px;font-size:12px}.st-tab th,.st-tab td{padding:6px 3px;font-size:11.5px}.st-tab th{font-size:10.5px}.st-brand{font-size:20px}.st-tot b{font-size:22px}.stmt-bar .btn{padding:8px 10px;font-size:13px}}
+@media print{body.stmt-on>*:not(.stmt-ov){display:none!important}body.stmt-on{background:#fff!important}body.stmt-on::before{display:none!important}.stmt-ov{position:static;background:none;overflow:visible;padding:0}.stmt-bar{display:none}.stmt-wrap{padding:0}.stmt{box-shadow:none;width:100%;border-radius:0;padding:10px 4px}@page{size:A4;margin:14mm}}
 .cr-setbtn{margin-left:auto}.panel .ph:has(.cr-setbtn){flex-wrap:wrap;gap:8px}
 .cr-p.paid{background:#eef3ec}.cr-p.chg{background:#fbf1e3}.cr-paid{font-size:12px!important;font-weight:600;color:#4f7a52!important}.cr-p.chg .cr-paid{color:#a0672a!important}
 .cr-set{margin-top:14px;border:1px solid var(--rule);border-radius:14px;overflow:hidden}
@@ -1869,7 +1895,7 @@ function drawCrew(){
       <div class="seg cs-seg">${['qp','yl'].map(x=>`<button data-crb="${x}" aria-pressed="${x===b}"><i class="sw" style="background:var(${B[x].color})"></i>${x==='qp'?'旗跑':'旗時'}</button>`).join('')}</div></div>
     <div class="cr-month"><button class="btn" data-crym="-1" aria-label="上個月">‹</button><b>${y} 年 ${m} 月</b><button class="btn" data-crym="1" aria-label="下個月">›</button></div>
     <div class="panel"><div class="ph"><h2>${m} 月應付費用</h2><span class="hint num">合計 ${fmt(tot)} 元・${list.length} 張結案單</span>${ppl.length?`<button class="btn ${CR.settle?'':'primary'} cr-setbtn" data-crsettle="1">${CR.settle?'收起結算':unpaid.length?'當月結算':'✓ 已全部結清'}</button>`:''}</div>
-      ${ppl.length?`<div class="cr-ppl">${ppl.map(p=>{const pd=paidOf(p);return `<div class="cr-p ${pd?(+pd.amt===p.fin?'paid':'chg'):''}"><span class="cr-role">${esc(p.role)}師</span><b>${esc(p.person)}</b><span class="num">${p.days} 天・${p.jobs} 件</span><em class="num">${fmt(p.fin)}</em>${p.fin!==p.sub?`<small class="num">項目小計 ${fmt(p.sub)}</small>`:''}${pd?`<span class="cr-paid">${+pd.amt===p.fin?'✓ 已結清':`已結清 ${fmt(+pd.amt)}，之後有變動`}</span>`:''}</div>`;}).join('')}</div>`:'<p class="hint">這個月還沒有結案單。</p>'}
+      ${ppl.length?`<div class="cr-ppl">${ppl.map(p=>{const pd=paidOf(p);return `<div class="cr-p ${pd?(+pd.amt===p.fin?'paid':'chg'):''}"><span class="cr-role">${esc(p.role)}師</span><b>${esc(p.person)}</b><span class="num">${p.days} 天・${p.jobs} 件</span><em class="num">${fmt(p.fin)}</em>${p.fin!==p.sub?`<small class="num">項目小計 ${fmt(p.sub)}</small>`:''}${pd?`<span class="cr-paid">${+pd.amt===p.fin?'✓ 已結清':`已結清 ${fmt(+pd.amt)}，之後有變動`}</span>`:''}<button class="btn cr-pst" data-crstmt="${esc(p.key)}">對帳單</button></div>`;}).join('')}</div>`:'<p class="hint">這個月還沒有結案單。</p>'}
       ${CR.settle&&ppl.length?crewSettleHTML(b,ym,ppl,pay,tot,paidTot):''}
       <p class="hint">這些金額會自動帶到「營業分析 → 師資・人事」（那個月沒有手動填師資費用時）。</p></div>
     ${CR.editing==='new'?crewFormHTML():`<button class="btn primary cr-new" data-crnew="1">＋ 新增結案單</button>`}
@@ -1883,7 +1909,7 @@ function crewSettleHTML(b,ym,ppl,pay,tot,paidTot){
       <div class="cr-sr-n"><b>${esc(p.person)}</b><small>${esc(p.role)}師・${p.days} 天・${p.jobs} 件</small></div>
       <div class="cr-sr-a num">${fmt(p.fin)}<small>元</small></div>
       <div class="cr-sr-s">${pd?`<span class="${same?'ok':'warn'}">${same?'✓ 已結清':`⚠ 結清 ${fmt(+pd.amt)} 後金額有變動，差 ${fmt(p.fin-(+pd.amt))}`}</span><small>${esc(String(pd.at||'').slice(5,10).replace('-','/'))}・${esc(pd.by||'')}</small>`:'<span class="hint">未結清</span>'}</div>
-      <div class="cr-sr-b"><button class="btn" data-crcopy="${esc(p.key)}">複製明細</button>${same?`<button class="btn" data-crunpay="${esc(p.key)}">取消結清</button>`:`<button class="btn primary" data-crpay="${esc(p.key)}">${pd?'重新結清':'結清'}</button>`}</div>
+      <div class="cr-sr-b"><button class="btn" data-crstmt="${esc(p.key)}">對帳單</button>${same?`<button class="btn" data-crunpay="${esc(p.key)}">取消結清</button>`:`<button class="btn primary" data-crpay="${esc(p.key)}">${pd?'重新結清':'結清'}</button>`}</div>
     </div>`;}).join('')}
     <div class="cr-set-f">${ppl.some(p=>!pay[p.key]||+pay[p.key].amt!==p.fin)?`<button class="btn primary" data-crpayall="1">全部結清（${fmt(tot-sum(ppl.filter(p=>pay[p.key]&&+pay[p.key].amt===p.fin).map(p=>p.fin)))} 元）</button>`:'<span class="ok">✓ 這個月已經全部結清</span>'}<span class="hint">結清只是記錄已付款，不會改動結案單。</span></div></div>`;
 }
@@ -1898,6 +1924,45 @@ async function crewPay(keys,undo){
 function crewCopy(k){ const p=crewPeople()[k]; if(!p) return; const [y,m]=CR.ym.split('-').map(Number);
   const lines=[`${y}年${m}月 ${CR.branch==='qp'?'旗跑':'旗時'} ${p.person} ${p.role}師費用`].concat(p.sheets.map(d=>{const sub=sum((d.rows||[]).map(r=>+r.amt||0)), fin=crewSettle(d); return `${+d.date.slice(5,7)}/${+d.date.slice(8)}（${wk(d.date)}）${(d.rows||[]).filter(r=>r.customer||r.item).map(r=>`${r.customer||''}${r.item?' '+r.item:''}`).join('、')||'無拍攝'}　${fmt(fin)}${fin>sub?'（保底）':''}`;}),[`共 ${p.days} 天，合計 ${fmt(p.fin)} 元`]);
   const t=lines.join('\n'); (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>toast('明細已複製，可以貼到 LINE')).catch(()=>{ prompt('複製以下明細',t); });
+}
+function crewStmtHTML(k){
+  const p=crewPeople()[k]; if(!p) return ''; const [y,m]=CR.ym.split('-').map(Number), b=CR.branch, bn=b==='qp'?'旗跑':'旗時';
+  const pd=(((S.crewpay||{})[`${b}-${CR.ym}`]||{}).people||{})[k], last=new Date(y,m,0).getDate();
+  const sheets=p.sheets.slice().sort((a,c)=>a.date<c.date?-1:1), photo=p.role==='攝影';
+  const body=sheets.map(d=>{const rows=(d.rows||[]).filter(r=>r.customer||r.item||+r.amt), sub=sum(rows.map(r=>+r.amt||0)), fin=crewSettle(d), n=Math.max(rows.length,1);
+    const dl=`${+d.date.slice(5,7)}/${+d.date.slice(8)}<small>（${wk(d.date)}）</small>`;
+    const tr=(r,i)=>`<tr${i===0?' class="st-first"':''}>${i===0?`<td rowspan="${n}" class="st-d">${dl}</td>`:''}<td>${esc(r?r.customer||'':'')}</td><td>${r?esc(r.item||'')+(r.qty?` ×${esc(r.qty)}`:''):'<span class="st-mute">當日無拍攝</span>'}</td>${photo?`<td class="num">${r&&r.tone!==''&&r.tone!=null?esc(r.tone):''}</td><td class="num">${r&&r.retouch!==''&&r.retouch!=null?esc(r.retouch):''}</td>`:''}<td class="num">${r?fmt(+r.amt||0):''}</td>${i===0?`<td rowspan="${n}" class="num st-day">${fmt(fin)}${fin>sub?'<small>保底</small>':''}</td>`:''}</tr>`;
+    return rows.length?rows.map(tr).join(''):tr(null,0);}).join('');
+  const jobs=sum(sheets.map(d=>(d.rows||[]).filter(r=>r.customer||r.item).length)), mins=sheets.filter(d=>crewSettle(d)>sum((d.rows||[]).map(r=>+r.amt||0))).length;
+  return `<div class="stmt" id="stmtDoc">
+    <div class="st-head"><div><div class="st-brand">${bn}<small>${esc(B[b].name)}</small></div><div class="st-title">${esc(p.role)}師費用對帳單</div></div>
+      <div class="st-meta"><div><span>${esc(p.role)}師</span><b>${esc(p.person)}</b></div><div><span>結算期間</span><b class="num">${y}/${m}/1 – ${m}/${last}</b></div><div><span>開立日期</span><b class="num">${todayStr().replace(/-/g,'/')}</b></div></div></div>
+    <table class="st-tab"><thead><tr><th>日期</th><th>客人</th><th>項目</th>${photo?'<th class="num">調色</th><th class="num">精修</th>':''}<th class="num">項目金額</th><th class="num">當日應付</th></tr></thead><tbody>${body}</tbody></table>
+    <div class="st-sum"><div class="st-sl"><span>出勤 <b>${p.days}</b> 天</span><span>拍攝／服務 <b>${jobs}</b> 件</span>${mins?`<span>保底計算 <b>${mins}</b> 天</span>`:''}${photo&&FEES[b]['攝影'].minimum?`<span class="st-mute">攝影師每日保底 ${fmt(FEES[b]['攝影'].minimum)} 元</span>`:''}</div>
+      <div class="st-tot"><span>本月應付合計</span><b class="num">NT$ ${fmt(p.fin)}</b></div></div>
+    <div class="st-foot"><div class="st-pay">${pd&&+pd.amt===p.fin?`<span class="st-stamp">已付款</span><span>${esc(String(pd.at||'').slice(0,10).replace(/-/g,'/'))} 結清・${esc(pd.by||'')}</span>`:pd?`<span>已先付 ${fmt(+pd.amt)} 元，尚差 ${fmt(p.fin-(+pd.amt))} 元</span>`:'<span>尚未付款</span>'}</div>
+      <div class="st-sign"><div>${esc(p.role)}師確認簽名</div><div>店家確認</div></div>
+      <p class="st-note">如對明細有疑問，請於收到對帳單後 3 日內告知，謝謝您這個月的辛苦 🙏</p></div>
+  </div>`;
+}
+function crewStmt(k){
+  const html=crewStmtHTML(k); if(!html) return; const p=crewPeople()[k], [y,m]=CR.ym.split('-').map(Number);
+  const v=document.createElement('div'); v.className='stmt-ov'; v.innerHTML=`<div class="stmt-bar"><button class="btn" data-stclose>‹ 返回</button><span class="stmt-sp"></span><button class="btn" data-stcopy>複製文字</button><button class="btn" data-stimg>存成圖片</button><button class="btn primary" data-stprint>列印／存 PDF</button></div><div class="stmt-wrap">${html}</div>`;
+  document.body.appendChild(v); document.body.classList.add('noscroll','stmt-on');
+  const close=()=>{v.remove(); document.body.classList.remove('noscroll','stmt-on');};
+  const fname=`${CR.branch==='qp'?'旗跑':'旗時'}-${p.person}-${y}年${m}月對帳單`;
+  v.addEventListener('click',async ev=>{ const t=ev.target.closest('button'); if(!t) return;
+    if(t.hasAttribute('data-stclose')) close();
+    else if(t.hasAttribute('data-stcopy')) crewCopy(k);
+    else if(t.hasAttribute('data-stprint')){ const old=document.title; document.title=fname; window.print(); setTimeout(()=>document.title=old,500); }
+    else if(t.hasAttribute('data-stimg')){ t.disabled=true; t.textContent='製作中…';
+      try{ if(!window.html2canvas) await new Promise((r,j)=>{const sc=document.createElement('script'); sc.src='https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'; sc.onload=r; sc.onerror=j; document.head.appendChild(sc);});
+        const c=await html2canvas($('#stmtDoc'),{scale:2,backgroundColor:'#fffdf8'}); const blob=await new Promise(r=>c.toBlob(r,'image/png')); const file=new File([blob],fname+'.png',{type:'image/png'});
+        if(navigator.canShare&&navigator.canShare({files:[file]})){ try{ await navigator.share({files:[file],title:fname}); }catch(e){} }
+        else { const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=fname+'.png'; document.body.appendChild(a); a.click(); a.remove(); toast('圖片已下載'); }
+      }catch(e){ toast('存圖失敗，可以改用「列印／存 PDF」'); }
+      t.disabled=false; t.textContent='存成圖片'; }
+  });
 }
 async function crewSave(){
   const dr=CR.draft; const err=t=>{const e=$('#crErr'); if(e) e.textContent=t;};
@@ -1922,6 +1987,7 @@ function bindCrew(){
     if(t.dataset.crunpay){ crewPay([t.dataset.crunpay],true); return; }
     if(t.dataset.crpayall){ crewPay(Object.keys(crewPeople())); return; }
     if(t.dataset.crcopy){ crewCopy(t.dataset.crcopy); return; }
+    if(t.dataset.crstmt){ crewStmt(t.dataset.crstmt); return; }
     if(t.dataset.crb){ CR.branch=t.dataset.crb; CR.editing=null; CR.draft=null; crewRedraw(); }
     else if(t.dataset.crym){ CR.ym=ymShift(CR.ym,+t.dataset.crym); CR.open=null; crewRedraw(); }
     else if(t.dataset.crnew){ CR.ctx=dly?'daily':'crew'; if(dly) CR.branch=D.branch; CR.editing='new'; CR.draft=crewNewDraft(); if(dly) CR.draft.date=D.day; crewRedraw(); }
