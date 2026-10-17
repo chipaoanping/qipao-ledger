@@ -834,6 +834,7 @@ table.opdays tr.na td{border-bottom:2px solid var(--rule)}
 .pr-in.off{opacity:.4}.chip.mini{padding:2px 8px;font-size:11px}
 .pr-x{display:grid;gap:8px}.pr-xr{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) 30px;gap:8px;align-items:center}.pr-addx{justify-self:start;font-size:13px;padding:6px 12px}
 .pr-foot{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px}.pr-acts{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.pr-paidtag{color:#4f7a52;font-weight:600;font-size:13px}
+.pr-xh{display:flex;justify-content:space-between;align-items:baseline;font-size:13px}.pr-xh b{font-weight:600;color:var(--ink-2)}.pr-xh span{color:var(--ink-3);font-size:12.5px}
 .pr-prev{font-size:12px;color:var(--ink-3)}.pr-ref summary{cursor:pointer;font-weight:700}.pr-ref .rk-t{margin-top:12px}.pr-reft{overflow-x:auto}.pr-reft table{table-layout:fixed;min-width:680px;width:100%}.pr-reft th:nth-child(7),.pr-reft td:nth-child(7){width:30%;white-space:normal}.pr-reft td,.pr-reft th{font-size:13px;padding:6px 8px;white-space:nowrap}.pr-reft .num{text-align:right}
 .pr-miss{display:flex;flex-wrap:wrap;gap:8px}
 .pr-cfg summary{cursor:pointer;font-weight:700}.pr-cfgl{display:grid;gap:10px;margin-top:10px}
@@ -2006,13 +2007,15 @@ const PR={ym:todayStr().slice(0,7),draft:null,dirty:false,showCfg:false,cfgDraft
 const prCfg=()=>((S.payroll||{}).cfg||{}).emps||[];
 const prDoc=ym=>(S.payroll||{})[ym]||null;
 const prGross=r=>r.type==='時薪'?Math.round((+r.rate||0)*(+r.hours||0)):(+r.base||0)+(r.fullOn===false?0:(+r.full||0))+(+r.duty||0);
-const prNet=r=>prGross(r)-(+r.ins||0)+(+r.allow||0)+sum((r.extras||[]).map(x=>+x.amt||0));
-const prRowFrom=(e,prev)=>{ const s=prev||e; return {name:e.name,type:s.type||e.type||'月薪',base:s.base??e.base??0,full:s.full??e.full??0,fullOn:true,duty:s.duty??e.duty??0,rate:s.rate??e.rate??0,hours:'',ins:s.ins??e.ins??0,allow:e.allow??0,extras:[],note:''}; };
+const prAllow=r=>Array.isArray(r.allows)?sum(r.allows.map(x=>+x.amt||0)):(+r.allow||0);
+const prNet=r=>prGross(r)-(+r.ins||0)+prAllow(r)+sum((r.extras||[]).map(x=>+x.amt||0));
+const prRowFrom=(e,prev)=>{ const s=prev||e; return {name:e.name,type:s.type||e.type||'月薪',base:s.base??e.base??0,full:s.full??e.full??0,fullOn:true,duty:s.duty??e.duty??0,rate:s.rate??e.rate??0,hours:'',ins:s.ins??e.ins??0,allow:0,allows:[],extras:[],note:''}; };
 function prPrevRows(ym){ for(let i=1;i<=6;i++){ const d=prDoc(ymShift(ym,-i)); if(d&&d.rows) return d.rows; } return {}; }
 function prEnsureDraft(){
   const ym=PR.ym; if(PR.draft&&PR.draft.ym===ym) return;
   const d=prDoc(ym); PR.dirty=false;
   PR.draft=d?{ym,exists:true,rows:JSON.parse(JSON.stringify(d.rows||{})),order:d.order||Object.keys(d.rows||{})}:null;
+  if(PR.draft) Object.values(PR.draft.rows).forEach(r=>{ if(!Array.isArray(r.allows)) r.allows=+r.allow?[{label:'補貼',amt:+r.allow}]:[]; });
 }
 function prNewMonth(){ const ym=PR.ym, prev=prPrevRows(ym), rows={}, order=[];
   prCfg().filter(e=>e.active!==false).forEach(e=>{ rows[e.id]=prRowFrom(e,prev[e.id]); order.push(e.id); });
@@ -2022,19 +2025,20 @@ function prCardHTML(id,r){
   const paid=r.paid, g=prGross(r), n=prNet(r);
   return `<div class="pr-card ${paid?'paid':''}" data-prc="${id}">
     <div class="pr-ch"><b>${esc(r.name)}</b><span class="chips">${['月薪','時薪'].map(t=>`<button type="button" class="chip ${r.type===t?'on':''}" data-prtype="${id}|${t}">${t}</button>`).join('')}</span>
-      ${(()=>{const pv=prPrevRows(PR.ym)[id]; return pv?`<span class="pr-prev num">上次實發 ${fmt(pv.net??prNet(pv))}${pv.allow?`・補貼 ${fmt(+pv.allow)}`:''}</span>`:'';})()}<span class="pr-net num" id="prNet-${id}">實發 <b>${fmt(n)}</b></span></div>
+      ${(()=>{const pv=prPrevRows(PR.ym)[id]; return pv?`<span class="pr-prev num">上次實發 ${fmt(pv.net??prNet(pv))}${prAllow(pv)?`・補貼 ${fmt(prAllow(pv))}`:''}</span>`:'';})()}<span class="pr-net num" id="prNet-${id}">實發 <b>${fmt(n)}</b></span></div>
     <div class="pr-grid">
       ${r.type==='時薪'?`<label><span>時薪</span>${prIn(id,'rate',r.rate)}</label><label><span>時數</span><span class="din pr-in"><input data-pr="${id}" data-k="hours" type="number" inputmode="decimal" step="0.5" value="${esc(r.hours??'')}" placeholder="0"><small>小時</small></span></label>`
       :`<label><span>底薪</span>${prIn(id,'base',r.base)}</label>
       <label><span>全勤 <button type="button" class="chip mini ${r.fullOn===false?'':'on'}" data-prfull="${id}">${r.fullOn===false?'沒有全勤':'有全勤'}</button></span>${prIn(id,'full',r.full,'',r.fullOn===false?'off':'')}</label>
       <label><span>職務津貼</span>${prIn(id,'duty',r.duty)}</label>`}
       <label><span>勞健保自付（扣）</span>${prIn(id,'ins',r.ins)}</label>
-      <label><span>補貼</span>${prIn(id,'allow',r.allow)}</label>
     </div>
-    <div class="pr-x">${(r.extras||[]).map((x,i)=>`<div class="pr-xr"><input class="tin" data-prx="${id}|${i}" data-k="label" value="${esc(x.label||'')}" placeholder="項目，例：加班、機票、代購"><span class="din"><input data-prx="${id}|${i}" data-k="amt" type="number" inputmode="numeric" value="${esc(x.amt??'')}" placeholder="扣款請打負數"><small>元</small></span><button class="ibtn" data-prdelx="${id}|${i}" aria-label="刪除">✕</button></div>`).join('')}
-      <button class="btn pr-addx" data-praddx="${id}">＋ 其他加項／扣項</button></div>
+    <div class="pr-x pr-al"><div class="pr-xh"><b>補貼明細</b><span class="num" id="prAl-${id}">合計 ${fmt(prAllow(r))} 元</span></div>${(r.allows||[]).map((x,i)=>`<div class="pr-xr"><input class="tin" data-pra="${id}|${i}" data-k="label" value="${esc(x.label||'')}" placeholder="例：APP補貼、外出補貼、餐費"><span class="din"><input data-pra="${id}|${i}" data-k="amt" type="number" inputmode="numeric" value="${esc(x.amt??'')}" placeholder="0"><small>元</small></span><button class="ibtn" data-prdela="${id}|${i}" aria-label="刪除">✕</button></div>`).join('')}
+      <button class="btn pr-addx" data-pradda="${id}">＋ 新增補貼</button></div>
+    <div class="pr-x"><div class="pr-xh"><b>其他加項／扣項</b></div>${(r.extras||[]).map((x,i)=>`<div class="pr-xr"><input class="tin" data-prx="${id}|${i}" data-k="label" value="${esc(x.label||'')}" placeholder="項目，例：加班、機票、代購"><span class="din"><input data-prx="${id}|${i}" data-k="amt" type="number" inputmode="numeric" value="${esc(x.amt??'')}" placeholder="扣款請打負數"><small>元</small></span><button class="ibtn" data-prdelx="${id}|${i}" aria-label="刪除">✕</button></div>`).join('')}
+      <button class="btn pr-addx" data-praddx="${id}">＋ 新增加項／扣項</button></div>
     <label class="dfield"><span class="fl">備註</span><input class="tin" data-pr="${id}" data-k="note" value="${esc(r.note||'')}" placeholder="例：APP補貼 250+74、伯虎支援 4/21"></label>
-    <div class="pr-foot"><span class="hint num" id="prSum-${id}">應發 ${fmt(g)}・扣勞健保 ${fmt(+r.ins||0)}・補貼與其他 ${fmt((+r.allow||0)+sum((r.extras||[]).map(x=>+x.amt||0)))}</span>
+    <div class="pr-foot"><span class="hint num" id="prSum-${id}">應發 ${fmt(g)}・扣勞健保 ${fmt(+r.ins||0)}・補貼 ${fmt(prAllow(r))}・其他 ${fmt(sum((r.extras||[]).map(x=>+x.amt||0)))}</span>
       <span class="pr-acts">${paid?`<span class="pr-paidtag">✓ 已發放 ${esc(String(paid.at||'').slice(5,10).replace('-','/'))}</span>`:''}<button class="btn" data-prslip="${id}">薪資單</button><button class="btn ${paid?'':'primary'}" data-prpaid="${id}">${paid?'取消發放':'標記已發放'}</button><button class="btn ${PR.confirm===id?'danger':''}" data-prrm="${id}">${PR.confirm===id?'確定移除':'移除'}</button></span></div>
   </div>`;
 }
@@ -2057,7 +2061,7 @@ function prRefHTML(){
   return `<details class="panel pr-ref" ${PR.showRef?'open':''} id="prRef"><summary>💡 薪水參考（近 ${months.length} 個月）</summary>
     ${ids.map(id=>{ const name=(months.find(([,d])=>d.rows[id])||[,{rows:{}}])[1].rows[id].name;
       return `<div class="rk-t">${esc(name)}</div><div class="pr-reft"><table class="plain"><tr><th>月份</th><th class="num">底薪</th><th class="num">全勤</th><th class="num">職務津貼</th><th class="num">勞健保</th><th class="num">補貼</th><th>其他</th><th class="num">實發</th></tr>
-      ${months.filter(([,d])=>d.rows[id]).map(([k,d])=>{ const r=d.rows[id]; return `<tr><td>${+k.slice(5)} 月</td>${r.type==='時薪'?`<td class="num" colspan="3">時薪 ${fmt(+r.rate||0)} × ${esc(r.hours||0)}h</td>`:`<td class="num">${fmt(+r.base||0)}</td><td class="num">${r.fullOn===false?'—':fmt(+r.full||0)}</td><td class="num">${fmt(+r.duty||0)}</td>`}<td class="num">−${fmt(+r.ins||0)}</td><td class="num">${fmt(+r.allow||0)}</td><td>${(r.extras||[]).map(x=>`${esc(x.label)} ${x.amt<0?'−':'+'}${fmt(Math.abs(+x.amt||0))}`).join('、')||'<span class="hint">—</span>'}</td><td class="num"><b>${fmt(r.net??prNet(r))}</b></td></tr>`; }).join('')}</table></div>`; }).join('')}
+      ${months.filter(([,d])=>d.rows[id]).map(([k,d])=>{ const r=d.rows[id]; return `<tr><td>${+k.slice(5)} 月</td>${r.type==='時薪'?`<td class="num" colspan="3">時薪 ${fmt(+r.rate||0)} × ${esc(r.hours||0)}h</td>`:`<td class="num">${fmt(+r.base||0)}</td><td class="num">${r.fullOn===false?'—':fmt(+r.full||0)}</td><td class="num">${fmt(+r.duty||0)}</td>`}<td class="num">−${fmt(+r.ins||0)}</td><td class="num">${fmt(prAllow(r))}</td><td>${(r.extras||[]).map(x=>`${esc(x.label)} ${x.amt<0?'−':'+'}${fmt(Math.abs(+x.amt||0))}`).join('、')||'<span class="hint">—</span>'}</td><td class="num"><b>${fmt(r.net??prNet(r))}</b></td></tr>`; }).join('')}</table></div>`; }).join('')}
     <p class="hint">建立新月份時會沿用上個月的底薪、全勤、職務津貼和勞健保；補貼與其他項目每月不同，可以參考上表再填。</p></details>`;
 }
 function drawPay(){
@@ -2078,10 +2082,11 @@ function drawPay(){
     ${prRefHTML()}
     ${prCfgHTML()}`;
 }
-function prRecalc(id){ const r=PR.draft.rows[id]; const n=$('#prNet-'+id); if(n) n.innerHTML=`實發 <b>${fmt(prNet(r))}</b>`; const s=$('#prSum-'+id); if(s) s.textContent=`應發 ${fmt(prGross(r))}・扣勞健保 ${fmt(+r.ins||0)}・補貼與其他 ${fmt((+r.allow||0)+sum((r.extras||[]).map(x=>+x.amt||0)))}`;
+function prRecalc(id){ const r=PR.draft.rows[id]; const n=$('#prNet-'+id); if(n) n.innerHTML=`實發 <b>${fmt(prNet(r))}</b>`; const s=$('#prSum-'+id); if(s) s.textContent=`應發 ${fmt(prGross(r))}・扣勞健保 ${fmt(+r.ins||0)}・補貼 ${fmt(prAllow(r))}・其他 ${fmt(sum((r.extras||[]).map(x=>+x.amt||0)))}`;
+  const al=$('#prAl-'+id); if(al) al.textContent=`合計 ${fmt(prAllow(r))} 元`;
   const tt=$('.pr-tot b'); if(tt) tt.textContent=fmt(sum(PR.draft.order.filter(i=>PR.draft.rows[i]).map(i=>prNet(PR.draft.rows[i]))));
   if(!PR.dirty){ PR.dirty=true; const sv=$('.pr-save'); if(sv){ const b=sv.querySelector('[data-prsave]'); if(b) b.disabled=false; if(!sv.querySelector('.pr-dirty')) sv.insertAdjacentHTML('afterbegin','<span class="pr-dirty">● 尚未儲存</span>'); const ok=sv.querySelector('.hint'); if(ok) ok.remove(); } } }
-const prClean=r=>{ const o={...r}; ['base','full','duty','rate','ins','allow'].forEach(k=>o[k]=Math.round(+o[k]||0)); o.hours=o.hours===''||o.hours==null?'':+o.hours; o.extras=(o.extras||[]).filter(x=>x.label||+x.amt).map(x=>({label:(x.label||'').trim(),amt:Math.round(+x.amt||0)})); o.note=(o.note||'').trim(); o.gross=prGross(o); o.net=prNet(o); if(!o.paid) delete o.paid; return o; };
+const prClean=r=>{ const o={...r}; ['base','full','duty','rate','ins','allow'].forEach(k=>o[k]=Math.round(+o[k]||0)); o.hours=o.hours===''||o.hours==null?'':+o.hours; o.extras=(o.extras||[]).filter(x=>x.label||+x.amt).map(x=>({label:(x.label||'').trim(),amt:Math.round(+x.amt||0)})); o.allows=(o.allows||[]).filter(x=>x.label||+x.amt).map(x=>({label:(x.label||'').trim(),amt:Math.round(+x.amt||0)})); o.allow=sum(o.allows.map(x=>x.amt)); o.note=(o.note||'').trim(); o.gross=prGross(o); o.net=prNet(o); if(!o.paid) delete o.paid; return o; };
 async function prSave(msg){
   const dr=PR.draft, rows={}; dr.order.filter(id=>dr.rows[id]).forEach(id=>rows[id]=prClean(dr.rows[id]));
   const doc={month:dr.ym,rows,order:dr.order.filter(id=>dr.rows[id]),total:sum(Object.values(rows).map(r=>r.net)),by:W.name||'',updatedAt:new Date().toISOString()};
@@ -2095,7 +2100,7 @@ async function prSaveCfg(){
 function prSlipHTML(id){
   const r=prClean(PR.draft.rows[id]), [y,m]=PR.ym.split('-').map(Number), line=(l,v,c)=>`<tr${c?` class="${c}"`:''}><td>${l}</td><td class="num">${v<0?'−':''}${fmt(Math.abs(v))}</td></tr>`;
   const plus=r.type==='時薪'?[[`時薪 ${fmt(r.rate)} × ${r.hours||0} 小時`,r.gross]]:[['底薪',r.base],['全勤獎金',r.fullOn===false?0:r.full],['職務津貼',r.duty]];
-  const adds=[['補貼',r.allow]].concat(r.extras.filter(x=>x.amt>0).map(x=>[x.label||'其他',x.amt])).filter(x=>x[1]);
+  const adds=r.allows.map(x=>[x.label||'補貼',x.amt]).concat(r.extras.filter(x=>x.amt>0).map(x=>[x.label||'其他',x.amt])).filter(x=>x[1]);
   const minus=[['勞健保自付額',-r.ins]].concat(r.extras.filter(x=>x.amt<0).map(x=>[x.label||'其他扣款',x.amt])).filter(x=>x[1]);
   return `<div class="stmt pslip" id="stmtDoc"><div class="st-head"><div><div class="st-brand">旗跑・旗時<small>南風俱樂部</small></div><div class="st-title">${y} 年 ${m} 月薪資單</div></div>
     <div class="st-meta"><div><span>姓名</span><b>${esc(r.name)}</b></div><div><span>計薪方式</span><b>${esc(r.type)}</b></div><div><span>計薪期間</span><b class="num">${y}/${m}/1 – ${m}/${new Date(y,m,0).getDate()}</b></div></div></div>
@@ -2109,6 +2114,7 @@ function bindPay(){
   const main=$('#main');
   main.addEventListener('input',ev=>{ if(S.mode!=='payroll') return; const t=ev.target;
     if(t.dataset.pr){ PR.draft.rows[t.dataset.pr][t.dataset.k]=t.value; prRecalc(t.dataset.pr); }
+    else if(t.dataset.pra){ const [id,i]=t.dataset.pra.split('|'); PR.draft.rows[id].allows[+i][t.dataset.k]=t.value; prRecalc(id); }
     else if(t.dataset.prx){ const [id,i]=t.dataset.prx.split('|'); PR.draft.rows[id].extras[+i][t.dataset.k]=t.value; prRecalc(id); }
     else if(t.dataset.pe!=null){ PR.cfgDraft??=JSON.parse(JSON.stringify(prCfg())); PR.cfgDraft[+t.dataset.pe][t.dataset.k]=t.value; if(!$('[data-pesave]')){ $('.pr-cfgf').insertAdjacentHTML('beforeend','<button class="btn primary" data-pesave="1">儲存人員設定</button><button class="btn" data-pecancel="1">取消</button>'); } } });
   main.addEventListener('change',ev=>{ if(S.mode!=='payroll') return; const t=ev.target; if(t.dataset.pe!=null&&t.dataset.k==='type'){ PR.showCfg=true; drawPay(); } });
@@ -2121,6 +2127,8 @@ function bindPay(){
     else if(d.prundo){ PR.draft=null; PR.dirty=false; drawPay(); }
     else if(d.prtype){ const [id,v]=d.prtype.split('|'); PR.draft.rows[id].type=v; PR.dirty=true; drawPay(); }
     else if(d.prfull){ const r=PR.draft.rows[d.prfull]; r.fullOn=r.fullOn===false; PR.dirty=true; drawPay(); }
+    else if(d.pradda){ (PR.draft.rows[d.pradda].allows??=[]).push({label:'',amt:''}); PR.dirty=true; drawPay(); setTimeout(()=>{const l=document.querySelectorAll(`[data-pra^="${d.pradda}|"][data-k="label"]`); l.length&&l[l.length-1].focus();},0); }
+    else if(d.prdela){ const [id,i]=d.prdela.split('|'); PR.draft.rows[id].allows.splice(+i,1); PR.dirty=true; drawPay(); }
     else if(d.praddx){ (PR.draft.rows[d.praddx].extras??=[]).push({label:'',amt:''}); PR.dirty=true; drawPay(); }
     else if(d.prdelx){ const [id,i]=d.prdelx.split('|'); PR.draft.rows[id].extras.splice(+i,1); PR.dirty=true; drawPay(); }
     else if(d.pradd){ const e=prCfg().find(x=>x.id===d.pradd); if(e){ PR.draft.rows[e.id]=prRowFrom(e,prPrevRows(PR.ym)[e.id]); PR.draft.order.push(e.id); PR.dirty=true; drawPay(); } }
