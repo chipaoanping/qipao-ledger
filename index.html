@@ -818,6 +818,18 @@ table.opdays tr.na td{border-bottom:2px solid var(--rule)}
 .cr-min{width:90px;display:inline-block;padding:6px 8px;margin-left:4px}
 .cr-act{display:flex;gap:8px}.btn.danger{color:#fff;background:var(--accent);border-color:var(--accent)}
 .cr-form{display:grid;gap:12px}.cr-pf{display:grid;gap:8px}
+.cr-setbtn{margin-left:auto}.panel .ph:has(.cr-setbtn){flex-wrap:wrap;gap:8px}
+.cr-p.paid{background:#eef3ec}.cr-p.chg{background:#fbf1e3}.cr-paid{font-size:12px!important;font-weight:600;color:#4f7a52!important}.cr-p.chg .cr-paid{color:#a0672a!important}
+.cr-set{margin-top:14px;border:1px solid var(--rule);border-radius:14px;overflow:hidden}
+.cr-set-h{display:flex;flex-wrap:wrap;gap:6px 16px;justify-content:space-between;align-items:baseline;padding:12px 16px;background:var(--soft)}.cr-set-h em{font-style:normal;color:var(--wine);font-weight:700}
+.cr-sr{display:grid;grid-template-columns:minmax(0,1.2fr) auto minmax(0,1.4fr) auto;gap:12px;align-items:center;padding:12px 16px;border-top:1px solid var(--soft)}
+.cr-sr.ok{background:#f5f8f3}
+.cr-sr-n{display:grid}.cr-sr-n small{font-size:12px;color:var(--ink-3)}
+.cr-sr-a{font-size:19px;font-weight:700}.cr-sr-a small{font-size:12px;font-weight:400;margin-left:2px;color:var(--ink-3)}
+.cr-sr-s{display:grid;font-size:13px}.cr-sr-s small{font-size:11.5px;color:var(--ink-3)}.cr-sr-s .ok,.cr-set-f .ok{color:#4f7a52;font-weight:600}.cr-sr-s .warn{color:#a0672a;font-weight:600}
+.cr-sr-b{display:flex;gap:6px}
+.cr-set-f{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;padding:12px 16px;border-top:1px solid var(--rule);background:var(--paper)}
+@media (max-width:640px){.cr-sr{grid-template-columns:minmax(0,1fr) auto}.cr-sr-s{grid-column:1/-1}.cr-sr-b{grid-column:1/-1}.cr-sr-b .btn{flex:1}}
 .cr-row2{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
 .cr-row2 label{display:grid;gap:3px}.cr-row2 span{font-size:11.5px;color:var(--ink-3)}.cr-row2 label{min-width:0}.cr-row2 .tin{padding:8px 10px;font-size:14px;width:100%;min-width:0;box-sizing:border-box}
 .cr-row2 .cr-req{grid-column:1/-1}.cr-row2 textarea{resize:vertical;font:inherit}
@@ -1848,17 +1860,44 @@ function drawCrew(){
   if(CR.ctx==='daily'&&CR.editing){CR.editing=null;CR.draft=null;} CR.ctx='crew';
   const b=CR.branch, ym=CR.ym, list=crewDocs(b,ym), [y,m]=ym.split('-').map(Number);
   const by={}; list.forEach(d=>{const k=d.role+'|'+(crewName(d.person)||'—'); (by[k]??={role:d.role,person:crewName(d.person)||'—',days:0,jobs:0,sub:0,fin:0}); by[k].days++; by[k].jobs+=(d.rows||[]).filter(r=>r.item||r.customer).length; by[k].sub+=sum((d.rows||[]).map(r=>+r.amt||0)); by[k].fin+=crewSettle(d);});
+  Object.entries(by).forEach(([k,v])=>{v.key=k; v.sheets=list.filter(d=>d.role+'|'+(crewName(d.person)||'—')===k);});
   const ppl=Object.values(by).sort((a,c)=>c.fin-a.fin), tot=sum(ppl.map(p=>p.fin));
+  const pay=((S.crewpay||{})[`${b}-${ym}`]||{}).people||{}, paidOf=p=>pay[p.key];
+  const paidTot=sum(ppl.map(p=>paidOf(p)?+paidOf(p).amt||0:0)), unpaid=ppl.filter(p=>!paidOf(p)||+paidOf(p).amt!==p.fin);
   const f=FEES[b];
   $('#main').innerHTML=`<div class="sheet-top"><div class="st-l"><div><div class="st-name">造型・攝影結案 <small>師資費用</small></div><div class="st-state">每位造型師、攝影師每天一張結案單</div></div></div>
       <div class="seg cs-seg">${['qp','yl'].map(x=>`<button data-crb="${x}" aria-pressed="${x===b}"><i class="sw" style="background:var(${B[x].color})"></i>${x==='qp'?'旗跑':'旗時'}</button>`).join('')}</div></div>
     <div class="cr-month"><button class="btn" data-crym="-1" aria-label="上個月">‹</button><b>${y} 年 ${m} 月</b><button class="btn" data-crym="1" aria-label="下個月">›</button></div>
-    <div class="panel"><div class="ph"><h2>${m} 月應付費用</h2><span class="hint num">合計 ${fmt(tot)} 元・${list.length} 張結案單</span></div>
-      ${ppl.length?`<div class="cr-ppl">${ppl.map(p=>`<div class="cr-p"><span class="cr-role">${esc(p.role)}師</span><b>${esc(p.person)}</b><span class="num">${p.days} 天・${p.jobs} 件</span><em class="num">${fmt(p.fin)}</em>${p.fin!==p.sub?`<small class="num">項目小計 ${fmt(p.sub)}</small>`:''}</div>`).join('')}</div>`:'<p class="hint">這個月還沒有結案單。</p>'}
+    <div class="panel"><div class="ph"><h2>${m} 月應付費用</h2><span class="hint num">合計 ${fmt(tot)} 元・${list.length} 張結案單</span>${ppl.length?`<button class="btn ${CR.settle?'':'primary'} cr-setbtn" data-crsettle="1">${CR.settle?'收起結算':unpaid.length?'當月結算':'✓ 已全部結清'}</button>`:''}</div>
+      ${ppl.length?`<div class="cr-ppl">${ppl.map(p=>{const pd=paidOf(p);return `<div class="cr-p ${pd?(+pd.amt===p.fin?'paid':'chg'):''}"><span class="cr-role">${esc(p.role)}師</span><b>${esc(p.person)}</b><span class="num">${p.days} 天・${p.jobs} 件</span><em class="num">${fmt(p.fin)}</em>${p.fin!==p.sub?`<small class="num">項目小計 ${fmt(p.sub)}</small>`:''}${pd?`<span class="cr-paid">${+pd.amt===p.fin?'✓ 已結清':`已結清 ${fmt(+pd.amt)}，之後有變動`}</span>`:''}</div>`;}).join('')}</div>`:'<p class="hint">這個月還沒有結案單。</p>'}
+      ${CR.settle&&ppl.length?crewSettleHTML(b,ym,ppl,pay,tot,paidTot):''}
       <p class="hint">這些金額會自動帶到「營業分析 → 師資・人事」（那個月沒有手動填師資費用時）。</p></div>
     ${CR.editing==='new'?crewFormHTML():`<button class="btn primary cr-new" data-crnew="1">＋ 新增結案單</button>`}
     <div class="cr-list">${list.map(d=>CR.editing===d.id?crewFormHTML():crewSheetHTML(d)).join('')}</div>
     <details class="panel cr-ref"><summary>💡 ${b==='qp'?'旗跑':'旗時'}費用參考表</summary><div class="two">${['攝影','造型'].map(r=>`<div><div class="rk-t">${r}師</div><table class="plain">${f[r].items.concat(f[r].extras).map(([n,a])=>`<tr><td>${esc(n)}</td><td class="num">${fmt(a)}</td></tr>`).join('')}${f[r].minimum?`<tr><td>每日保底</td><td class="num">${fmt(f[r].minimum)}</td></tr>`:''}</table></div>`).join('')}</div><p class="hint">選項目時會自動帶入參考金額，可以再手動改。</p></details>`;
+}
+function crewSettleHTML(b,ym,ppl,pay,tot,paidTot){
+  const [y,m]=ym.split('-').map(Number);
+  return `<div class="cr-set"><div class="cr-set-h"><b>${y} 年 ${m} 月${b==='qp'?'旗跑':'旗時'}師資結算</b><span class="num">已結清 ${fmt(paidTot)}／應付 ${fmt(tot)}・未結清 <em>${fmt(tot-paidTot)}</em></span></div>
+    ${ppl.map(p=>{const pd=pay[p.key], same=pd&&+pd.amt===p.fin; return `<div class="cr-sr ${same?'ok':''}">
+      <div class="cr-sr-n"><b>${esc(p.person)}</b><small>${esc(p.role)}師・${p.days} 天・${p.jobs} 件</small></div>
+      <div class="cr-sr-a num">${fmt(p.fin)}<small>元</small></div>
+      <div class="cr-sr-s">${pd?`<span class="${same?'ok':'warn'}">${same?'✓ 已結清':`⚠ 結清 ${fmt(+pd.amt)} 後金額有變動，差 ${fmt(p.fin-(+pd.amt))}`}</span><small>${esc(String(pd.at||'').slice(5,10).replace('-','/'))}・${esc(pd.by||'')}</small>`:'<span class="hint">未結清</span>'}</div>
+      <div class="cr-sr-b"><button class="btn" data-crcopy="${esc(p.key)}">複製明細</button>${same?`<button class="btn" data-crunpay="${esc(p.key)}">取消結清</button>`:`<button class="btn primary" data-crpay="${esc(p.key)}">${pd?'重新結清':'結清'}</button>`}</div>
+    </div>`;}).join('')}
+    <div class="cr-set-f">${ppl.some(p=>!pay[p.key]||+pay[p.key].amt!==p.fin)?`<button class="btn primary" data-crpayall="1">全部結清（${fmt(tot-sum(ppl.filter(p=>pay[p.key]&&+pay[p.key].amt===p.fin).map(p=>p.fin)))} 元）</button>`:'<span class="ok">✓ 這個月已經全部結清</span>'}<span class="hint">結清只是記錄已付款，不會改動結案單。</span></div></div>`;
+}
+function crewPeople(){ const b=CR.branch, ym=CR.ym, list=crewDocs(b,ym), by={};
+  list.forEach(d=>{const k=d.role+'|'+(crewName(d.person)||'—'); (by[k]??={key:k,role:d.role,person:crewName(d.person)||'—',days:0,fin:0,sheets:[]}); by[k].days++; by[k].fin+=crewSettle(d); by[k].sheets.push(d);}); return by; }
+async function crewPay(keys,undo){
+  const b=CR.branch, ym=CR.ym, id=`${b}-${ym}`, by=crewPeople(), cur=((S.crewpay||{})[id])||{branch:b,month:ym,people:{}}, people={...(cur.people||{})};
+  keys.forEach(k=>{ if(undo) delete people[k]; else if(by[k]) people[k]={amt:by[k].fin,days:by[k].days,at:new Date().toISOString(),by:W.name||''}; });
+  const doc={branch:b,month:ym,people,updatedAt:new Date().toISOString()};
+  try{ await S.db.doc('crewpay/'+id).set(doc); S.crewpay={...(S.crewpay||{}),[id]:doc}; drawCrew(); toast(undo?'已取消結清':'已記錄結清'); }catch(e){ toast('儲存失敗，請稍後再試'); }
+}
+function crewCopy(k){ const p=crewPeople()[k]; if(!p) return; const [y,m]=CR.ym.split('-').map(Number);
+  const lines=[`${y}年${m}月 ${CR.branch==='qp'?'旗跑':'旗時'} ${p.person} ${p.role}師費用`].concat(p.sheets.map(d=>{const sub=sum((d.rows||[]).map(r=>+r.amt||0)), fin=crewSettle(d); return `${+d.date.slice(5,7)}/${+d.date.slice(8)}（${wk(d.date)}）${(d.rows||[]).filter(r=>r.customer||r.item).map(r=>`${r.customer||''}${r.item?' '+r.item:''}`).join('、')||'無拍攝'}　${fmt(fin)}${fin>sub?'（保底）':''}`;}),[`共 ${p.days} 天，合計 ${fmt(p.fin)} 元`]);
+  const t=lines.join('\n'); (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>toast('明細已複製，可以貼到 LINE')).catch(()=>{ prompt('複製以下明細',t); });
 }
 async function crewSave(){
   const dr=CR.draft; const err=t=>{const e=$('#crErr'); if(e) e.textContent=t;};
@@ -1878,6 +1917,11 @@ function bindCrew(){
     if(t.dataset.crr!=null&&t.dataset.k==='item'){ const r=CR.draft.rows[+t.dataset.crr]; r.item=t.value; const a=crewFeeOf(t.value); if(a){ r.amt=a*(+r.qty||1); const ai=main.querySelector(`[data-crr="${t.dataset.crr}"][data-k="amt"]`); if(ai) ai.value=r.amt; } crewRefreshSum(); }
     if(t.dataset.crf==='date') CR.draft.date=t.value; });
   main.addEventListener('click',ev=>{ if(!(S.mode==='crew'||S.mode==='daily')) return; const t=ev.target.closest('button'); if(!t) return; const dly=S.mode==='daily';
+    if(t.dataset.crsettle){ CR.settle=!CR.settle; drawCrew(); return; }
+    if(t.dataset.crpay){ crewPay([t.dataset.crpay]); return; }
+    if(t.dataset.crunpay){ crewPay([t.dataset.crunpay],true); return; }
+    if(t.dataset.crpayall){ crewPay(Object.keys(crewPeople())); return; }
+    if(t.dataset.crcopy){ crewCopy(t.dataset.crcopy); return; }
     if(t.dataset.crb){ CR.branch=t.dataset.crb; CR.editing=null; CR.draft=null; crewRedraw(); }
     else if(t.dataset.crym){ CR.ym=ymShift(CR.ym,+t.dataset.crym); CR.open=null; crewRedraw(); }
     else if(t.dataset.crnew){ CR.ctx=dly?'daily':'crew'; if(dly) CR.branch=D.branch; CR.editing='new'; CR.draft=crewNewDraft(); if(dly) CR.draft.date=D.day; crewRedraw(); }
@@ -2026,7 +2070,7 @@ const fsDec=d=>d&&typeof d.__json==='string'?JSON.parse(d.__json):d;
 async function importData(file){
   const set=t=>{IMP.msg=t; const m=$('#impMsg'); if(m) m.textContent=t;};
   try{
-    const j=JSON.parse(await file.text()); const cols=isBoss()?['months','daily','misc','settle','crewlog']:['months','daily','misc','crewlog'];
+    const j=JSON.parse(await file.text()); const cols=isBoss()?['months','daily','misc','settle','crewlog','crewpay']:['months','daily','misc','crewlog','crewpay'];
     const ops=[]; for(const c of cols) for(const [id,d] of Object.entries(j[c]||{})) ops.push([c,id,d]);
     const sm=Object.entries(j.status||{}); let sn=0;
     for(const [id,v] of sm){ const m=id.match(/^(qp|yl)-(\d{4}-\d{2}-\d{2})$/); if(!m) continue; const ref=FB.fs.doc('daily/'+id), cur=await ref.get();
@@ -2048,7 +2092,7 @@ async function importData(file){
 }
 async function exportData(){
   const out={_meta:{exportedAt:new Date().toISOString(),by:W.name}};
-  for(const c of ['months','daily','misc','settle','crewlog']){ const s=await FB.fs.collection(c).get(); out[c]={}; s.docs.forEach(d=>out[c][d.id]=fsDec(d.data())); }
+  for(const c of ['months','daily','misc','settle','crewlog','crewpay']){ const s=await FB.fs.collection(c).get(); out[c]={}; s.docs.forEach(d=>out[c][d.id]=fsDec(d.data())); }
   const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(out)],{type:'application/json'})); a.download=`旗跑旗時-備份-${todayStr()}.json`; document.body.appendChild(a); a.click(); a.remove();
 }
 document.addEventListener('change',ev=>{ if(ev.target.id==='impFile'&&ev.target.files[0]) importData(ev.target.files[0]); });
@@ -2439,7 +2483,7 @@ document.addEventListener('click',ev=>{
 function showLoadErr(){ let el=$('#loadErr'); if(!el){ el=document.createElement('div'); el.id='loadErr'; el.className='load-err'; document.querySelector('.wrap')?.insertBefore(el,$('#main')); }
   el.innerHTML=S.loadErr?`⚠️ 讀取資料失敗（${esc(S.loadErr)}）。${S.loadErr==='permission-denied'?'這個帳號目前沒有讀取權限，請找妃妃確認人員名單，或登出後重新登入。':'請檢查網路後重新整理頁面。'} <button class="btn" onclick="location.reload()">重新整理</button>`:''; el.hidden=!S.loadErr; }
 function stopData(){ FB.unsubs.forEach(u=>{try{u()}catch(e){}}); FB.unsubs=[]; if(D.unsub){try{D.unsub()}catch(e){}} D.unsub=null; D.subMonth=null; if(C.unsub){try{C.unsub()}catch(e){}} C.unsub=null; C.subB=null;
-  S.db=null; S.docs={}; S.allDaily={}; S.loadErr=null; showLoadErr(); S.misc={}; S.settle={}; S.crewlog={}; D.docs={}; C.daily={}; S.loaded=false; FB.dataOn=false; }
+  S.db=null; S.docs={}; S.allDaily={}; S.loadErr=null; showLoadErr(); S.misc={}; S.settle={}; S.crewlog={}; S.crewpay={}; D.docs={}; C.daily={}; S.loaded=false; FB.dataOn=false; }
 function startData(){
   if(FB.dataOn) return; FB.dataOn=true; const db=FB.fs; S.db=db; S.canWrite=true;
   setTimeout(()=>{ if(FB.dataOn&&!S.loaded){ S.loadErr='讀取超過 15 秒'; showLoadErr(); } },15000);
@@ -2453,6 +2497,7 @@ function startData(){
   FB.unsubs.push(db.collection('daily').onSnapshot(snap=>{ const o={}; snap.docs.forEach(d=>{o[d.id]=d.data();}); S.allDaily=o; if(S.mode==='ledger'&&S.sec==='cust'&&!S.editing&&!S.adding) render(); },()=>{}));
   FB.unsubs.push(db.collection('settle').onSnapshot(snap=>{ const o={}; snap.docs.forEach(d=>{o[d.id]=d.data();}); S.settle=o; if(S.mode==='cash') drawCash(); else if(S.mode==='spend') drawSpend(); else if(S.mode==='home') renderHome(); },()=>{}));
   FB.unsubs.push(db.collection('crewlog').onSnapshot(snap=>{ const o={}; snap.docs.forEach(d=>{o[d.id]=d.data();}); S.crewlog=o; if((S.mode==='crew'||S.mode==='daily')&&!CR.editing) crewRedraw(); else if(S.mode==='home') renderHome(); },()=>{}));
+  FB.unsubs.push(db.collection('crewpay').onSnapshot(snap=>{ const o={}; snap.docs.forEach(d=>{o[d.id]=d.data();}); S.crewpay=o; if(S.mode==='crew'&&!CR.editing) drawCrew(); },()=>{}));
   FB.unsubs.push(db.collection('misc').onSnapshot(snap=>{ const m={}; snap.docs.forEach(d=>{m[d.id]=fsDec(d.data());}); S.misc=m; S.miscLoaded=true; if(S.loaded&&!S.editing&&!S.adding&&S.mode==='ledger'&&S.month===0&&S.sec==='chan') render(); },()=>{}));
 }
 function applyAuth(){
