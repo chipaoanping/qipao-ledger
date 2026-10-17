@@ -847,6 +847,21 @@ table.opdays tr.na td{border-bottom:2px solid var(--rule)}
 .bk-d{font-weight:700;font-size:13px;color:var(--ink-2);margin-top:8px;padding:4px 2px;border-bottom:1px solid var(--rule)}
 .bk-two{display:grid;grid-template-columns:1fr 1fr;gap:6px 22px}.bk-col{min-width:0}.bk-d span{float:right;font-weight:400;color:var(--ink-3);font-size:12px}.bk-none{padding:10px 2px}
 @media (max-width:720px){.bk-two{grid-template-columns:1fr}}
+.bk-go{margin-left:auto;padding:6px 12px;font-size:13px}
+.bk-cal{display:grid;gap:10px}.bk-sum{font-size:13px;color:var(--ink-3)}.bk-sum b{color:var(--wine);font-size:16px}
+.bk-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.bk-wh{text-align:center;font-size:12px;color:var(--ink-3);padding:4px 0}
+.bk-c{all:unset;box-sizing:border-box;cursor:pointer;min-height:64px;border-radius:10px;background:var(--soft);padding:6px;display:flex;flex-wrap:wrap;align-content:flex-start;gap:3px;position:relative}
+.bk-c.empty{background:none;cursor:default}.bk-c.past{opacity:.55}.bk-c.off{background:repeating-linear-gradient(135deg,var(--soft),var(--soft) 6px,var(--paper) 6px,var(--paper) 12px)}
+.bk-c.today .bk-n b{background:var(--wine);color:#fff;border-radius:999px;padding:0 6px}
+.bk-c.on{outline:2px solid var(--wine);outline-offset:-2px;opacity:1}
+.bk-n{flex:0 0 100%;font-size:13px;line-height:1.5}.bk-n b{font-weight:700;display:inline-block}
+.bk-c i,.bk-leg i{font-style:normal;font-size:11.5px;font-weight:700;color:#fff;border-radius:6px;padding:0 6px;line-height:18px;display:inline-block;min-width:8px;min-height:10px}
+.bk-c i.q,.bk-leg i.q{background:var(--qp)}.bk-c i.y,.bk-leg i.y{background:var(--yl)}
+.bk-c em,.bk-leg em{font-style:normal;font-size:10.5px;color:var(--ink-3)}
+.bk-c u,.bk-leg u{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--accent);position:absolute;top:8px;right:8px}
+.bk-leg{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;font-size:12px}.bk-leg u{position:static}
+@media (max-width:560px){.bk-c{min-height:52px;padding:4px;border-radius:8px}.bk-c i{font-size:10.5px;padding:0 4px;line-height:16px}}
 .bk-u{font-size:11.5px;text-align:right}.hint.bad{color:var(--accent)}
 .hs-h{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:6px}.hs-h b{font-family:var(--f-display);font-size:17px;letter-spacing:.08em}.hs-h span{font-size:13px;color:var(--ink-3)}.hs-h em{font-style:normal;font-weight:700;color:var(--wine);font-size:17px}
 .hs-g{display:grid;grid-template-columns:1fr 1fr;gap:12px}
@@ -931,7 +946,7 @@ table.opdays tr.na td{border-bottom:2px solid var(--rule)}
       <div class="eyebrow">南風俱樂部 ・ 經營管理</div>
       <h1>旗跑・旗時 收支總覽</h1>
     </div>
-    <div class="hright"><div class="seg mode" role="group" aria-label="頁面" id="modeSeg"><button data-mode="home">首頁</button><button data-mode="daily">每日結帳</button><button data-mode="spend">當日支出</button><button data-mode="ledger">營業分析</button><button data-mode="cash" class="boss-only">現金結算</button><button data-mode="crew" hidden>造型・攝影</button><button data-mode="payroll" hidden>薪資</button></div><span class="who" id="who" hidden></span><button class="reload-btn" id="reloadBtn" type="button" aria-label="重新整理" title="重新整理（載入最新版本）"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button><span class="status" id="status"><i></i><span>連線中…</span></span></div>
+    <div class="hright"><div class="seg mode" role="group" aria-label="頁面" id="modeSeg"><button data-mode="home">首頁</button><button data-mode="daily">每日結帳</button><button data-mode="spend">當日支出</button><button data-mode="ledger">營業分析</button><button data-mode="cash" class="boss-only">現金結算</button><button data-mode="booking">預約</button><button data-mode="crew" hidden>造型・攝影</button><button data-mode="payroll" hidden>薪資</button></div><span class="who" id="who" hidden></span><button class="reload-btn" id="reloadBtn" type="button" aria-label="重新整理" title="重新整理（載入最新版本）"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button><span class="status" id="status"><i></i><span>連線中…</span></span></div>
   </header>
 
   <div class="controls">
@@ -2404,38 +2419,59 @@ const ICON0={
   ledger:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2 2 2 0 0 0 2 2h13"/><path d="M8 13l3-3 2 2 3-4"/></svg>'
 };
 const ICON=new Proxy(ICON0,{get:(o,k)=>o[k]||(k==='payroll'?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2.2"/><path d="M5.5 16.5c.6-1.7 2-2.6 3.5-2.6s2.9.9 3.5 2.6M14.5 10h4M14.5 13.5h3"/></svg>':k==='crew'?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>':k==='cash'?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="2"/><circle cx="12" cy="12" r="2.6"/><path d="M6 9.5v5M18 9.5v5"/></svg>':'')});
-/* ---------- 近期預約（Google 日曆） ---------- */
-const BK={data:null,at:0,loading:false,err:'',tab:'two'};
+/* ---------- 預約（Google 日曆） ---------- */
+const BK={cache:{},loading:{},err:'',ym:todayStr().slice(0,7),day:todayStr(),br:'all'};
 const bkURL=()=>((S.misc||{}).booking||{}).url||'';
-function bkLoad(force){
-  const url=bkURL(); if(!url||BK.loading) return; if(!force&&(BK.data||BK.err)&&Date.now()-BK.at<5*60e3) return;
-  BK.loading=true; BK.err='';
-  fetch(url+(url.includes('?')?'&':'?')+'days=14',{cache:'no-store'}).then(r=>r.json()).then(j=>{ if(j.error) throw new Error(j.error==='unauthorized'?'通關密碼不對':j.error); BK.data=j; })
-    .catch(e=>{ BK.err=(e&&e.message)||'讀取失敗'; }).finally(()=>{ BK.at=Date.now(); BK.loading=false; const el=$('#bkPanel'); if(S.mode==='home'&&el) el.outerHTML=bookingsHTML(); });
+function bkFetch(key,from,days,force){
+  const url=bkURL(); if(!url||BK.loading[key]) return; const c=BK.cache[key]; if(!force&&c&&Date.now()-c.at<5*60e3) return;
+  BK.loading[key]=true; BK.err='';
+  fetch(url+(url.includes('?')?'&':'?')+`from=${from}&days=${days}`,{cache:'no-store'}).then(r=>r.json()).then(j=>{ if(j.error) throw new Error(j.error==='unauthorized'?'通關密碼不對':j.error); BK.cache[key]={data:j,at:Date.now()}; })
+    .catch(e=>{ BK.err=(e&&e.message)||'讀取失敗'; BK.cache[key]=BK.cache[key]||{data:null,at:Date.now()}; BK.cache[key].at=Date.now(); }).finally(()=>{ BK.loading[key]=false; bkRedraw(); });
 }
+function bkRedraw(){ if(S.mode==='home'){ const el=$('#bkPanel'); if(el) el.outerHTML=bookingsHTML(); } else if(S.mode==='booking') drawBooking(); }
 const bkDay=iso=>new Date(iso).toLocaleDateString('sv',{timeZone:'Asia/Taipei'});
 const bkTime=iso=>new Date(iso).toLocaleTimeString('en-GB',{timeZone:'Asia/Taipei',hour:'2-digit',minute:'2-digit',hour12:false});
-function bookingsHTML(){
-  if(!bkURL()) return (typeof canImport==='function'&&canImport())?`<div class="panel bk" id="bkPanel"><div class="ph"><h2>近期預約</h2><span class="hint">尚未連結 Google 日曆</span></div><p class="hint">在首頁下方「資料管理」貼上預約日曆連結後，這裡就會顯示兩館的預約。</p></div>`:'';
-  bkLoad(false);
-  const t=todayStr(), tm=addDays(t,1), w7=addDays(t,6), rng={two:[t,tm],week:[t,w7]}[BK.tab]||[t,tm];
-  const evs=(BK.data&&BK.data.events)||[];
-  const sDay=e=>bkDay(e.start), eDay=e=>e.allDay?addDays(bkDay(e.end),-1):bkDay(e.start);
-  const hit=(e,[a,z])=>sDay(e)<=z&&eDay(e)>=a;
-  const list=evs.filter(e=>hit(e,rng));
-  const cnt=k=>evs.filter(e=>e.kind==='booking'&&hit(e,{today:[t,t],tmr:[tm,tm],two:[t,tm],week:[t,w7]}[k])).length;
-  const byDay={}; list.forEach(e=>{ const d=sDay(e)<rng[0]?rng[0]:sDay(e); (byDay[d]??=[]).push(e); });
-  const row=e=>`<div class="bk-r ${e.kind==='note'?'note':''}" style="--bc:var(${B[e.branch].color})"><span class="bk-t num">${e.allDay?'全天':bkTime(e.start)}</span><span class="bk-b">${e.branch==='qp'?'旗跑':'旗時'}</span>
+const bkS=e=>bkDay(e.start), bkE=e=>e.allDay?addDays(bkDay(e.end),-1):bkDay(e.start);
+const bkOn=(e,d)=>bkS(e)<=d&&bkE(e)>=d;
+const bkRow=e=>`<div class="bk-r ${e.kind==='note'?'note':''}" style="--bc:var(${B[e.branch].color})"><span class="bk-t num">${e.allDay?'全天':bkTime(e.start)}</span><span class="bk-b">${e.branch==='qp'?'旗跑':'旗時'}</span>
     <span class="bk-m">${e.kind==='booking'?`<b>${esc(e.name||'—')}</b>${e.people?`<em>${esc(e.people)} 人</em>`:''}<small>${esc(e.item||'')}</small>`:`<b>${esc(e.title)}</b>`}</span>${e.status?`<span class="bk-s ${/已付款|完成/.test(e.status)&&!/訂金/.test(e.status)?'ok':''}">${esc(e.status)}</span>`:'<span></span>'}</div>`;
-  const days=Object.keys(byDay).sort();
-  return `<div class="panel bk" id="bkPanel"><div class="ph"><h2>近期預約</h2><span class="chips">${[['two','今天＋明天'],['week','未來 7 天']].map(([k,l])=>`<button type="button" class="chip ${BK.tab===k?'on':''}" data-bktab="${k}">${l}・${cnt(k)}</button>`).join('')}</span><button class="ibtn bk-rl" data-bkreload="1" aria-label="重新讀取">↻</button></div>
-    ${BK.err?`<p class="hint bad">讀取預約失敗：${esc(BK.err)}</p>`:''}
-    ${!BK.data?`<p class="hint">${BK.loading?'正在讀取 Google 日曆…':''}</p>`:BK.tab==='two'?`<div class="bk-two">${[[t,'今天'],[tm,'明天']].map(([d,l])=>`<div class="bk-col"><div class="bk-d">${l}・${+d.slice(5,7)}/${+d.slice(8)}（${wk(d)}）<span>${cnt(l==='今天'?'today':'tmr')} 組</span></div>${(byDay[d]||[]).length?byDay[d].map(row).join(''):`<p class="hint bk-none">${l}沒有預約</p>`}</div>`).join('')}</div>`:days.length?days.map(d=>`<div class="bk-d">${+d.slice(5,7)}/${+d.slice(8)}（${wk(d)}）</div>${byDay[d].map(row).join('')}`).join(''):`<p class="hint">這 7 天沒有預約。</p>`}
-    ${BK.data?`<p class="hint bk-u">${bkTime(BK.data.updated)} 更新・資料來自旗跑、旗時 Google 日曆</p>`:''}</div>`;
+function bookingsHTML(){
+  if(!bkURL()) return (typeof canImport==='function'&&canImport())?`<div class="panel bk" id="bkPanel"><div class="ph"><h2>今明預約</h2><span class="hint">尚未連結 Google 日曆</span></div><p class="hint">在首頁下方「資料管理」貼上預約日曆連結後，這裡就會顯示兩館的預約。</p></div>`:'';
+  const t=todayStr(), tm=addDays(t,1); bkFetch('home',t,2,false);
+  const c=BK.cache.home, evs=(c&&c.data&&c.data.events)||[];
+  const col=(d,l)=>{ const l2=evs.filter(e=>bkOn(e,d)), n=l2.filter(e=>e.kind==='booking').length;
+    return `<div class="bk-col"><div class="bk-d">${l}・${+d.slice(5,7)}/${+d.slice(8)}（${wk(d)}）<span>${n} 組</span></div>${l2.length?l2.map(bkRow).join(''):`<p class="hint bk-none">${l}沒有預約</p>`}</div>`; };
+  return `<div class="panel bk" id="bkPanel"><div class="ph"><h2>今明預約</h2><button class="ibtn bk-rl" data-bkreload="home" aria-label="重新讀取">↻</button><button class="btn bk-go" data-home="booking">預約日曆 →</button></div>
+    ${BK.err&&!(c&&c.data)?`<p class="hint bad">讀取預約失敗：${esc(BK.err)}</p>`:''}
+    ${c&&c.data?`<div class="bk-two">${col(t,'今天')}${col(tm,'明天')}</div>`:`<p class="hint">${BK.loading.home?'正在讀取 Google 日曆…':''}</p>`}</div>`;
 }
-document.addEventListener('click',ev=>{ const t=ev.target.closest('[data-bktab],[data-bkreload]'); if(!t||S.mode!=='home') return;
-  if(t.dataset.bktab) BK.tab=t.dataset.bktab; else bkLoad(true);
-  const el=$('#bkPanel'); if(el) el.outerHTML=bookingsHTML(); });
+function drawBooking(){
+  if(!W.name){ renderLogin(); return; }
+  const ym=BK.ym, [y,m]=ym.split('-').map(Number), n=new Date(y,m,0).getDate(), key='m'+ym;
+  if(!bkURL()){ $('#main').innerHTML=`<div class="panel emptyb">還沒有連結預約日曆。${canImport()?'請到首頁下方「資料管理」貼上預約日曆連結。':'請找妃妃或郁雯設定。'}</div>`; return; }
+  bkFetch(key,`${ym}-01`,n,false);
+  const c=BK.cache[key], evs=((c&&c.data&&c.data.events)||[]).filter(e=>BK.br==='all'||e.branch===BK.br), t=todayStr();
+  const first=new Date(y,m-1,1).getDay(), cells=[]; for(let i=0;i<first;i++) cells.push(null); for(let d=1;d<=n;d++) cells.push(`${ym}-${pad(d)}`);
+  if(!BK.day.startsWith(ym)) BK.day=t.startsWith(ym)?t:`${ym}-01`;
+  const dayEv=d=>evs.filter(e=>bkOn(e,d)), sel=dayEv(BK.day);
+  const tot=evs.filter(e=>e.kind==='booking').length, ppl=sum(evs.filter(e=>e.kind==='booking').map(e=>+e.people||0));
+  $('#main').innerHTML=`<div class="sheet-top"><div class="st-l"><div><div class="st-name">預約日曆 <small>旗跑・旗時</small></div><div class="st-state">資料來自兩館 Google 日曆${c&&c.data?`・${bkTime(c.data.updated)} 更新`:''}</div></div></div>
+      <div class="seg cs-seg">${[['all','全部'],['qp','旗跑'],['yl','旗時']].map(([k,l])=>`<button data-bkbr="${k}" aria-pressed="${BK.br===k}">${k!=='all'?`<i class="sw" style="background:var(${B[k].color})"></i>`:''}${l}</button>`).join('')}</div></div>
+    <div class="cr-month"><button class="btn" data-bkym="-1" aria-label="上個月">‹</button><b>${y} 年 ${m} 月</b><button class="btn" data-bkym="1" aria-label="下個月">›</button>${ym!==t.slice(0,7)?'<button class="btn" data-bktoday="1">本月</button>':''}<button class="ibtn bk-rl" data-bkreload="${key}" aria-label="重新讀取">↻</button></div>
+    ${BK.err?`<p class="hint bad">讀取預約失敗：${esc(BK.err)}</p>`:''}
+    <div class="panel bk-cal">${!(c&&c.data)?`<p class="hint">${BK.loading[key]?'正在讀取 Google 日曆…':''}</p>`:''}
+      <div class="bk-sum num">本月預約 <b>${tot}</b> 組${ppl?`・旗袍體驗 <b>${ppl}</b> 人`:''}</div>
+      <div class="bk-grid">${['日','一','二','三','四','五','六'].map(w=>`<div class="bk-wh">${w}</div>`).join('')}
+      ${cells.map(d=>{ if(!d) return '<div class="bk-c empty"></div>'; const l=dayEv(d), bq=l.filter(e=>e.kind==='booking'&&e.branch==='qp').length, by=l.filter(e=>e.kind==='booking'&&e.branch==='yl').length, off=l.some(e=>e.kind==='note'&&/店休/.test(e.title));
+        return `<button class="bk-c ${d===t?'today':''} ${d===BK.day?'on':''} ${d<t?'past':''} ${off?'off':''}" data-bkday="${d}"><span class="bk-n"><b>${+d.slice(8)}</b></span>${bq?`<i class="q">${bq}</i>`:''}${by?`<i class="y">${by}</i>`:''}${off?'<em>休</em>':''}${l.some(e=>e.kind==='note'&&!/店休/.test(e.title))?'<u></u>':''}</button>`; }).join('')}</div>
+      <p class="hint bk-leg"><i class="q"></i>旗跑預約　<i class="y"></i>旗時預約　<u></u>行程　<em>休</em>店休</p></div>
+    <div class="panel bk"><div class="ph"><h2>${+BK.day.slice(5,7)}/${+BK.day.slice(8)}（${wk(BK.day)}）</h2><span class="hint">${sel.filter(e=>e.kind==='booking').length} 組預約</span></div>
+      ${sel.length?sel.map(bkRow).join(''):'<p class="hint">這天沒有預約。</p>'}</div>`;
+}
+document.addEventListener('click',ev=>{ if(S.mode!=='home'&&S.mode!=='booking') return; const t=ev.target.closest('[data-bkreload],[data-bkday],[data-bkym],[data-bkbr],[data-bktoday]'); if(!t) return; const d=t.dataset;
+  if(d.bkreload){ bkFetch(d.bkreload,d.bkreload==='home'?todayStr():`${BK.ym}-01`,d.bkreload==='home'?2:new Date(+BK.ym.slice(0,4),+BK.ym.slice(5),0).getDate(),true); bkRedraw(); return; }
+  if(d.bkday) BK.day=d.bkday; else if(d.bkym){ BK.ym=ymShift(BK.ym,+d.bkym); BK.err=''; } else if(d.bkbr) BK.br=d.bkbr; else if(d.bktoday){ BK.ym=todayStr().slice(0,7); BK.day=todayStr(); }
+  drawBooking(); });
 function homeStatsHTML(today){
   const ym=today.slice(0,7), m=+ym.slice(5), docs={...(S.allDaily||{}),...D.docs};
   const one=b=>{ const ds=Object.values(docs).filter(d=>d&&d.branch===b&&String(d.date||'').startsWith(ym)&&dStatusOf(d)==='營業'), rev=sum(ds.map(d=>+d.revenue||0)), c=statusCount(b,ym,docs); if(c.未記錄&&!dStatusOf(docs[dId(b,today)])) c.未記錄--; const vis=sum(ds.map(d=>+d.visitors||0));
@@ -2574,7 +2610,7 @@ function bindSpend(){
   main.addEventListener('submit',ev=>{ if(S.mode==='spend'){ev.preventDefault();ev.stopImmediatePropagation();} },true);
   main.addEventListener('click',ev=>{
     const t=ev.target.closest('button'); if(!t) return;
-    if(S.mode==='home'&&t.dataset.home){ const k=t.dataset.home; if(k==='ledger'||k==='cash'||k==='crew'||k==='payroll'){S.mode=k;saveUI();render();scrollTo({top:0});} else openPick(k); return; }
+    if(S.mode==='home'&&t.dataset.home){ const k=t.dataset.home; if(k==='ledger'||k==='cash'||k==='crew'||k==='payroll'||k==='booking'){S.mode=k;saveUI();render();scrollTo({top:0});} else openPick(k); return; }
     if(S.mode!=='spend') return;
     if(t.dataset.sback) openPick('spend');
     else if(t.dataset.sshift) setSpendDay(addDays(SP.day,+t.dataset.sshift));
@@ -2713,6 +2749,7 @@ function render(){
   if(S.mode==='home'){ renderHome(); return; }
   if(S.mode==='crew'){ drawCrew(); return; }
   if(S.mode==='payroll'){ drawPay(); return; }
+  if(S.mode==='booking'){ drawBooking(); return; }
   if(S.mode==='cash'){ if(!S.loaded){ $('#main').innerHTML=`<div class="panel emptyb">正在讀取…</div>`; return; } drawCash(); return; }
   if(S.mode==='spend'){ if(!SP.branch){ S.mode='home'; return render(); } if(!S.loaded){ $('#main').innerHTML=`<div class="panel emptyb">正在讀取…</div>`; return; } drawSpend(); return; }
   if(daily&&!D.branch){ S.mode='home'; return render(); }
