@@ -822,6 +822,25 @@ table.opdays tr.na td{border-bottom:2px solid var(--rule)}
 .st-sec{margin-top:18px}.st-sec-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding-bottom:4px}.st-sec-h b{font-size:15px;letter-spacing:.08em;display:flex;align-items:center;gap:6px}.st-sec-h b i{width:10px;height:10px;border-radius:2px;display:inline-block}.st-sec-h b small{font-size:11.5px;color:#8a7a74;font-weight:400;letter-spacing:0}.st-sec-h span{font-size:12px;color:#8a7a74}
 .st-sec .st-tab{margin-top:4px}.st-subl{text-align:right!important;color:#8a7a74;font-size:12px;border-bottom:0!important}.st-sub{font-weight:700;font-size:15px;border-bottom:0!important}.st-tab tfoot td{border-top:1px solid #2d2220}
 .st-both{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px 16px;margin-top:8px;padding:10px 16px;border:1px dashed #d9cfc6;border-radius:8px;font-size:12.5px;color:#5d4f4a}.st-both b{color:var(--wine);font-size:15px}
+.pr-top{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px}
+.pr-tot{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px}.pr-tot span{color:var(--ink-3);font-size:13px}.pr-tot b{font-size:30px;color:var(--wine)}.pr-tot small{color:var(--ink-3);font-size:12.5px}
+.pr-save{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.pr-dirty{color:#a0672a;font-size:13px;font-weight:600}
+.pr-list{display:grid;gap:14px}
+.pr-card{background:var(--paper);border:1px solid var(--rule);border-radius:14px;padding:16px 18px;display:grid;gap:12px}
+.pr-card.paid{border-color:#b9cdb5;background:#fbfdf9}
+.pr-ch{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}.pr-ch>b{font-size:18px}.pr-net{margin-left:auto;font-size:14px;color:var(--ink-3)}.pr-net b{font-size:22px;color:var(--wine);margin-left:4px}
+.pr-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.pr-grid label{display:grid;gap:4px;min-width:0}.pr-grid label>span:first-child{font-size:12px;color:var(--ink-3);display:flex;align-items:center;gap:6px}
+.pr-in.off{opacity:.4}.chip.mini{padding:2px 8px;font-size:11px}
+.pr-x{display:grid;gap:8px}.pr-xr{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) 30px;gap:8px;align-items:center}.pr-addx{justify-self:start;font-size:13px;padding:6px 12px}
+.pr-foot{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px}.pr-acts{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.pr-paidtag{color:#4f7a52;font-weight:600;font-size:13px}
+.pr-miss{display:flex;flex-wrap:wrap;gap:8px}
+.pr-cfg summary{cursor:pointer;font-weight:700}.pr-cfgl{display:grid;gap:10px;margin-top:10px}
+.pr-ce{display:grid;grid-template-columns:minmax(80px,1fr) 80px repeat(4,minmax(70px,1fr)) auto;gap:8px;align-items:end}.pr-ce.off{opacity:.5}.pr-ce label{display:grid;gap:3px;min-width:0}.pr-ce label span{font-size:11.5px;color:var(--ink-3)}.pr-ce .tin{padding:8px 10px;min-width:0;width:100%;box-sizing:border-box}
+.pr-cfgf{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.ps-cols{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:18px}.ps-h{font-weight:700;letter-spacing:.12em;font-size:13px;padding-bottom:6px;border-bottom:2px solid #2d2220}
+.ps-tab td{padding:8px 4px}.ps-tab tr.ps-t td{font-weight:700;border-top:1px solid #2d2220;border-bottom:0}
+@media (max-width:640px){.pr-ce{grid-template-columns:1fr 1fr;padding:10px;border:1px solid var(--soft);border-radius:10px}.pr-grid{grid-template-columns:1fr 1fr}.ps-cols{grid-template-columns:1fr;gap:14px}.pr-net{margin-left:0;width:100%}}
 .cr-pst{justify-self:start;margin-top:6px;padding:5px 12px;font-size:12.5px}
 .stmt-ov{position:fixed;inset:0;z-index:300;background:rgba(40,25,22,.55);display:flex;flex-direction:column;overflow:auto;padding:env(safe-area-inset-top) 0 24px}
 .stmt-bar{position:sticky;top:0;z-index:1;display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 14px;background:var(--paper);border-bottom:1px solid var(--rule)}.stmt-sp{flex:1}
@@ -888,7 +907,7 @@ table.opdays tr.na td{border-bottom:2px solid var(--rule)}
       <div class="eyebrow">南風俱樂部 ・ 經營管理</div>
       <h1>旗跑・旗時 收支總覽</h1>
     </div>
-    <div class="hright"><div class="seg mode" role="group" aria-label="頁面" id="modeSeg"><button data-mode="home">首頁</button><button data-mode="daily">每日結帳</button><button data-mode="spend">當日支出</button><button data-mode="ledger">營業分析</button><button data-mode="cash" class="boss-only">現金結算</button><button data-mode="crew" hidden>造型・攝影</button></div><span class="who" id="who" hidden></span><button class="reload-btn" id="reloadBtn" type="button" aria-label="重新整理" title="重新整理（載入最新版本）"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button><span class="status" id="status"><i></i><span>連線中…</span></span></div>
+    <div class="hright"><div class="seg mode" role="group" aria-label="頁面" id="modeSeg"><button data-mode="home">首頁</button><button data-mode="daily">每日結帳</button><button data-mode="spend">當日支出</button><button data-mode="ledger">營業分析</button><button data-mode="cash" class="boss-only">現金結算</button><button data-mode="crew" hidden>造型・攝影</button><button data-mode="payroll" hidden>薪資</button></div><span class="who" id="who" hidden></span><button class="reload-btn" id="reloadBtn" type="button" aria-label="重新整理" title="重新整理（載入最新版本）"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button><span class="status" id="status"><i></i><span>連線中…</span></span></div>
   </header>
 
   <div class="controls">
@@ -1023,7 +1042,11 @@ const listOf=(b,m,k,y=YEAR)=>{ const raw=listOfRaw(b,m,k,y);
   if(k==='rev') return raw.length?raw:autoRev(b,y,m);
   if(k==='cust') return raw.length?raw:autoCust(b,y,m);
   if(k==='crew') return raw.length?raw:(typeof autoCrew==='function'?autoCrew(b,y,m):[]);
-  if(k==='exp'){ if(typeof autoCrew!=='function'||raw.some(e=>e.cat==='外包造型・攝影')) return raw; const a=autoCrew(b,y,m); return a.length?raw.concat(a.map(e=>({id:e.id.replace('crew','crewx'),cat:'外包造型・攝影',item:`${e.item}（${e.cat}）`,amt:e.amt,date:'',note:e.note,auto:true,crewAuto:true}))):raw; }
+  if(k==='pay') return raw.length?raw:(typeof autoPayroll==='function'?autoPayroll(b,y,m):[]);
+  if(k==='exp'){ if(typeof autoCrew!=='function') return raw; let out=raw;
+    if(!raw.some(e=>e.cat==='外包造型・攝影')){ const a=autoCrew(b,y,m); if(a.length) out=out.concat(a.map(e=>({id:e.id.replace('crew','crewx'),cat:'外包造型・攝影',item:`${e.item}（${e.cat}）`,amt:e.amt,date:'',note:e.note,auto:true,crewAuto:true}))); }
+    if(CATS[b].exp.includes('人事薪資')&&!raw.some(e=>e.cat==='人事薪資')){ const a=autoPayroll(b,y,m); if(a.length) out=out.concat(a.map(e=>({id:e.id.replace('pay','payx'),cat:'人事薪資',item:e.item,amt:e.amt,date:'',note:'薪資表',auto:true,crewAuto:true}))); }
+    return out; }
   if(k==='qty'){ const a=autoQty(b,y,m,raw); return a.length?raw.concat(a):raw; }
   return raw; };
 const tot=(b,m,k)=>sum(listOf(b,m,k).map(e=>+e.amt||0));
@@ -1117,7 +1140,7 @@ function bookHTML(b,m,kind,ro){
   const editable=!ro && S.canWrite!==false && S.db;
   const title=(S.branch==='all'&&!K.money)?`${B[b].short} ・ ${K.label}`:K.label;
   const head=K.nosum?`<span class="hint">依類別統計</span>`:`<span class="sum num">${fmt(total)}<small class="u"> ${K.unit}</small></span>`;
-  let h=`<section class="book" data-kind="${kind}"><div class="book-h"><div class="t"><h2>${title}</h2><span class="hint">${list.length} 筆${list.some(e=>e.crewAuto)?(list.every(e=>e.auto)?'・由攝影造型結案單自動計算':'・含攝影造型結案單'):list.length&&list.every(e=>e.auto)?'・由每日結帳自動計算':list.some(e=>e.auto)?'・含每日結帳來客':''}</span></div>${head}</div>`;
+  let h=`<section class="book" data-kind="${kind}"><div class="book-h"><div class="t"><h2>${title}</h2><span class="hint">${list.length} 筆${list.some(e=>e.crewAuto)?(list.every(e=>e.auto)?'・由結案單／薪資表自動計算':'・含結案單／薪資表'):list.length&&list.every(e=>e.auto)?'・由每日結帳自動計算':list.some(e=>e.auto)?'・含每日結帳來客':''}</span></div>${head}</div>`;
   if(!list.length) h+=`<div class="emptyb">${m} 月沒有${K.label}紀錄${editable?'，用下方按鈕新增第一筆':''}。</div>`;
   if(kind==='plat'&&list.length){ h+=platSummary(list)+`<details class="orders"${S.editing&&S.editing.kind==='plat'||S.confirmDel&&list.some(e=>e.id===S.confirmDel)?' open':''}><summary>訂單明細（${list.length} 筆）</summary>`; }
   for(const [c,items,ct] of groupBy(list,cats)){
@@ -1958,15 +1981,14 @@ function crewStmtHTML(k){
       <p class="st-note">如對明細有疑問，請於收到對帳單後 3 日內告知，謝謝您這個月的辛苦 🙏</p></div>
   </div>`;
 }
-function crewStmt(k){
-  const html=crewStmtHTML(k); if(!html) return; const p=crewPeopleAll()[k], [y,m]=CR.ym.split('-').map(Number);
-  const v=document.createElement('div'); v.className='stmt-ov'; v.innerHTML=`<div class="stmt-bar"><button class="btn" data-stclose>‹ 返回</button><span class="stmt-sp"></span><button class="btn" data-stcopy>複製文字</button><button class="btn" data-stimg>存成圖片</button><button class="btn primary" data-stprint>列印／存 PDF</button></div><div class="stmt-wrap">${html}</div>`;
+function crewStmt(k){ const html=crewStmtHTML(k); if(!html) return; const p=crewPeopleAll()[k], [y,m]=CR.ym.split('-').map(Number); openDocOv(html,`${p.person}-${y}年${m}月對帳單`,()=>crewCopy(k)); }
+function openDocOv(html,fname,onCopy){
+  const v=document.createElement('div'); v.className='stmt-ov'; v.innerHTML=`<div class="stmt-bar"><button class="btn" data-stclose>‹ 返回</button><span class="stmt-sp"></span>${onCopy?'<button class="btn" data-stcopy>複製文字</button>':''}<button class="btn" data-stimg>存成圖片</button><button class="btn primary" data-stprint>列印／存 PDF</button></div><div class="stmt-wrap">${html}</div>`;
   document.body.appendChild(v); document.body.classList.add('noscroll','stmt-on');
   const close=()=>{v.remove(); document.body.classList.remove('noscroll','stmt-on');};
-  const fname=`${p.person}-${y}年${m}月對帳單`;
   v.addEventListener('click',async ev=>{ const t=ev.target.closest('button'); if(!t) return;
     if(t.hasAttribute('data-stclose')) close();
-    else if(t.hasAttribute('data-stcopy')) crewCopy(k);
+    else if(t.hasAttribute('data-stcopy')) onCopy&&onCopy();
     else if(t.hasAttribute('data-stprint')){ const old=document.title; document.title=fname; window.print(); setTimeout(()=>document.title=old,500); }
     else if(t.hasAttribute('data-stimg')){ t.disabled=true; t.textContent='製作中…';
       try{ if(!window.html2canvas) await new Promise((r,j)=>{const sc=document.createElement('script'); sc.src='https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'; sc.onload=r; sc.onerror=j; document.head.appendChild(sc);});
@@ -1977,6 +1999,131 @@ function crewStmt(k){
       t.disabled=false; t.textContent='存成圖片'; }
   });
 }
+
+/* ---------- 薪資 ---------- */
+const PR={ym:todayStr().slice(0,7),draft:null,dirty:false,showCfg:false,cfgDraft:null,confirm:null};
+const prCfg=()=>((S.payroll||{}).cfg||{}).emps||[];
+const prDoc=ym=>(S.payroll||{})[ym]||null;
+const prGross=r=>r.type==='時薪'?Math.round((+r.rate||0)*(+r.hours||0)):(+r.base||0)+(r.fullOn===false?0:(+r.full||0))+(+r.duty||0);
+const prNet=r=>prGross(r)-(+r.ins||0)+(+r.allow||0)+sum((r.extras||[]).map(x=>+x.amt||0));
+const prRowFrom=(e,prev)=>{ const s=prev||e; return {name:e.name,type:s.type||e.type||'月薪',base:s.base??e.base??0,full:s.full??e.full??0,fullOn:true,duty:s.duty??e.duty??0,rate:s.rate??e.rate??0,hours:'',ins:s.ins??e.ins??0,allow:e.allow??0,extras:[],note:''}; };
+function prPrevRows(ym){ for(let i=1;i<=6;i++){ const d=prDoc(ymShift(ym,-i)); if(d&&d.rows) return d.rows; } return {}; }
+function prEnsureDraft(){
+  const ym=PR.ym; if(PR.draft&&PR.draft.ym===ym) return;
+  const d=prDoc(ym); PR.dirty=false;
+  PR.draft=d?{ym,exists:true,rows:JSON.parse(JSON.stringify(d.rows||{})),order:d.order||Object.keys(d.rows||{})}:null;
+}
+function prNewMonth(){ const ym=PR.ym, prev=prPrevRows(ym), rows={}, order=[];
+  prCfg().filter(e=>e.active!==false).forEach(e=>{ rows[e.id]=prRowFrom(e,prev[e.id]); order.push(e.id); });
+  PR.draft={ym,exists:false,rows,order}; PR.dirty=true; }
+const prIn=(id,k,v,ph,w)=>`<span class="din pr-in${w?' '+w:''}"><input data-pr="${id}" data-k="${k}" type="number" inputmode="numeric" value="${esc(v??'')}" placeholder="${ph||0}"><small>元</small></span>`;
+function prCardHTML(id,r){
+  const paid=r.paid, g=prGross(r), n=prNet(r);
+  return `<div class="pr-card ${paid?'paid':''}" data-prc="${id}">
+    <div class="pr-ch"><b>${esc(r.name)}</b><span class="chips">${['月薪','時薪'].map(t=>`<button type="button" class="chip ${r.type===t?'on':''}" data-prtype="${id}|${t}">${t}</button>`).join('')}</span>
+      <span class="pr-net num" id="prNet-${id}">實發 <b>${fmt(n)}</b></span></div>
+    <div class="pr-grid">
+      ${r.type==='時薪'?`<label><span>時薪</span>${prIn(id,'rate',r.rate)}</label><label><span>時數</span><span class="din pr-in"><input data-pr="${id}" data-k="hours" type="number" inputmode="decimal" step="0.5" value="${esc(r.hours??'')}" placeholder="0"><small>小時</small></span></label>`
+      :`<label><span>底薪</span>${prIn(id,'base',r.base)}</label>
+      <label><span>全勤 <button type="button" class="chip mini ${r.fullOn===false?'':'on'}" data-prfull="${id}">${r.fullOn===false?'沒有全勤':'有全勤'}</button></span>${prIn(id,'full',r.full,'',r.fullOn===false?'off':'')}</label>
+      <label><span>職務津貼</span>${prIn(id,'duty',r.duty)}</label>`}
+      <label><span>勞健保自付（扣）</span>${prIn(id,'ins',r.ins)}</label>
+      <label><span>補貼</span>${prIn(id,'allow',r.allow)}</label>
+    </div>
+    <div class="pr-x">${(r.extras||[]).map((x,i)=>`<div class="pr-xr"><input class="tin" data-prx="${id}|${i}" data-k="label" value="${esc(x.label||'')}" placeholder="項目，例：加班、機票、代購"><span class="din"><input data-prx="${id}|${i}" data-k="amt" type="number" inputmode="numeric" value="${esc(x.amt??'')}" placeholder="扣款請打負數"><small>元</small></span><button class="ibtn" data-prdelx="${id}|${i}" aria-label="刪除">✕</button></div>`).join('')}
+      <button class="btn pr-addx" data-praddx="${id}">＋ 其他加項／扣項</button></div>
+    <label class="dfield"><span class="fl">備註</span><input class="tin" data-pr="${id}" data-k="note" value="${esc(r.note||'')}" placeholder="例：APP補貼 250+74、伯虎支援 4/21"></label>
+    <div class="pr-foot"><span class="hint num" id="prSum-${id}">應發 ${fmt(g)}・扣勞健保 ${fmt(+r.ins||0)}・補貼與其他 ${fmt((+r.allow||0)+sum((r.extras||[]).map(x=>+x.amt||0)))}</span>
+      <span class="pr-acts">${paid?`<span class="pr-paidtag">✓ 已發放 ${esc(String(paid.at||'').slice(5,10).replace('-','/'))}</span>`:''}<button class="btn" data-prslip="${id}">薪資單</button><button class="btn ${paid?'':'primary'}" data-prpaid="${id}">${paid?'取消發放':'標記已發放'}</button><button class="btn ${PR.confirm===id?'danger':''}" data-prrm="${id}">${PR.confirm===id?'確定移除':'移除'}</button></span></div>
+  </div>`;
+}
+function prCfgHTML(){
+  const list=PR.cfgDraft||prCfg();
+  return `<details class="panel pr-cfg" ${PR.showCfg?'open':''} id="prCfg"><summary>👥 人員與預設薪資</summary>
+    <p class="hint">建立新月份薪資表時，會用這裡的預設值（若上個月有資料，會沿用上個月的金額）。</p>
+    <div class="pr-cfgl">${list.map((e,i)=>`<div class="pr-ce ${e.active===false?'off':''}">
+      <input class="tin" data-pe="${i}" data-k="name" value="${esc(e.name||'')}" placeholder="姓名">
+      <select class="tin" data-pe="${i}" data-k="type"><option ${e.type!=='時薪'?'selected':''}>月薪</option><option ${e.type==='時薪'?'selected':''}>時薪</option></select>
+      ${e.type==='時薪'?`<label><span>時薪</span><input class="tin" type="number" data-pe="${i}" data-k="rate" value="${esc(e.rate??'')}"></label>`:`<label><span>底薪</span><input class="tin" type="number" data-pe="${i}" data-k="base" value="${esc(e.base??'')}"></label><label><span>全勤</span><input class="tin" type="number" data-pe="${i}" data-k="full" value="${esc(e.full??'')}"></label><label><span>職務津貼</span><input class="tin" type="number" data-pe="${i}" data-k="duty" value="${esc(e.duty??'')}"></label>`}
+      <label><span>勞健保自付</span><input class="tin" type="number" data-pe="${i}" data-k="ins" value="${esc(e.ins??'')}"></label>
+      <button class="btn" data-peact="${i}">${e.active===false?'恢復':'停用'}</button></div>`).join('')}</div>
+    <div class="pr-cfgf"><button class="btn" data-peadd="1">＋ 新增人員</button>${PR.cfgDraft?'<button class="btn primary" data-pesave="1">儲存人員設定</button><button class="btn" data-pecancel="1">取消</button>':''}</div></details>`;
+}
+function drawPay(){
+  if(!W.name){ renderLogin(); return; }
+  if(!crewOK()){ $('#main').innerHTML=`<div class="panel emptyb">這個頁面只有${esc(BOSS)}和指定人員可以使用。</div>`; return; }
+  prEnsureDraft();
+  const ym=PR.ym, [y,m]=ym.split('-').map(Number), dr=PR.draft;
+  const ids=dr?dr.order.filter(id=>dr.rows[id]):[], tot=dr?sum(ids.map(id=>prNet(dr.rows[id]))):0, paidN=dr?ids.filter(id=>dr.rows[id].paid).length:0;
+  const missing=dr?prCfg().filter(e=>e.active!==false&&!dr.rows[e.id]):[];
+  $('#main').innerHTML=`<div class="sheet-top"><div class="st-l"><div><div class="st-name">薪資 <small>正職・時薪人員</small></div><div class="st-state">每月薪資計算、發放紀錄與薪資單</div></div></div></div>
+    <div class="cr-month"><button class="btn" data-prym="-1" aria-label="上個月">‹</button><b>${y} 年 ${m} 月</b><button class="btn" data-prym="1" aria-label="下個月">›</button></div>
+    ${dr?`<div class="panel pr-top"><div class="pr-tot"><span>${m} 月實發合計</span><b class="num">${fmt(tot)}</b><small>元・${ids.length} 人・已發放 ${paidN}／${ids.length}</small></div>
+        <div class="pr-save">${PR.dirty?'<span class="pr-dirty">● 尚未儲存</span>':dr.exists?'<span class="hint">✓ 已儲存</span>':''}<button class="btn primary" data-prsave="1" ${PR.dirty?'':'disabled'}>${dr.exists?'儲存修改':'建立薪資表'}</button>${PR.dirty&&dr.exists?'<button class="btn" data-prundo="1">放棄修改</button>':''}${!dr.exists?'<button class="btn" data-prundo="1">取消</button>':''}</div></div>
+      <div class="pr-list">${ids.map(id=>prCardHTML(id,dr.rows[id])).join('')}</div>
+      ${missing.length?`<div class="pr-miss">${missing.map(e=>`<button class="btn" data-pradd="${e.id}">＋ 加入 ${esc(e.name)}</button>`).join('')}</div>`:''}
+      <p class="hint">儲存後，實發金額會自動帶到「營業分析 → 師資・人事」與旗跑支出的「人事薪資」（那個月沒有手動填時）。</p>`
+    :`<div class="panel emptyb"><p>${m} 月還沒有薪資表。</p>${prCfg().length?`<button class="btn primary" data-prnew="1">建立 ${m} 月薪資表</button><p class="hint">會帶入每個人的底薪、全勤、職務津貼和勞健保，補貼和其他項目再自己填。</p>`:'<p class="hint">請先在下方「人員與預設薪資」新增人員。</p>'}</div>`}
+    ${prCfgHTML()}`;
+}
+function prRecalc(id){ const r=PR.draft.rows[id]; const n=$('#prNet-'+id); if(n) n.innerHTML=`實發 <b>${fmt(prNet(r))}</b>`; const s=$('#prSum-'+id); if(s) s.textContent=`應發 ${fmt(prGross(r))}・扣勞健保 ${fmt(+r.ins||0)}・補貼與其他 ${fmt((+r.allow||0)+sum((r.extras||[]).map(x=>+x.amt||0)))}`;
+  const tt=$('.pr-tot b'); if(tt) tt.textContent=fmt(sum(PR.draft.order.filter(i=>PR.draft.rows[i]).map(i=>prNet(PR.draft.rows[i]))));
+  if(!PR.dirty){ PR.dirty=true; const sv=$('.pr-save'); if(sv){ const b=sv.querySelector('[data-prsave]'); if(b) b.disabled=false; if(!sv.querySelector('.pr-dirty')) sv.insertAdjacentHTML('afterbegin','<span class="pr-dirty">● 尚未儲存</span>'); const ok=sv.querySelector('.hint'); if(ok) ok.remove(); } } }
+const prClean=r=>{ const o={...r}; ['base','full','duty','rate','ins','allow'].forEach(k=>o[k]=Math.round(+o[k]||0)); o.hours=o.hours===''||o.hours==null?'':+o.hours; o.extras=(o.extras||[]).filter(x=>x.label||+x.amt).map(x=>({label:(x.label||'').trim(),amt:Math.round(+x.amt||0)})); o.note=(o.note||'').trim(); o.gross=prGross(o); o.net=prNet(o); if(!o.paid) delete o.paid; return o; };
+async function prSave(msg){
+  const dr=PR.draft, rows={}; dr.order.filter(id=>dr.rows[id]).forEach(id=>rows[id]=prClean(dr.rows[id]));
+  const doc={month:dr.ym,rows,order:dr.order.filter(id=>dr.rows[id]),total:sum(Object.values(rows).map(r=>r.net)),by:W.name||'',updatedAt:new Date().toISOString()};
+  try{ await S.db.doc('payroll/'+dr.ym).set(doc); S.payroll={...(S.payroll||{}),[dr.ym]:doc}; PR.draft=null; PR.dirty=false; drawPay(); toast(msg||'薪資表已儲存'); return true; }
+  catch(e){ toast('儲存失敗，請稍後再試'); return false; }
+}
+async function prSaveCfg(){
+  const emps=(PR.cfgDraft||[]).filter(e=>(e.name||'').trim()).map(e=>({...e,name:e.name.trim(),base:Math.round(+e.base||0),full:Math.round(+e.full||0),duty:Math.round(+e.duty||0),rate:Math.round(+e.rate||0),ins:Math.round(+e.ins||0)}));
+  try{ await S.db.doc('payroll/cfg').set({emps,updatedAt:new Date().toISOString(),by:W.name||''}); S.payroll={...(S.payroll||{}),cfg:{emps}}; PR.cfgDraft=null; PR.showCfg=true; drawPay(); toast('人員設定已儲存'); }catch(e){ toast('儲存失敗'); }
+}
+function prSlipHTML(id){
+  const r=prClean(PR.draft.rows[id]), [y,m]=PR.ym.split('-').map(Number), line=(l,v,c)=>`<tr${c?` class="${c}"`:''}><td>${l}</td><td class="num">${v<0?'−':''}${fmt(Math.abs(v))}</td></tr>`;
+  const plus=r.type==='時薪'?[[`時薪 ${fmt(r.rate)} × ${r.hours||0} 小時`,r.gross]]:[['底薪',r.base],['全勤獎金',r.fullOn===false?0:r.full],['職務津貼',r.duty]];
+  const adds=[['補貼',r.allow]].concat(r.extras.filter(x=>x.amt>0).map(x=>[x.label||'其他',x.amt])).filter(x=>x[1]);
+  const minus=[['勞健保自付額',-r.ins]].concat(r.extras.filter(x=>x.amt<0).map(x=>[x.label||'其他扣款',x.amt])).filter(x=>x[1]);
+  return `<div class="stmt pslip" id="stmtDoc"><div class="st-head"><div><div class="st-brand">旗跑・旗時<small>南風俱樂部</small></div><div class="st-title">${y} 年 ${m} 月薪資單</div></div>
+    <div class="st-meta"><div><span>姓名</span><b>${esc(r.name)}</b></div><div><span>計薪方式</span><b>${esc(r.type)}</b></div><div><span>計薪期間</span><b class="num">${y}/${m}/1 – ${m}/${new Date(y,m,0).getDate()}</b></div></div></div>
+    <div class="ps-cols"><div><div class="ps-h">應發項目</div><table class="st-tab ps-tab">${plus.map(x=>line(...x)).join('')}${adds.map(x=>line(...x)).join('')}${line('應發合計',r.gross+sum(adds.map(x=>x[1])),'ps-t')}</table></div>
+      <div><div class="ps-h">應扣項目</div><table class="st-tab ps-tab">${minus.length?minus.map(x=>line(...x)).join(''):'<tr><td class="st-mute">無</td><td></td></tr>'}${line('應扣合計',sum(minus.map(x=>x[1])),'ps-t')}</table></div></div>
+    <div class="st-sum"><div class="st-sl">${r.note?`<span>備註：${esc(r.note)}</span>`:''}</div><div class="st-tot"><span>實發金額</span><b class="num">NT$ ${fmt(r.net)}</b></div></div>
+    <div class="st-foot"><div class="st-pay">${r.paid?`<span class="st-stamp">已發放</span><span>${esc(String(r.paid.at||'').slice(0,10).replace(/-/g,'/'))}・${esc(r.paid.by||'')}</span>`:'<span>尚未發放</span>'}</div>
+      <div class="st-sign"><div>員工簽收</div><div>店家確認</div></div><p class="st-note">薪資單內容請妥善保管，如有疑問請於 3 日內提出。</p></div></div>`;
+}
+function bindPay(){
+  const main=$('#main');
+  main.addEventListener('input',ev=>{ if(S.mode!=='payroll') return; const t=ev.target;
+    if(t.dataset.pr){ PR.draft.rows[t.dataset.pr][t.dataset.k]=t.value; prRecalc(t.dataset.pr); }
+    else if(t.dataset.prx){ const [id,i]=t.dataset.prx.split('|'); PR.draft.rows[id].extras[+i][t.dataset.k]=t.value; prRecalc(id); }
+    else if(t.dataset.pe!=null){ PR.cfgDraft??=JSON.parse(JSON.stringify(prCfg())); PR.cfgDraft[+t.dataset.pe][t.dataset.k]=t.value; if(!$('[data-pesave]')){ $('.pr-cfgf').insertAdjacentHTML('beforeend','<button class="btn primary" data-pesave="1">儲存人員設定</button><button class="btn" data-pecancel="1">取消</button>'); } } });
+  main.addEventListener('change',ev=>{ if(S.mode!=='payroll') return; const t=ev.target; if(t.dataset.pe!=null&&t.dataset.k==='type'){ PR.showCfg=true; drawPay(); } });
+  main.addEventListener('toggle',ev=>{ if(ev.target.id==='prCfg') PR.showCfg=ev.target.open; },true);
+  main.addEventListener('click',ev=>{ if(S.mode!=='payroll') return; const t=ev.target.closest('button'); if(!t) return; const d=t.dataset;
+    const leave=()=>!PR.dirty||!PR.draft||!PR.draft.exists&&!PR.dirty||confirm('這個月的修改還沒儲存，確定要離開嗎？');
+    if(d.prym){ if(PR.dirty&&!leave()) return; PR.ym=ymShift(PR.ym,+d.prym); PR.draft=null; PR.dirty=false; PR.confirm=null; drawPay(); }
+    else if(d.prnew){ prNewMonth(); drawPay(); }
+    else if(d.prsave) prSave();
+    else if(d.prundo){ PR.draft=null; PR.dirty=false; drawPay(); }
+    else if(d.prtype){ const [id,v]=d.prtype.split('|'); PR.draft.rows[id].type=v; PR.dirty=true; drawPay(); }
+    else if(d.prfull){ const r=PR.draft.rows[d.prfull]; r.fullOn=r.fullOn===false; PR.dirty=true; drawPay(); }
+    else if(d.praddx){ (PR.draft.rows[d.praddx].extras??=[]).push({label:'',amt:''}); PR.dirty=true; drawPay(); }
+    else if(d.prdelx){ const [id,i]=d.prdelx.split('|'); PR.draft.rows[id].extras.splice(+i,1); PR.dirty=true; drawPay(); }
+    else if(d.pradd){ const e=prCfg().find(x=>x.id===d.pradd); if(e){ PR.draft.rows[e.id]=prRowFrom(e,prPrevRows(PR.ym)[e.id]); PR.draft.order.push(e.id); PR.dirty=true; drawPay(); } }
+    else if(d.prrm){ if(PR.confirm!==d.prrm){ PR.confirm=d.prrm; drawPay(); return; } PR.confirm=null; delete PR.draft.rows[d.prrm]; PR.draft.order=PR.draft.order.filter(x=>x!==d.prrm); PR.dirty=true; drawPay(); }
+    else if(d.prpaid){ const r=PR.draft.rows[d.prpaid]; r.paid=r.paid?null:{at:new Date().toISOString(),by:W.name||''}; prSave(r.paid?`${r.name} 已標記發放`:'已取消發放'); }
+    else if(d.prslip){ const r=PR.draft.rows[d.prslip], [y,m]=PR.ym.split('-').map(Number); openDocOv(prSlipHTML(d.prslip),`${r.name}-${y}年${m}月薪資單`,null); }
+    else if(d.peadd){ PR.cfgDraft??=JSON.parse(JSON.stringify(prCfg())); PR.cfgDraft.push({id:'e'+uid(),name:'',type:'月薪',base:29500,full:2000,duty:0,rate:0,ins:0,active:true}); PR.showCfg=true; drawPay(); }
+    else if(d.peact){ PR.cfgDraft??=JSON.parse(JSON.stringify(prCfg())); const e=PR.cfgDraft[+d.peact]; e.active=e.active===false; PR.showCfg=true; drawPay(); }
+    else if(d.pesave) prSaveCfg();
+    else if(d.pecancel){ PR.cfgDraft=null; drawPay(); }
+  });
+}
+function autoPayroll(b,y,m){ if(b!=='qp') return []; const d=(S.payroll||{})[`${y}-${pad(m)}`]; if(!d||!d.rows) return [];
+  return Object.entries(d.rows).map(([id,r])=>({id:`auto-pay-${y}-${m}-${id}`,cat:r.type==='時薪'?'時薪人員':'正職',item:r.name,amt:r.net??prNet(r),note:'薪資表',auto:true})); }
+
 async function crewSave(){
   const dr=CR.draft; const err=t=>{const e=$('#crErr'); if(e) e.textContent=t;};
   if(!dr.date) return err('請選日期'); if(!dr.person.trim()) return err('請填人員名字');
@@ -2149,7 +2296,7 @@ const fsDec=d=>d&&typeof d.__json==='string'?JSON.parse(d.__json):d;
 async function importData(file){
   const set=t=>{IMP.msg=t; const m=$('#impMsg'); if(m) m.textContent=t;};
   try{
-    const j=JSON.parse(await file.text()); const cols=isBoss()?['months','daily','misc','settle','crewlog','crewpay']:['months','daily','misc','crewlog','crewpay'];
+    const j=JSON.parse(await file.text()); const cols=isBoss()?['months','daily','misc','settle','crewlog','crewpay','payroll']:['months','daily','misc','crewlog','crewpay','payroll'];
     const ops=[]; for(const c of cols) for(const [id,d] of Object.entries(j[c]||{})) ops.push([c,id,d]);
     const sm=Object.entries(j.status||{}); let sn=0;
     for(const [id,v] of sm){ const m=id.match(/^(qp|yl)-(\d{4}-\d{2}-\d{2})$/); if(!m) continue; const ref=FB.fs.doc('daily/'+id), cur=await ref.get();
@@ -2171,7 +2318,7 @@ async function importData(file){
 }
 async function exportData(){
   const out={_meta:{exportedAt:new Date().toISOString(),by:W.name}};
-  for(const c of ['months','daily','misc','settle','crewlog','crewpay']){ const s=await FB.fs.collection(c).get(); out[c]={}; s.docs.forEach(d=>out[c][d.id]=fsDec(d.data())); }
+  for(const c of ['months','daily','misc','settle','crewlog','crewpay','payroll']){ const s=await FB.fs.collection(c).get(); out[c]={}; s.docs.forEach(d=>out[c][d.id]=fsDec(d.data())); }
   const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(out)],{type:'application/json'})); a.download=`旗跑旗時-備份-${todayStr()}.json`; document.body.appendChild(a); a.click(); a.remove();
 }
 document.addEventListener('change',ev=>{ if(ev.target.id==='impFile'&&ev.target.files[0]) importData(ev.target.files[0]); });
@@ -2192,7 +2339,7 @@ const ICON0={
   spend:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>',
   ledger:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2 2 2 0 0 0 2 2h13"/><path d="M8 13l3-3 2 2 3-4"/></svg>'
 };
-const ICON=new Proxy(ICON0,{get:(o,k)=>o[k]||(k==='crew'?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>':k==='cash'?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="2"/><circle cx="12" cy="12" r="2.6"/><path d="M6 9.5v5M18 9.5v5"/></svg>':'')});
+const ICON=new Proxy(ICON0,{get:(o,k)=>o[k]||(k==='payroll'?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2.2"/><path d="M5.5 16.5c.6-1.7 2-2.6 3.5-2.6s2.9.9 3.5 2.6M14.5 10h4M14.5 13.5h3"/></svg>':k==='crew'?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>':k==='cash'?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="2"/><circle cx="12" cy="12" r="2.6"/><path d="M6 9.5v5M18 9.5v5"/></svg>':'')});
 function renderHome(){
   subCash();
   if(!W.name){ renderLogin(); return; }
@@ -2211,6 +2358,7 @@ function renderHome(){
       ${card('spend','當日支出','零用金、採購、雜支',sRow('qp')+sRow('yl'),'選擇分店記支出')}
       ${card('ledger','營業分析','每月收支・銷售・顧客・師資',lRow('qp')+lRow('yl'),'打開營業分析')}
       ${crewOK()?card('crew','造型・攝影結案','每月造型師、攝影師費用',['qp','yl'].map(b=>{const l=crewDocs(b,todayStr().slice(0,7));return `<li><i style="background:var(${B[b].color})"></i>${b==='qp'?'旗跑':'旗時'}<span>${todayStr().slice(5,7)*1} 月 ${l.length} 張・${fmt(sum(l.map(crewSettle)))} 元</span></li>`;}).join(''),'開始記錄'):''}
+      ${crewOK()?card('payroll','薪資','每月薪資計算與薪資單',(()=>{const ym=todayStr().slice(0,7), d=(S.payroll||{})[ym], pm=ymShift(ym,-1), dp=(S.payroll||{})[pm]; const li=(x,lab)=>x?`<li><i style="background:var(--accent)"></i>${lab}<span>${Object.keys(x.rows||{}).length} 人・${fmt(x.total||0)} 元${Object.values(x.rows||{}).every(r=>r.paid)?'・已發放':''}</span></li>`:`<li><i style="background:var(--rule)"></i>${lab}<span>尚未建立</span></li>`; return li(dp,`${+pm.slice(5)} 月`)+li(d,`${+ym.slice(5)} 月`);})(),'開始計算'):''}
       ${card('cash','現金結算',`營收現金・零用金（僅${BOSS}可完成結算）`,['qp','yl'].map(b=>{const l=lastSettle(b,'cash'),p=lastSettle(b,'petty');return `<li><i style="background:var(${B[b].color})"></i>${b==='qp'?'旗跑':'旗時'}<span>現金 ${l?md(l.date):'未結'}・零用金 ${p?md(p.date):'未結'}</span></li>`;}).join(''),isBoss()?'開始結算':'查看結算')}
     </div>
     ${adminHTML()}
@@ -2317,7 +2465,7 @@ function bindSpend(){
   main.addEventListener('submit',ev=>{ if(S.mode==='spend'){ev.preventDefault();ev.stopImmediatePropagation();} },true);
   main.addEventListener('click',ev=>{
     const t=ev.target.closest('button'); if(!t) return;
-    if(S.mode==='home'&&t.dataset.home){ const k=t.dataset.home; if(k==='ledger'||k==='cash'||k==='crew'){S.mode=k;saveUI();render();scrollTo({top:0});} else openPick(k); return; }
+    if(S.mode==='home'&&t.dataset.home){ const k=t.dataset.home; if(k==='ledger'||k==='cash'||k==='crew'||k==='payroll'){S.mode=k;saveUI();render();scrollTo({top:0});} else openPick(k); return; }
     if(S.mode!=='spend') return;
     if(t.dataset.sback) openPick('spend');
     else if(t.dataset.sshift) setSpendDay(addDays(SP.day,+t.dataset.sshift));
@@ -2436,13 +2584,14 @@ function bindCash(){
 /* ---------- render & events ---------- */
 function render(){
   document.querySelectorAll('#modeSeg button,#bnav button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.mode===S.mode));
-  { const cb=document.querySelector('#modeSeg button[data-mode="crew"]'); if(cb) cb.hidden=!(W.name&&crewOK()); }
+  ['crew','payroll'].forEach(k=>{ const cb=document.querySelector(`#modeSeg button[data-mode="${k}"]`); if(cb) cb.hidden=!(W.name&&crewOK()); });
   if(!W.name){ document.body.classList.add('locked'); ['#yearSeg','#branchSeg'].forEach(q=>$(q).hidden=true); document.querySelector('.controls2').hidden=true; document.querySelector('details.notes').hidden=true; renderLogin(); return; }
   document.body.classList.remove('locked');
   const daily=S.mode==='daily', led=S.mode==='ledger';
   $('#yearSeg').hidden=!led; $('#branchSeg').hidden=!led; document.querySelector('.controls2').hidden=!led; document.querySelector('details.notes').hidden=!led;
   if(S.mode==='home'){ renderHome(); return; }
   if(S.mode==='crew'){ drawCrew(); return; }
+  if(S.mode==='payroll'){ drawPay(); return; }
   if(S.mode==='cash'){ if(!S.loaded){ $('#main').innerHTML=`<div class="panel emptyb">正在讀取…</div>`; return; } drawCash(); return; }
   if(S.mode==='spend'){ if(!SP.branch){ S.mode='home'; return render(); } if(!S.loaded){ $('#main').innerHTML=`<div class="panel emptyb">正在讀取…</div>`; return; } drawSpend(); return; }
   if(daily&&!D.branch){ S.mode='home'; return render(); }
@@ -2469,7 +2618,7 @@ document.getElementById('reloadBtn')?.addEventListener('click',async()=>{
   try{ const r=await navigator.serviceWorker?.getRegistration(); await r?.update(); }catch(e){}
   location.reload();
 });
-bindDaily(); bindGuests(); bindCrew(); bindGL(); bindSpend(); bindLogin(); bindCash(); renderWho();
+bindDaily(); bindGuests(); bindCrew(); bindPay(); bindGL(); bindSpend(); bindLogin(); bindCash(); renderWho();
 document.querySelectorAll('.seg button[data-b]').forEach(b=>b.onclick=()=>{S.branch=b.dataset.b;S.editing=S.adding=S.confirmDel=null;saveUI();render();});
 
 $('#main').addEventListener('click',async ev=>{
@@ -2562,7 +2711,7 @@ document.addEventListener('click',ev=>{
 function showLoadErr(){ let el=$('#loadErr'); if(!el){ el=document.createElement('div'); el.id='loadErr'; el.className='load-err'; document.querySelector('.wrap')?.insertBefore(el,$('#main')); }
   el.innerHTML=S.loadErr?`⚠️ 讀取資料失敗（${esc(S.loadErr)}）。${S.loadErr==='permission-denied'?'這個帳號目前沒有讀取權限，請找妃妃確認人員名單，或登出後重新登入。':'請檢查網路後重新整理頁面。'} <button class="btn" onclick="location.reload()">重新整理</button>`:''; el.hidden=!S.loadErr; }
 function stopData(){ FB.unsubs.forEach(u=>{try{u()}catch(e){}}); FB.unsubs=[]; if(D.unsub){try{D.unsub()}catch(e){}} D.unsub=null; D.subMonth=null; if(C.unsub){try{C.unsub()}catch(e){}} C.unsub=null; C.subB=null;
-  S.db=null; S.docs={}; S.allDaily={}; S.loadErr=null; showLoadErr(); S.misc={}; S.settle={}; S.crewlog={}; S.crewpay={}; D.docs={}; C.daily={}; S.loaded=false; FB.dataOn=false; }
+  S.db=null; S.docs={}; S.allDaily={}; S.loadErr=null; showLoadErr(); S.misc={}; S.settle={}; S.crewlog={}; S.crewpay={}; S.payroll={}; D.docs={}; C.daily={}; S.loaded=false; FB.dataOn=false; }
 function startData(){
   if(FB.dataOn) return; FB.dataOn=true; const db=FB.fs; S.db=db; S.canWrite=true;
   setTimeout(()=>{ if(FB.dataOn&&!S.loaded){ S.loadErr='讀取超過 15 秒'; showLoadErr(); } },15000);
@@ -2577,6 +2726,7 @@ function startData(){
   FB.unsubs.push(db.collection('settle').onSnapshot(snap=>{ const o={}; snap.docs.forEach(d=>{o[d.id]=d.data();}); S.settle=o; if(S.mode==='cash') drawCash(); else if(S.mode==='spend') drawSpend(); else if(S.mode==='home') renderHome(); },()=>{}));
   FB.unsubs.push(db.collection('crewlog').onSnapshot(snap=>{ const o={}; snap.docs.forEach(d=>{o[d.id]=d.data();}); S.crewlog=o; if((S.mode==='crew'||S.mode==='daily')&&!CR.editing) crewRedraw(); else if(S.mode==='home') renderHome(); },()=>{}));
   FB.unsubs.push(db.collection('crewpay').onSnapshot(snap=>{ const o={}; snap.docs.forEach(d=>{o[d.id]=d.data();}); S.crewpay=o; if(S.mode==='crew'&&!CR.editing) drawCrew(); },()=>{}));
+  FB.unsubs.push(db.collection('payroll').onSnapshot(snap=>{ const o={}; snap.docs.forEach(d=>{o[d.id]=d.data();}); S.payroll=o; if(S.mode==='payroll'&&!PR.dirty){ PR.draft=null; drawPay(); } else if(S.mode==='home') renderHome(); },()=>{}));
   FB.unsubs.push(db.collection('misc').onSnapshot(snap=>{ const m={}; snap.docs.forEach(d=>{m[d.id]=fsDec(d.data());}); S.misc=m; S.miscLoaded=true; if(S.loaded&&!S.editing&&!S.adding&&S.mode==='ledger'&&S.month===0&&S.sec==='chan') render(); },()=>{}));
 }
 function applyAuth(){
