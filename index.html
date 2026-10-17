@@ -34,6 +34,7 @@ body::before{content:"";display:block;height:env(safe-area-inset-top,0px)}
 .adm-p small{font-size:12px;color:var(--ink-3)}
 .adm-p .chip{padding:3px 10px;font-size:12px}.chip.danger{color:var(--accent)}
 .adm-data{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.adm-bk{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:12px}.adm-bk .tin{flex:1;min-width:200px}.adm-bk .fl{font-weight:600;font-size:13px}
 .adm-data label.btn{cursor:pointer}
 </style>
 </head>
@@ -838,6 +839,13 @@ table.opdays tr.na td{border-bottom:2px solid var(--rule)}
 .pr-x{display:grid;gap:8px}.pr-xr{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) 30px;gap:8px;align-items:center}.pr-addx{justify-self:start;font-size:13px;padding:6px 12px}
 .pr-foot{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px}.pr-acts{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.pr-paidtag{color:#4f7a52;font-weight:600;font-size:13px}
 .hstats{background:var(--paper);border:1px solid var(--rule);border-radius:16px;padding:16px 18px;display:grid;gap:12px;margin-bottom:18px}
+.bk{margin-bottom:18px;display:grid;gap:4px}.bk .ph{flex-wrap:wrap;gap:8px}.bk .ph .chips{margin-left:auto}.bk-rl{font-size:16px}
+.bk-r{display:grid;grid-template-columns:46px 38px minmax(0,1fr) auto;gap:10px;align-items:center;padding:9px 2px;border-bottom:1px solid var(--soft)}
+.bk-r.note{opacity:.65}.bk-t{font-weight:700;font-size:14px}.bk-b{font-size:11px;color:#fff;background:var(--bc);border-radius:6px;text-align:center;padding:2px 0}
+.bk-m{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 8px;min-width:0}.bk-m b{font-size:15px}.bk-m em{font-style:normal;font-size:12.5px;color:var(--wine);font-weight:600}.bk-m small{flex-basis:100%;font-size:12px;color:var(--ink-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bk-s{font-size:11.5px;color:#a0672a;white-space:nowrap}.bk-s.ok{color:#4f7a52}
+.bk-d{font-weight:700;font-size:13px;color:var(--ink-2);margin-top:8px;padding:4px 2px;border-bottom:1px solid var(--rule)}
+.bk-u{font-size:11.5px;text-align:right}.hint.bad{color:var(--accent)}
 .hs-h{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:6px}.hs-h b{font-family:var(--f-display);font-size:17px;letter-spacing:.08em}.hs-h span{font-size:13px;color:var(--ink-3)}.hs-h em{font-style:normal;font-weight:700;color:var(--wine);font-size:17px}
 .hs-g{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .hs-c{border-radius:12px;background:var(--soft);padding:12px 14px;display:grid;gap:4px;border-left:4px solid var(--bc)}
@@ -2329,13 +2337,14 @@ const IMPORTERS=['郁雯'];  /* 除了老闆以外，可以匯入／下載備份
 const canImport=()=>isBoss()||(!!W.name&&IMPORTERS.includes(W.name));
 function adminHTML(){
   if(!canImport()) return '';
+  const bkRow=`<div class="adm-bk"><span class="fl">預約日曆連結</span><input class="tin" id="bkUrlIn" value="${esc(((S.misc||{}).booking||{}).url||'')}" placeholder="貼上 Apps Script 網址（含 ?k=…）"><button class="btn" data-bksave="1">儲存</button></div>`;
   const dataRow=`<div class="adm-data"><label class="btn">匯入備份資料<input type="file" accept="application/json,.json" id="impFile" hidden></label><button class="btn" data-export="1">下載備份</button><span class="hint" id="impMsg">${esc(IMP.msg||"從舊網頁搬資料、或定期備份用")}</span></div>`;
-  if(!isBoss()) return `<section class="panel adm"><div class="ph"><h2>資料管理</h2><span class="hint">匯入與備份</span></div>${dataRow}</section>`;
+  if(!isBoss()) return `<section class="panel adm"><div class="ph"><h2>資料管理</h2><span class="hint">匯入與備份</span></div>${dataRow}${bkRow}</section>`;
   return `<section class="panel adm"><div class="ph"><h2>人員與資料管理</h2><span class="hint">只有${esc(BOSS)}看得到人員管理</span></div>
     <div class="adm-people">${people().map(p=>`<div class="adm-p"><i>${esc(p.name.slice(0,1))}</i><b>${esc(p.name)}</b>${p.name===BOSS?'<small>老闆</small>':`<button class="chip" data-pwreset="${esc(p.name)}">重設密碼</button><button class="chip danger" data-staffdel="${esc(p.name)}">移除</button>`}</div>`).join('')}</div>
     <form class="lg-add" id="staffForm"><input id="staffNew" maxlength="12" placeholder="新增人員名字" autocomplete="off"><button class="btn primary" type="submit">新增人員</button></form>
     <div class="adm-data"><label class="btn">匯入備份資料<input type="file" accept="application/json,.json" id="impFile" hidden></label><button class="btn" data-export="1">下載備份</button><span class="hint" id="impMsg">${esc(IMP.msg||"從舊網頁搬資料、或定期備份用")}</span></div>
-  </section>`;
+  ${bkRow}</section>`;
 }
 const IMP={msg:''};
 /* Firestore 不支援「陣列裡面再放陣列」，這種資料改存成文字 */
@@ -2373,6 +2382,10 @@ async function exportData(){
 document.addEventListener('change',ev=>{ if(ev.target.id==='impFile'&&ev.target.files[0]) importData(ev.target.files[0]); });
 document.addEventListener('click',ev=>{ const t=ev.target.closest('[data-export]'); if(t) exportData().catch(()=>toast('備份失敗')); });
 
+document.addEventListener('click',async ev=>{ const t=ev.target.closest('[data-bksave]'); if(!t) return; const v=($('#bkUrlIn')||{}).value||'';
+  const url=v.trim(); if(url&&!/^https:\/\/script\.google(usercontent)?\.com\//.test(url)){ toast('連結看起來不對，請貼 script.google.com 開頭的網址'); return; }
+  try{ await FB.fs.doc('misc/booking').set({url,by:W.name||'',at:new Date().toISOString()}); S.misc={...(S.misc||{}),booking:{url}}; BK.data=null; BK.err=''; BK.at=0; toast(url?'已連結預約日曆':'已移除預約日曆連結'); renderHome(); }catch(e){ toast('儲存失敗'); } });
+
 
 /* ---------- 首頁 & 當日支出 ---------- */
 const SP={branch:null, day:todayStr(), cat:'', pay:'零用金', draft:{}, confirmDel:null};
@@ -2389,6 +2402,38 @@ const ICON0={
   ledger:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2 2 2 0 0 0 2 2h13"/><path d="M8 13l3-3 2 2 3-4"/></svg>'
 };
 const ICON=new Proxy(ICON0,{get:(o,k)=>o[k]||(k==='payroll'?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2.2"/><path d="M5.5 16.5c.6-1.7 2-2.6 3.5-2.6s2.9.9 3.5 2.6M14.5 10h4M14.5 13.5h3"/></svg>':k==='crew'?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>':k==='cash'?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="2"/><circle cx="12" cy="12" r="2.6"/><path d="M6 9.5v5M18 9.5v5"/></svg>':'')});
+/* ---------- 近期預約（Google 日曆） ---------- */
+const BK={data:null,at:0,loading:false,err:'',tab:'today'};
+const bkURL=()=>((S.misc||{}).booking||{}).url||'';
+function bkLoad(force){
+  const url=bkURL(); if(!url||BK.loading) return; if(!force&&(BK.data||BK.err)&&Date.now()-BK.at<5*60e3) return;
+  BK.loading=true; BK.err='';
+  fetch(url+(url.includes('?')?'&':'?')+'days=14',{cache:'no-store'}).then(r=>r.json()).then(j=>{ if(j.error) throw new Error(j.error==='unauthorized'?'通關密碼不對':j.error); BK.data=j; })
+    .catch(e=>{ BK.err=(e&&e.message)||'讀取失敗'; }).finally(()=>{ BK.at=Date.now(); BK.loading=false; const el=$('#bkPanel'); if(S.mode==='home'&&el) el.outerHTML=bookingsHTML(); });
+}
+const bkDay=iso=>new Date(iso).toLocaleDateString('sv',{timeZone:'Asia/Taipei'});
+const bkTime=iso=>new Date(iso).toLocaleTimeString('en-GB',{timeZone:'Asia/Taipei',hour:'2-digit',minute:'2-digit',hour12:false});
+function bookingsHTML(){
+  if(!bkURL()) return (typeof canImport==='function'&&canImport())?`<div class="panel bk" id="bkPanel"><div class="ph"><h2>近期預約</h2><span class="hint">尚未連結 Google 日曆</span></div><p class="hint">在首頁下方「資料管理」貼上預約日曆連結後，這裡就會顯示兩館的預約。</p></div>`:'';
+  bkLoad(false);
+  const t=todayStr(), tm=addDays(t,1), w7=addDays(t,6), rng={today:[t,t],tmr:[tm,tm],week:[t,w7]}[BK.tab];
+  const evs=(BK.data&&BK.data.events)||[];
+  const sDay=e=>bkDay(e.start), eDay=e=>e.allDay?addDays(bkDay(e.end),-1):bkDay(e.start);
+  const hit=(e,[a,z])=>sDay(e)<=z&&eDay(e)>=a;
+  const list=evs.filter(e=>hit(e,rng));
+  const cnt=k=>evs.filter(e=>e.kind==='booking'&&hit(e,{today:[t,t],tmr:[tm,tm],week:[t,w7]}[k])).length;
+  const byDay={}; list.forEach(e=>{ const d=sDay(e)<rng[0]?rng[0]:sDay(e); (byDay[d]??=[]).push(e); });
+  const row=e=>`<div class="bk-r ${e.kind==='note'?'note':''}" style="--bc:var(${B[e.branch].color})"><span class="bk-t num">${e.allDay?'全天':bkTime(e.start)}</span><span class="bk-b">${e.branch==='qp'?'旗跑':'旗時'}</span>
+    <span class="bk-m">${e.kind==='booking'?`<b>${esc(e.name||'—')}</b>${e.people?`<em>${esc(e.people)} 人</em>`:''}<small>${esc(e.item||'')}</small>`:`<b>${esc(e.title)}</b>`}</span>${e.status?`<span class="bk-s ${/已付款|完成/.test(e.status)&&!/訂金/.test(e.status)?'ok':''}">${esc(e.status)}</span>`:'<span></span>'}</div>`;
+  const days=Object.keys(byDay).sort();
+  return `<div class="panel bk" id="bkPanel"><div class="ph"><h2>近期預約</h2><span class="chips">${[['today','今天'],['tmr','明天'],['week','7 天']].map(([k,l])=>`<button type="button" class="chip ${BK.tab===k?'on':''}" data-bktab="${k}">${l}・${cnt(k)}</button>`).join('')}</span><button class="ibtn bk-rl" data-bkreload="1" aria-label="重新讀取">↻</button></div>
+    ${BK.err?`<p class="hint bad">讀取預約失敗：${esc(BK.err)}</p>`:''}
+    ${!BK.data?`<p class="hint">${BK.loading?'正在讀取 Google 日曆…':''}</p>`:days.length?days.map(d=>`${BK.tab==='week'?`<div class="bk-d">${+d.slice(5,7)}/${+d.slice(8)}（${wk(d)}）</div>`:''}${byDay[d].map(row).join('')}`).join(''):`<p class="hint">${BK.tab==='today'?'今天':BK.tab==='tmr'?'明天':'這 7 天'}沒有預約。</p>`}
+    ${BK.data?`<p class="hint bk-u">${bkTime(BK.data.updated)} 更新・資料來自旗跑、旗時 Google 日曆</p>`:''}</div>`;
+}
+document.addEventListener('click',ev=>{ const t=ev.target.closest('[data-bktab],[data-bkreload]'); if(!t||S.mode!=='home') return;
+  if(t.dataset.bktab) BK.tab=t.dataset.bktab; else bkLoad(true);
+  const el=$('#bkPanel'); if(el) el.outerHTML=bookingsHTML(); });
 function homeStatsHTML(today){
   const ym=today.slice(0,7), m=+ym.slice(5), docs={...(S.allDaily||{}),...D.docs};
   const one=b=>{ const ds=Object.values(docs).filter(d=>d&&d.branch===b&&String(d.date||'').startsWith(ym)&&dStatusOf(d)==='營業'), rev=sum(ds.map(d=>+d.revenue||0)), c=statusCount(b,ym,docs); if(c.未記錄&&!dStatusOf(docs[dId(b,today)])) c.未記錄--; const vis=sum(ds.map(d=>+d.visitors||0));
@@ -2414,6 +2459,7 @@ function renderHome(){
   $('#main').innerHTML=`<section class="home">
     <div class="home-h"><div class="home-date">${+today.slice(5,7)} 月 ${+today.slice(8)} 日・星期${wk(today)}</div><h2>今天要做什麼？</h2></div>
     ${homeStatsHTML(today)}
+    ${bookingsHTML()}
     <div class="hcards">
       ${card('daily','每日結帳','營收、來客、收款方式',dRow('qp')+dRow('yl'),'選擇分店結帳')}
       ${card('spend','當日支出','零用金、採購、雜支',sRow('qp')+sRow('yl'),'選擇分店記支出')}
@@ -2800,7 +2846,7 @@ function startData(){
   FB.unsubs.push(db.collection('crewlog').onSnapshot(snap=>{ const o={}; snap.docs.forEach(d=>{o[d.id]=d.data();}); S.crewlog=o; if((S.mode==='crew'||S.mode==='daily')&&!CR.editing) crewRedraw(); else if(S.mode==='home') renderHome(); },()=>{}));
   FB.unsubs.push(db.collection('crewpay').onSnapshot(snap=>{ const o={}; snap.docs.forEach(d=>{o[d.id]=d.data();}); S.crewpay=o; if(S.mode==='crew'&&!CR.editing) drawCrew(); },()=>{}));
   FB.unsubs.push(db.collection('payroll').onSnapshot(snap=>{ const o={}; snap.docs.forEach(d=>{o[d.id]=d.data();}); S.payroll=o; if(S.mode==='payroll'&&!PR.dirty){ PR.draft=null; drawPay(); } else if(S.mode==='home') renderHome(); },()=>{}));
-  FB.unsubs.push(db.collection('misc').onSnapshot(snap=>{ const m={}; snap.docs.forEach(d=>{m[d.id]=fsDec(d.data());}); S.misc=m; S.miscLoaded=true; if(S.loaded&&!S.editing&&!S.adding&&S.mode==='ledger'&&S.month===0&&S.sec==='chan') render(); },()=>{}));
+  FB.unsubs.push(db.collection('misc').onSnapshot(snap=>{ const m={}; snap.docs.forEach(d=>{m[d.id]=fsDec(d.data());}); S.misc=m; S.miscLoaded=true; if(S.mode==='home'&&m.booking&&m.booking.url&&!BK.data&&!BK.loading) renderHome(); if(S.loaded&&!S.editing&&!S.adding&&S.mode==='ledger'&&S.month===0&&S.sec==='chan') render(); },()=>{}));
 }
 function applyAuth(){
   const u=FB.auth&&FB.auth.currentUser;
