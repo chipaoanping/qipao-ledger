@@ -818,6 +818,10 @@ table.opdays tr.na td{border-bottom:2px solid var(--rule)}
 .cr-min{width:90px;display:inline-block;padding:6px 8px;margin-left:4px}
 .cr-act{display:flex;gap:8px}.btn.danger{color:#fff;background:var(--accent);border-color:var(--accent)}
 .cr-form{display:grid;gap:12px}.cr-pf{display:grid;gap:8px}
+.cr-brk{display:flex;flex-wrap:wrap;gap:2px 0;align-items:center}.cr-brk i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:4px}
+.st-sec{margin-top:18px}.st-sec-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding-bottom:4px}.st-sec-h b{font-size:15px;letter-spacing:.08em;display:flex;align-items:center;gap:6px}.st-sec-h b i{width:10px;height:10px;border-radius:2px;display:inline-block}.st-sec-h b small{font-size:11.5px;color:#8a7a74;font-weight:400;letter-spacing:0}.st-sec-h span{font-size:12px;color:#8a7a74}
+.st-sec .st-tab{margin-top:4px}.st-subl{text-align:right!important;color:#8a7a74;font-size:12px;border-bottom:0!important}.st-sub{font-weight:700;font-size:15px;border-bottom:0!important}.st-tab tfoot td{border-top:1px solid #2d2220}
+.st-both{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px 16px;margin-top:8px;padding:10px 16px;border:1px dashed #d9cfc6;border-radius:8px;font-size:12.5px;color:#5d4f4a}.st-both b{color:var(--wine);font-size:15px}
 .cr-pst{justify-self:start;margin-top:6px;padding:5px 12px;font-size:12.5px}
 .stmt-ov{position:fixed;inset:0;z-index:300;background:rgba(40,25,22,.55);display:flex;flex-direction:column;overflow:auto;padding:env(safe-area-inset-top) 0 24px}
 .stmt-bar{position:sticky;top:0;z-index:1;display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 14px;background:var(--paper);border-bottom:1px solid var(--rule)}.stmt-sp{flex:1}
@@ -1889,69 +1893,77 @@ function drawCrew(){
   const by={}; list.forEach(d=>{const k=d.role+'|'+(crewName(d.person)||'—'); (by[k]??={role:d.role,person:crewName(d.person)||'—',days:0,jobs:0,sub:0,fin:0}); by[k].days++; by[k].jobs+=(d.rows||[]).filter(r=>r.item||r.customer).length; by[k].sub+=sum((d.rows||[]).map(r=>+r.amt||0)); by[k].fin+=crewSettle(d);});
   Object.entries(by).forEach(([k,v])=>{v.key=k; v.sheets=list.filter(d=>d.role+'|'+(crewName(d.person)||'—')===k);});
   const ppl=Object.values(by).sort((a,c)=>c.fin-a.fin), tot=sum(ppl.map(p=>p.fin));
-  const pay=((S.crewpay||{})[`${b}-${ym}`]||{}).people||{}, paidOf=p=>pay[p.key];
-  const paidTot=sum(ppl.map(p=>paidOf(p)?+paidOf(p).amt||0:0)), unpaid=ppl.filter(p=>!paidOf(p)||+paidOf(p).amt!==p.fin);
+  const pay=crewPayOf(ym), all=crewPeopleAll(ym), paidOf=p=>pay[p.key], allFin=p=>(all[p.key]||{}).fin||0;
+  const unpaid=Object.values(all).filter(p=>!pay[p.key]||+pay[p.key].amt!==p.fin);
   const f=FEES[b];
   $('#main').innerHTML=`<div class="sheet-top"><div class="st-l"><div><div class="st-name">造型・攝影結案 <small>師資費用</small></div><div class="st-state">每位造型師、攝影師每天一張結案單</div></div></div>
       <div class="seg cs-seg">${['qp','yl'].map(x=>`<button data-crb="${x}" aria-pressed="${x===b}"><i class="sw" style="background:var(${B[x].color})"></i>${x==='qp'?'旗跑':'旗時'}</button>`).join('')}</div></div>
     <div class="cr-month"><button class="btn" data-crym="-1" aria-label="上個月">‹</button><b>${y} 年 ${m} 月</b><button class="btn" data-crym="1" aria-label="下個月">›</button></div>
-    <div class="panel"><div class="ph"><h2>${m} 月應付費用</h2><span class="hint num">合計 ${fmt(tot)} 元・${list.length} 張結案單</span>${ppl.length?`<button class="btn ${CR.settle?'':'primary'} cr-setbtn" data-crsettle="1">${CR.settle?'收起結算':unpaid.length?'當月結算':'✓ 已全部結清'}</button>`:''}</div>
-      ${ppl.length?`<div class="cr-ppl">${ppl.map(p=>{const pd=paidOf(p);return `<div class="cr-p ${pd?(+pd.amt===p.fin?'paid':'chg'):''}"><span class="cr-role">${esc(p.role)}師</span><b>${esc(p.person)}</b><span class="num">${p.days} 天・${p.jobs} 件</span><em class="num">${fmt(p.fin)}</em>${p.fin!==p.sub?`<small class="num">項目小計 ${fmt(p.sub)}</small>`:''}${pd?`<span class="cr-paid">${+pd.amt===p.fin?'✓ 已結清':`已結清 ${fmt(+pd.amt)}，之後有變動`}</span>`:''}<button class="btn cr-pst" data-crstmt="${esc(p.key)}">對帳單</button></div>`;}).join('')}</div>`:'<p class="hint">這個月還沒有結案單。</p>'}
-      ${CR.settle&&ppl.length?crewSettleHTML(b,ym,ppl,pay,tot,paidTot):''}
+    <div class="panel"><div class="ph"><h2>${m} 月應付費用</h2><span class="hint num">合計 ${fmt(tot)} 元・${list.length} 張結案單</span>${Object.keys(all).length?`<button class="btn ${CR.settle?'':'primary'} cr-setbtn" data-crsettle="1">${CR.settle?'收起結算':unpaid.length?'當月結算（兩館）':'✓ 兩館已全部結清'}</button>`:''}</div>
+      ${ppl.length?`<div class="cr-ppl">${ppl.map(p=>{const pd=paidOf(p);return `<div class="cr-p ${pd?(+pd.amt===allFin(p)?'paid':'chg'):''}"><span class="cr-role">${esc(p.role)}師</span><b>${esc(p.person)}</b><span class="num">${p.days} 天・${p.jobs} 件</span><em class="num">${fmt(p.fin)}</em>${p.fin!==p.sub?`<small class="num">項目小計 ${fmt(p.sub)}</small>`:''}${pd?`<span class="cr-paid">${+pd.amt===allFin(p)?'✓ 已結清（兩館合併）':`兩館結清 ${fmt(+pd.amt)}，之後有變動`}</span>`:''}<button class="btn cr-pst" data-crstmt="${esc(p.key)}">對帳單</button></div>`;}).join('')}</div>`:'<p class="hint">這個月還沒有結案單。</p>'}
+      ${CR.settle&&Object.keys(all).length?crewSettleHTML(ym,all,pay):''}
       <p class="hint">這些金額會自動帶到「營業分析 → 師資・人事」（那個月沒有手動填師資費用時）。</p></div>
     ${CR.editing==='new'?crewFormHTML():`<button class="btn primary cr-new" data-crnew="1">＋ 新增結案單</button>`}
     <div class="cr-list">${list.map(d=>CR.editing===d.id?crewFormHTML():crewSheetHTML(d)).join('')}</div>
     <details class="panel cr-ref"><summary>💡 ${b==='qp'?'旗跑':'旗時'}費用參考表</summary><div class="two">${['攝影','造型'].map(r=>`<div><div class="rk-t">${r}師</div><table class="plain">${f[r].items.concat(f[r].extras).map(([n,a])=>`<tr><td>${esc(n)}</td><td class="num">${fmt(a)}</td></tr>`).join('')}${f[r].minimum?`<tr><td>每日保底</td><td class="num">${fmt(f[r].minimum)}</td></tr>`:''}</table></div>`).join('')}</div><p class="hint">選項目時會自動帶入參考金額，可以再手動改。</p></details>`;
 }
-function crewSettleHTML(b,ym,ppl,pay,tot,paidTot){
-  const [y,m]=ym.split('-').map(Number);
-  return `<div class="cr-set"><div class="cr-set-h"><b>${y} 年 ${m} 月${b==='qp'?'旗跑':'旗時'}師資結算</b><span class="num">已結清 ${fmt(paidTot)}／應付 ${fmt(tot)}・未結清 <em>${fmt(tot-paidTot)}</em></span></div>
+const crewPayOf=ym=>(((S.crewpay||{})[`all-${ym}`]||{}).people)||{};
+const BNM=x=>x==='qp'?'旗跑':'旗時';
+function crewSettleHTML(ym,all,pay){
+  const [y,m]=ym.split('-').map(Number), ppl=Object.values(all).sort((a,c)=>c.fin-a.fin), tot=sum(ppl.map(p=>p.fin)), paidTot=sum(ppl.map(p=>pay[p.key]?+pay[p.key].amt||0:0));
+  return `<div class="cr-set"><div class="cr-set-h"><b>${y} 年 ${m} 月師資結算・兩館合併</b><span class="num">已結清 ${fmt(paidTot)}／應付 ${fmt(tot)}・未結清 <em>${fmt(tot-paidTot)}</em></span></div>
     ${ppl.map(p=>{const pd=pay[p.key], same=pd&&+pd.amt===p.fin; return `<div class="cr-sr ${same?'ok':''}">
-      <div class="cr-sr-n"><b>${esc(p.person)}</b><small>${esc(p.role)}師・${p.days} 天・${p.jobs} 件</small></div>
+      <div class="cr-sr-n"><b>${esc(p.person)}</b><small>${esc(p.role)}師・${p.days} 天</small><small class="cr-brk">${['qp','yl'].filter(x=>p[x]).map(x=>`<i style="background:var(${B[x].color})"></i>${BNM(x)} ${fmt(p[x].fin)}`).join('　')}</small></div>
       <div class="cr-sr-a num">${fmt(p.fin)}<small>元</small></div>
       <div class="cr-sr-s">${pd?`<span class="${same?'ok':'warn'}">${same?'✓ 已結清':`⚠ 結清 ${fmt(+pd.amt)} 後金額有變動，差 ${fmt(p.fin-(+pd.amt))}`}</span><small>${esc(String(pd.at||'').slice(5,10).replace('-','/'))}・${esc(pd.by||'')}</small>`:'<span class="hint">未結清</span>'}</div>
       <div class="cr-sr-b"><button class="btn" data-crstmt="${esc(p.key)}">對帳單</button>${same?`<button class="btn" data-crunpay="${esc(p.key)}">取消結清</button>`:`<button class="btn primary" data-crpay="${esc(p.key)}">${pd?'重新結清':'結清'}</button>`}</div>
     </div>`;}).join('')}
-    <div class="cr-set-f">${ppl.some(p=>!pay[p.key]||+pay[p.key].amt!==p.fin)?`<button class="btn primary" data-crpayall="1">全部結清（${fmt(tot-sum(ppl.filter(p=>pay[p.key]&&+pay[p.key].amt===p.fin).map(p=>p.fin)))} 元）</button>`:'<span class="ok">✓ 這個月已經全部結清</span>'}<span class="hint">結清只是記錄已付款，不會改動結案單。</span></div></div>`;
+    <div class="cr-set-f">${ppl.some(p=>!pay[p.key]||+pay[p.key].amt!==p.fin)?`<button class="btn primary" data-crpayall="1">全部結清（${fmt(tot-sum(ppl.filter(p=>pay[p.key]&&+pay[p.key].amt===p.fin).map(p=>p.fin)))} 元）</button>`:'<span class="ok">✓ 這個月兩館已經全部結清</span>'}<span class="hint">兩館金額合併付款，對帳單一人一張、內含兩館明細。結清只是記錄已付款，不會改動結案單。</span></div></div>`;
 }
-function crewPeople(){ const b=CR.branch, ym=CR.ym, list=crewDocs(b,ym), by={};
-  list.forEach(d=>{const k=d.role+'|'+(crewName(d.person)||'—'); (by[k]??={key:k,role:d.role,person:crewName(d.person)||'—',days:0,fin:0,sheets:[]}); by[k].days++; by[k].fin+=crewSettle(d); by[k].sheets.push(d);}); return by; }
+function crewPeople(b=CR.branch,ym=CR.ym){ const list=crewDocs(b,ym), by={};
+  list.forEach(d=>{const k=d.role+'|'+(crewName(d.person)||'—'); (by[k]??={key:k,role:d.role,person:crewName(d.person)||'—',days:0,fin:0,jobs:0,sheets:[]}); by[k].days++; by[k].fin+=crewSettle(d); by[k].jobs+=(d.rows||[]).filter(r=>r.item||r.customer).length; by[k].sheets.push(d);}); return by; }
+function crewPeopleAll(ym=CR.ym){ const out={}; ['qp','yl'].forEach(b=>Object.entries(crewPeople(b,ym)).forEach(([k,v])=>{ (out[k]??={key:k,role:v.role,person:v.person,days:0,fin:0}); out[k][b]=v; out[k].days+=v.days; out[k].fin+=v.fin; })); return out; }
 async function crewPay(keys,undo){
-  const b=CR.branch, ym=CR.ym, id=`${b}-${ym}`, by=crewPeople(), cur=((S.crewpay||{})[id])||{branch:b,month:ym,people:{}}, people={...(cur.people||{})};
-  keys.forEach(k=>{ if(undo) delete people[k]; else if(by[k]) people[k]={amt:by[k].fin,days:by[k].days,at:new Date().toISOString(),by:W.name||''}; });
-  const doc={branch:b,month:ym,people,updatedAt:new Date().toISOString()};
+  const ym=CR.ym, id=`all-${ym}`, by=crewPeopleAll(ym), cur=((S.crewpay||{})[id])||{}, people={...(cur.people||{})};
+  keys.forEach(k=>{ if(undo) delete people[k]; else if(by[k]) people[k]={amt:by[k].fin,days:by[k].days,qp:by[k].qp?by[k].qp.fin:0,yl:by[k].yl?by[k].yl.fin:0,at:new Date().toISOString(),by:W.name||''}; });
+  const doc={branch:'all',month:ym,people,updatedAt:new Date().toISOString()};
   try{ await S.db.doc('crewpay/'+id).set(doc); S.crewpay={...(S.crewpay||{}),[id]:doc}; drawCrew(); toast(undo?'已取消結清':'已記錄結清'); }catch(e){ toast('儲存失敗，請稍後再試'); }
 }
-function crewCopy(k){ const p=crewPeople()[k]; if(!p) return; const [y,m]=CR.ym.split('-').map(Number);
-  const lines=[`${y}年${m}月 ${CR.branch==='qp'?'旗跑':'旗時'} ${p.person} ${p.role}師費用`].concat(p.sheets.map(d=>{const sub=sum((d.rows||[]).map(r=>+r.amt||0)), fin=crewSettle(d); return `${+d.date.slice(5,7)}/${+d.date.slice(8)}（${wk(d.date)}）${(d.rows||[]).filter(r=>r.customer||r.item).map(r=>`${r.customer||''}${r.item?' '+r.item:''}`).join('、')||'無拍攝'}　${fmt(fin)}${fin>sub?'（保底）':''}`;}),[`共 ${p.days} 天，合計 ${fmt(p.fin)} 元`]);
+function crewCopy(k){ const a=crewPeopleAll()[k]; if(!a) return; const [y,m]=CR.ym.split('-').map(Number);
+  const lines=[`${y}年${m}月 ${a.person} ${a.role}師費用`];
+  ['qp','yl'].filter(x=>a[x]).forEach(x=>{ const p=a[x]; lines.push('',`【${BNM(x)}】`); p.sheets.slice().sort((q,w)=>q.date<w.date?-1:1).forEach(d=>{const sub=sum((d.rows||[]).map(r=>+r.amt||0)), fin=crewSettle(d); lines.push(`${+d.date.slice(5,7)}/${+d.date.slice(8)}（${wk(d.date)}）${(d.rows||[]).filter(r=>r.customer||r.item).map(r=>`${r.customer||''}${r.item?' '+r.item:''}`).join('、')||'無拍攝'}　${fmt(fin)}${fin>sub?'（保底）':''}`);}); lines.push(`${BNM(x)}小計 ${p.days} 天 ${fmt(p.fin)} 元`); });
+  lines.push('',`兩館合計 ${a.days} 天，共 ${fmt(a.fin)} 元`);
   const t=lines.join('\n'); (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>toast('明細已複製，可以貼到 LINE')).catch(()=>{ prompt('複製以下明細',t); });
 }
 function crewStmtHTML(k){
-  const p=crewPeople()[k]; if(!p) return ''; const [y,m]=CR.ym.split('-').map(Number), b=CR.branch, bn=b==='qp'?'旗跑':'旗時';
-  const pd=(((S.crewpay||{})[`${b}-${CR.ym}`]||{}).people||{})[k], last=new Date(y,m,0).getDate();
-  const sheets=p.sheets.slice().sort((a,c)=>a.date<c.date?-1:1), photo=p.role==='攝影';
-  const body=sheets.map(d=>{const rows=(d.rows||[]).filter(r=>r.customer||r.item||+r.amt), sub=sum(rows.map(r=>+r.amt||0)), fin=crewSettle(d), n=Math.max(rows.length,1);
-    const dl=`${+d.date.slice(5,7)}/${+d.date.slice(8)}<small>（${wk(d.date)}）</small>`;
-    const tr=(r,i)=>`<tr${i===0?' class="st-first"':''}>${i===0?`<td rowspan="${n}" class="st-d">${dl}</td>`:''}<td>${esc(r?r.customer||'':'')}</td><td>${r?esc(r.item||'')+(r.qty?` ×${esc(r.qty)}`:''):'<span class="st-mute">當日無拍攝</span>'}</td>${photo?`<td class="num">${r&&r.tone!==''&&r.tone!=null?esc(r.tone):''}</td><td class="num">${r&&r.retouch!==''&&r.retouch!=null?esc(r.retouch):''}</td>`:''}<td class="num">${r?fmt(+r.amt||0):''}</td>${i===0?`<td rowspan="${n}" class="num st-day">${fmt(fin)}${fin>sub?'<small>保底</small>':''}</td>`:''}</tr>`;
-    return rows.length?rows.map(tr).join(''):tr(null,0);}).join('');
-  const jobs=sum(sheets.map(d=>(d.rows||[]).filter(r=>r.customer||r.item).length)), mins=sheets.filter(d=>crewSettle(d)>sum((d.rows||[]).map(r=>+r.amt||0))).length;
+  const a=crewPeopleAll()[k]; if(!a) return ''; const [y,m]=CR.ym.split('-').map(Number), last=new Date(y,m,0).getDate(), photo=a.role==='攝影';
+  const pd=crewPayOf(CR.ym)[k], paid=pd&&+pd.amt===a.fin, brs=['qp','yl'].filter(x=>a[x]);
+  const sec=b=>{ const p=a[b], sheets=p.sheets.slice().sort((q,w)=>q.date<w.date?-1:1);
+    const body=sheets.map(d=>{const rows=(d.rows||[]).filter(r=>r.customer||r.item||+r.amt), sub=sum(rows.map(r=>+r.amt||0)), fin=crewSettle(d), n=Math.max(rows.length,1);
+      const dl=`${+d.date.slice(5,7)}/${+d.date.slice(8)}<small>（${wk(d.date)}）</small>`;
+      const tr=(r,i)=>`<tr${i===0?' class="st-first"':''}>${i===0?`<td rowspan="${n}" class="st-d">${dl}</td>`:''}<td>${esc(r?r.customer||'':'')}</td><td>${r?esc(r.item||'')+(r.qty?` ×${esc(r.qty)}`:''):'<span class="st-mute">當日無拍攝</span>'}</td>${photo?`<td class="num">${r&&r.tone!==''&&r.tone!=null?esc(r.tone):''}</td><td class="num">${r&&r.retouch!==''&&r.retouch!=null?esc(r.retouch):''}</td>`:''}<td class="num">${r?fmt(+r.amt||0):''}</td>${i===0?`<td rowspan="${n}" class="num st-day">${fmt(fin)}${fin>sub?'<small>保底</small>':''}</td>`:''}</tr>`;
+      return rows.length?rows.map(tr).join(''):tr(null,0);}).join('');
+    const mins=sheets.filter(d=>crewSettle(d)>sum((d.rows||[]).map(r=>+r.amt||0))).length;
+    return `<div class="st-sec"><div class="st-sec-h"><b><i style="background:var(${B[b].color})"></i>${BNM(b)}<small>${esc(B[b].name)}</small></b><span class="num">${p.days} 天・${p.jobs} 件${mins?`・保底 ${mins} 天`:''}</span></div>
+      <table class="st-tab"><thead><tr><th>日期</th><th>客人</th><th>項目</th>${photo?'<th class="num">調色</th><th class="num">精修</th>':''}<th class="num">項目金額</th><th class="num">當日應付</th></tr></thead><tbody>${body}</tbody>
+      <tfoot><tr><td colspan="${photo?6:4}" class="st-subl">${BNM(b)}小計</td><td class="num st-sub">${fmt(p.fin)}</td></tr></tfoot></table></div>`; };
   return `<div class="stmt" id="stmtDoc">
-    <div class="st-head"><div><div class="st-brand">${bn}<small>${esc(B[b].name)}</small></div><div class="st-title">${esc(p.role)}師費用對帳單</div></div>
-      <div class="st-meta"><div><span>${esc(p.role)}師</span><b>${esc(p.person)}</b></div><div><span>分店</span><b>${bn}（${esc(B[b].name.replace(/^.*・/,''))}）</b></div><div><span>結算期間</span><b class="num">${y}/${m}/1 – ${m}/${last}</b></div><div><span>開立日期</span><b class="num">${todayStr().replace(/-/g,'/')}</b></div></div></div>
-    <table class="st-tab"><thead><tr><th>日期</th><th>客人</th><th>項目</th>${photo?'<th class="num">調色</th><th class="num">精修</th>':''}<th class="num">項目金額</th><th class="num">當日應付</th></tr></thead><tbody>${body}</tbody></table>
-    <div class="st-sum"><div class="st-sl"><span>出勤 <b>${p.days}</b> 天</span><span>拍攝／服務 <b>${jobs}</b> 件</span>${mins?`<span>保底計算 <b>${mins}</b> 天</span>`:''}${photo&&FEES[b]['攝影'].minimum?`<span class="st-mute">攝影師每日保底 ${fmt(FEES[b]['攝影'].minimum)} 元</span>`:''}</div>
-      <div class="st-tot"><span>本月應付合計</span><b class="num">NT$ ${fmt(p.fin)}</b></div></div>
-    <div class="st-foot"><div class="st-pay">${pd&&+pd.amt===p.fin?`<span class="st-stamp">已付款</span><span>${esc(String(pd.at||'').slice(0,10).replace(/-/g,'/'))} 結清・${esc(pd.by||'')}</span>`:pd?`<span>已先付 ${fmt(+pd.amt)} 元，尚差 ${fmt(p.fin-(+pd.amt))} 元</span>`:'<span>尚未付款</span>'}</div>
-      <div class="st-sign"><div>${esc(p.role)}師確認簽名</div><div>店家確認</div></div>
+    <div class="st-head"><div><div class="st-brand">旗跑・旗時<small>南風俱樂部</small></div><div class="st-title">${esc(a.role)}師費用對帳單</div></div>
+      <div class="st-meta"><div><span>${esc(a.role)}師</span><b>${esc(a.person)}</b></div><div><span>結算期間</span><b class="num">${y}/${m}/1 – ${m}/${last}</b></div><div><span>開立日期</span><b class="num">${todayStr().replace(/-/g,'/')}</b></div></div></div>
+    ${brs.map(sec).join('')}
+    <div class="st-sum"><div class="st-sl">${brs.map(b=>`<span>${BNM(b)} <b class="num">${fmt(a[b].fin)}</b></span>`).join('<span class="st-mute">＋</span>')}<span>共出勤 <b>${a.days}</b> 天</span>${photo?`<span class="st-mute">攝影師每日保底 ${fmt(FEES.yl['攝影'].minimum)} 元</span>`:''}</div>
+      <div class="st-tot"><span>${brs.length>1?'兩館合計應付':'本月應付合計'}</span><b class="num">NT$ ${fmt(a.fin)}</b></div></div>
+    <div class="st-foot"><div class="st-pay">${paid?`<span class="st-stamp">已付款</span><span>${esc(String(pd.at||'').slice(0,10).replace(/-/g,'/'))} 結清・${esc(pd.by||'')}</span>`:pd?`<span>已先付 ${fmt(+pd.amt)} 元，尚差 ${fmt(a.fin-(+pd.amt))} 元</span>`:'<span>尚未付款</span>'}</div>
+      <div class="st-sign"><div>${esc(a.role)}師確認簽名</div><div>店家確認</div></div>
       <p class="st-note">如對明細有疑問，請於收到對帳單後 3 日內告知，謝謝您這個月的辛苦 🙏</p></div>
   </div>`;
 }
 function crewStmt(k){
-  const html=crewStmtHTML(k); if(!html) return; const p=crewPeople()[k], [y,m]=CR.ym.split('-').map(Number);
+  const html=crewStmtHTML(k); if(!html) return; const p=crewPeopleAll()[k], [y,m]=CR.ym.split('-').map(Number);
   const v=document.createElement('div'); v.className='stmt-ov'; v.innerHTML=`<div class="stmt-bar"><button class="btn" data-stclose>‹ 返回</button><span class="stmt-sp"></span><button class="btn" data-stcopy>複製文字</button><button class="btn" data-stimg>存成圖片</button><button class="btn primary" data-stprint>列印／存 PDF</button></div><div class="stmt-wrap">${html}</div>`;
   document.body.appendChild(v); document.body.classList.add('noscroll','stmt-on');
   const close=()=>{v.remove(); document.body.classList.remove('noscroll','stmt-on');};
-  const fname=`${CR.branch==='qp'?'旗跑':'旗時'}-${p.person}-${y}年${m}月對帳單`;
+  const fname=`${p.person}-${y}年${m}月對帳單`;
   v.addEventListener('click',async ev=>{ const t=ev.target.closest('button'); if(!t) return;
     if(t.hasAttribute('data-stclose')) close();
     else if(t.hasAttribute('data-stcopy')) crewCopy(k);
