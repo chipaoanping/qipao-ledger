@@ -834,6 +834,7 @@ table.opdays tr.na td{border-bottom:2px solid var(--rule)}
 .pr-in.off{opacity:.4}.chip.mini{padding:2px 8px;font-size:11px}
 .pr-x{display:grid;gap:8px}.pr-xr{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) 30px;gap:8px;align-items:center}.pr-addx{justify-self:start;font-size:13px;padding:6px 12px}
 .pr-foot{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px}.pr-acts{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.pr-paidtag{color:#4f7a52;font-weight:600;font-size:13px}
+.pr-prev{font-size:12px;color:var(--ink-3)}.pr-ref summary{cursor:pointer;font-weight:700}.pr-ref .rk-t{margin-top:12px}.pr-reft{overflow-x:auto}.pr-reft table{table-layout:fixed;min-width:680px;width:100%}.pr-reft th:nth-child(7),.pr-reft td:nth-child(7){width:30%;white-space:normal}.pr-reft td,.pr-reft th{font-size:13px;padding:6px 8px;white-space:nowrap}.pr-reft .num{text-align:right}
 .pr-miss{display:flex;flex-wrap:wrap;gap:8px}
 .pr-cfg summary{cursor:pointer;font-weight:700}.pr-cfgl{display:grid;gap:10px;margin-top:10px}
 .pr-ce{display:grid;grid-template-columns:minmax(80px,1fr) 80px repeat(4,minmax(70px,1fr)) auto;gap:8px;align-items:end}.pr-ce.off{opacity:.5}.pr-ce label{display:grid;gap:3px;min-width:0}.pr-ce label span{font-size:11.5px;color:var(--ink-3)}.pr-ce .tin{padding:8px 10px;min-width:0;width:100%;box-sizing:border-box}
@@ -2021,7 +2022,7 @@ function prCardHTML(id,r){
   const paid=r.paid, g=prGross(r), n=prNet(r);
   return `<div class="pr-card ${paid?'paid':''}" data-prc="${id}">
     <div class="pr-ch"><b>${esc(r.name)}</b><span class="chips">${['月薪','時薪'].map(t=>`<button type="button" class="chip ${r.type===t?'on':''}" data-prtype="${id}|${t}">${t}</button>`).join('')}</span>
-      <span class="pr-net num" id="prNet-${id}">實發 <b>${fmt(n)}</b></span></div>
+      ${(()=>{const pv=prPrevRows(PR.ym)[id]; return pv?`<span class="pr-prev num">上次實發 ${fmt(pv.net??prNet(pv))}${pv.allow?`・補貼 ${fmt(+pv.allow)}`:''}</span>`:'';})()}<span class="pr-net num" id="prNet-${id}">實發 <b>${fmt(n)}</b></span></div>
     <div class="pr-grid">
       ${r.type==='時薪'?`<label><span>時薪</span>${prIn(id,'rate',r.rate)}</label><label><span>時數</span><span class="din pr-in"><input data-pr="${id}" data-k="hours" type="number" inputmode="decimal" step="0.5" value="${esc(r.hours??'')}" placeholder="0"><small>小時</small></span></label>`
       :`<label><span>底薪</span>${prIn(id,'base',r.base)}</label>
@@ -2049,6 +2050,16 @@ function prCfgHTML(){
       <button class="btn" data-peact="${i}">${e.active===false?'恢復':'停用'}</button></div>`).join('')}</div>
     <div class="pr-cfgf"><button class="btn" data-peadd="1">＋ 新增人員</button>${PR.cfgDraft?'<button class="btn primary" data-pesave="1">儲存人員設定</button><button class="btn" data-pecancel="1">取消</button>':''}</div></details>`;
 }
+function prRefHTML(){
+  const ym=PR.ym, months=[]; for(let i=0;i<12&&months.length<6;i++){ const k=ymShift(ym,-i); const d=prDoc(k); if(d&&d.rows&&(i>0||!PR.draft||PR.draft.exists)) months.push([k,d]); }
+  if(!months.length) return '';
+  const ids=[]; months.forEach(([,d])=>(d.order||Object.keys(d.rows)).forEach(id=>{ if(!ids.includes(id)) ids.push(id); }));
+  return `<details class="panel pr-ref" ${PR.showRef?'open':''} id="prRef"><summary>💡 薪水參考（近 ${months.length} 個月）</summary>
+    ${ids.map(id=>{ const name=(months.find(([,d])=>d.rows[id])||[,{rows:{}}])[1].rows[id].name;
+      return `<div class="rk-t">${esc(name)}</div><div class="pr-reft"><table class="plain"><tr><th>月份</th><th class="num">底薪</th><th class="num">全勤</th><th class="num">職務津貼</th><th class="num">勞健保</th><th class="num">補貼</th><th>其他</th><th class="num">實發</th></tr>
+      ${months.filter(([,d])=>d.rows[id]).map(([k,d])=>{ const r=d.rows[id]; return `<tr><td>${+k.slice(5)} 月</td>${r.type==='時薪'?`<td class="num" colspan="3">時薪 ${fmt(+r.rate||0)} × ${esc(r.hours||0)}h</td>`:`<td class="num">${fmt(+r.base||0)}</td><td class="num">${r.fullOn===false?'—':fmt(+r.full||0)}</td><td class="num">${fmt(+r.duty||0)}</td>`}<td class="num">−${fmt(+r.ins||0)}</td><td class="num">${fmt(+r.allow||0)}</td><td>${(r.extras||[]).map(x=>`${esc(x.label)} ${x.amt<0?'−':'+'}${fmt(Math.abs(+x.amt||0))}`).join('、')||'<span class="hint">—</span>'}</td><td class="num"><b>${fmt(r.net??prNet(r))}</b></td></tr>`; }).join('')}</table></div>`; }).join('')}
+    <p class="hint">建立新月份時會沿用上個月的底薪、全勤、職務津貼和勞健保；補貼與其他項目每月不同，可以參考上表再填。</p></details>`;
+}
 function drawPay(){
   if(!W.name){ renderLogin(); return; }
   if(!crewOK()){ $('#main').innerHTML=`<div class="panel emptyb">這個頁面只有${esc(BOSS)}和指定人員可以使用。</div>`; return; }
@@ -2064,6 +2075,7 @@ function drawPay(){
       ${missing.length?`<div class="pr-miss">${missing.map(e=>`<button class="btn" data-pradd="${e.id}">＋ 加入 ${esc(e.name)}</button>`).join('')}</div>`:''}
       <p class="hint">儲存後，實發金額會自動帶到「營業分析 → 師資・人事」與旗跑支出的「人事薪資」（那個月沒有手動填時）。</p>`
     :`<div class="panel emptyb"><p>${m} 月還沒有薪資表。</p>${prCfg().length?`<button class="btn primary" data-prnew="1">建立 ${m} 月薪資表</button><p class="hint">會帶入每個人的底薪、全勤、職務津貼和勞健保，補貼和其他項目再自己填。</p>`:'<p class="hint">請先在下方「人員與預設薪資」新增人員。</p>'}</div>`}
+    ${prRefHTML()}
     ${prCfgHTML()}`;
 }
 function prRecalc(id){ const r=PR.draft.rows[id]; const n=$('#prNet-'+id); if(n) n.innerHTML=`實發 <b>${fmt(prNet(r))}</b>`; const s=$('#prSum-'+id); if(s) s.textContent=`應發 ${fmt(prGross(r))}・扣勞健保 ${fmt(+r.ins||0)}・補貼與其他 ${fmt((+r.allow||0)+sum((r.extras||[]).map(x=>+x.amt||0)))}`;
@@ -2100,7 +2112,7 @@ function bindPay(){
     else if(t.dataset.prx){ const [id,i]=t.dataset.prx.split('|'); PR.draft.rows[id].extras[+i][t.dataset.k]=t.value; prRecalc(id); }
     else if(t.dataset.pe!=null){ PR.cfgDraft??=JSON.parse(JSON.stringify(prCfg())); PR.cfgDraft[+t.dataset.pe][t.dataset.k]=t.value; if(!$('[data-pesave]')){ $('.pr-cfgf').insertAdjacentHTML('beforeend','<button class="btn primary" data-pesave="1">儲存人員設定</button><button class="btn" data-pecancel="1">取消</button>'); } } });
   main.addEventListener('change',ev=>{ if(S.mode!=='payroll') return; const t=ev.target; if(t.dataset.pe!=null&&t.dataset.k==='type'){ PR.showCfg=true; drawPay(); } });
-  main.addEventListener('toggle',ev=>{ if(ev.target.id==='prCfg') PR.showCfg=ev.target.open; },true);
+  main.addEventListener('toggle',ev=>{ if(ev.target.id==='prCfg') PR.showCfg=ev.target.open; if(ev.target.id==='prRef') PR.showRef=ev.target.open; },true);
   main.addEventListener('click',ev=>{ if(S.mode!=='payroll') return; const t=ev.target.closest('button'); if(!t) return; const d=t.dataset;
     const leave=()=>!PR.dirty||!PR.draft||!PR.draft.exists&&!PR.dirty||confirm('這個月的修改還沒儲存，確定要離開嗎？');
     if(d.prym){ if(PR.dirty&&!leave()) return; PR.ym=ymShift(PR.ym,+d.prym); PR.draft=null; PR.dirty=false; PR.confirm=null; drawPay(); }
