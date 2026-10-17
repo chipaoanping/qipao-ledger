@@ -845,6 +845,8 @@ table.opdays tr.na td{border-bottom:2px solid var(--rule)}
 .bk-m{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 8px;min-width:0}.bk-m b{font-size:15px}.bk-m em{font-style:normal;font-size:12.5px;color:var(--wine);font-weight:600}.bk-m small{flex-basis:100%;font-size:12px;color:var(--ink-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .bk-s{font-size:11.5px;color:#a0672a;white-space:nowrap}.bk-s.ok{color:#4f7a52}
 .bk-d{font-weight:700;font-size:13px;color:var(--ink-2);margin-top:8px;padding:4px 2px;border-bottom:1px solid var(--rule)}
+.bk-two{display:grid;grid-template-columns:1fr 1fr;gap:6px 22px}.bk-col{min-width:0}.bk-d span{float:right;font-weight:400;color:var(--ink-3);font-size:12px}.bk-none{padding:10px 2px}
+@media (max-width:720px){.bk-two{grid-template-columns:1fr}}
 .bk-u{font-size:11.5px;text-align:right}.hint.bad{color:var(--accent)}
 .hs-h{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:6px}.hs-h b{font-family:var(--f-display);font-size:17px;letter-spacing:.08em}.hs-h span{font-size:13px;color:var(--ink-3)}.hs-h em{font-style:normal;font-weight:700;color:var(--wine);font-size:17px}
 .hs-g{display:grid;grid-template-columns:1fr 1fr;gap:12px}
@@ -2403,7 +2405,7 @@ const ICON0={
 };
 const ICON=new Proxy(ICON0,{get:(o,k)=>o[k]||(k==='payroll'?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2.2"/><path d="M5.5 16.5c.6-1.7 2-2.6 3.5-2.6s2.9.9 3.5 2.6M14.5 10h4M14.5 13.5h3"/></svg>':k==='crew'?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>':k==='cash'?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="2"/><circle cx="12" cy="12" r="2.6"/><path d="M6 9.5v5M18 9.5v5"/></svg>':'')});
 /* ---------- 近期預約（Google 日曆） ---------- */
-const BK={data:null,at:0,loading:false,err:'',tab:'today'};
+const BK={data:null,at:0,loading:false,err:'',tab:'two'};
 const bkURL=()=>((S.misc||{}).booking||{}).url||'';
 function bkLoad(force){
   const url=bkURL(); if(!url||BK.loading) return; if(!force&&(BK.data||BK.err)&&Date.now()-BK.at<5*60e3) return;
@@ -2416,19 +2418,19 @@ const bkTime=iso=>new Date(iso).toLocaleTimeString('en-GB',{timeZone:'Asia/Taipe
 function bookingsHTML(){
   if(!bkURL()) return (typeof canImport==='function'&&canImport())?`<div class="panel bk" id="bkPanel"><div class="ph"><h2>近期預約</h2><span class="hint">尚未連結 Google 日曆</span></div><p class="hint">在首頁下方「資料管理」貼上預約日曆連結後，這裡就會顯示兩館的預約。</p></div>`:'';
   bkLoad(false);
-  const t=todayStr(), tm=addDays(t,1), w7=addDays(t,6), rng={today:[t,t],tmr:[tm,tm],week:[t,w7]}[BK.tab];
+  const t=todayStr(), tm=addDays(t,1), w7=addDays(t,6), rng={two:[t,tm],week:[t,w7]}[BK.tab]||[t,tm];
   const evs=(BK.data&&BK.data.events)||[];
   const sDay=e=>bkDay(e.start), eDay=e=>e.allDay?addDays(bkDay(e.end),-1):bkDay(e.start);
   const hit=(e,[a,z])=>sDay(e)<=z&&eDay(e)>=a;
   const list=evs.filter(e=>hit(e,rng));
-  const cnt=k=>evs.filter(e=>e.kind==='booking'&&hit(e,{today:[t,t],tmr:[tm,tm],week:[t,w7]}[k])).length;
+  const cnt=k=>evs.filter(e=>e.kind==='booking'&&hit(e,{today:[t,t],tmr:[tm,tm],two:[t,tm],week:[t,w7]}[k])).length;
   const byDay={}; list.forEach(e=>{ const d=sDay(e)<rng[0]?rng[0]:sDay(e); (byDay[d]??=[]).push(e); });
   const row=e=>`<div class="bk-r ${e.kind==='note'?'note':''}" style="--bc:var(${B[e.branch].color})"><span class="bk-t num">${e.allDay?'全天':bkTime(e.start)}</span><span class="bk-b">${e.branch==='qp'?'旗跑':'旗時'}</span>
     <span class="bk-m">${e.kind==='booking'?`<b>${esc(e.name||'—')}</b>${e.people?`<em>${esc(e.people)} 人</em>`:''}<small>${esc(e.item||'')}</small>`:`<b>${esc(e.title)}</b>`}</span>${e.status?`<span class="bk-s ${/已付款|完成/.test(e.status)&&!/訂金/.test(e.status)?'ok':''}">${esc(e.status)}</span>`:'<span></span>'}</div>`;
   const days=Object.keys(byDay).sort();
-  return `<div class="panel bk" id="bkPanel"><div class="ph"><h2>近期預約</h2><span class="chips">${[['today','今天'],['tmr','明天'],['week','7 天']].map(([k,l])=>`<button type="button" class="chip ${BK.tab===k?'on':''}" data-bktab="${k}">${l}・${cnt(k)}</button>`).join('')}</span><button class="ibtn bk-rl" data-bkreload="1" aria-label="重新讀取">↻</button></div>
+  return `<div class="panel bk" id="bkPanel"><div class="ph"><h2>近期預約</h2><span class="chips">${[['two','今天＋明天'],['week','未來 7 天']].map(([k,l])=>`<button type="button" class="chip ${BK.tab===k?'on':''}" data-bktab="${k}">${l}・${cnt(k)}</button>`).join('')}</span><button class="ibtn bk-rl" data-bkreload="1" aria-label="重新讀取">↻</button></div>
     ${BK.err?`<p class="hint bad">讀取預約失敗：${esc(BK.err)}</p>`:''}
-    ${!BK.data?`<p class="hint">${BK.loading?'正在讀取 Google 日曆…':''}</p>`:days.length?days.map(d=>`${BK.tab==='week'?`<div class="bk-d">${+d.slice(5,7)}/${+d.slice(8)}（${wk(d)}）</div>`:''}${byDay[d].map(row).join('')}`).join(''):`<p class="hint">${BK.tab==='today'?'今天':BK.tab==='tmr'?'明天':'這 7 天'}沒有預約。</p>`}
+    ${!BK.data?`<p class="hint">${BK.loading?'正在讀取 Google 日曆…':''}</p>`:BK.tab==='two'?`<div class="bk-two">${[[t,'今天'],[tm,'明天']].map(([d,l])=>`<div class="bk-col"><div class="bk-d">${l}・${+d.slice(5,7)}/${+d.slice(8)}（${wk(d)}）<span>${cnt(l==='今天'?'today':'tmr')} 組</span></div>${(byDay[d]||[]).length?byDay[d].map(row).join(''):`<p class="hint bk-none">${l}沒有預約</p>`}</div>`).join('')}</div>`:days.length?days.map(d=>`<div class="bk-d">${+d.slice(5,7)}/${+d.slice(8)}（${wk(d)}）</div>${byDay[d].map(row).join('')}`).join(''):`<p class="hint">這 7 天沒有預約。</p>`}
     ${BK.data?`<p class="hint bk-u">${bkTime(BK.data.updated)} 更新・資料來自旗跑、旗時 Google 日曆</p>`:''}</div>`;
 }
 document.addEventListener('click',ev=>{ const t=ev.target.closest('[data-bktab],[data-bkreload]'); if(!t||S.mode!=='home') return;
