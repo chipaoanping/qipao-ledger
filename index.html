@@ -995,7 +995,7 @@ const KIND = {
   pay:{label:'薪資', unit:'元', val:'實發金額（元）', br:['qp'], cats:{qp:['正職','時薪人員']}},
   plat:{label:'旅遊平台訂單', unit:'元', val:'金額（元）', br:['qp'], date:true, cats:{qp:['Klook','KKday']}},
   consign:{label:'寄售銷售', unit:'元', val:'銷售額（元）', br:['yl'], fee:true, cats:{yl:['木子花花','世界漂亮','D.zack','日日選物','巧妙藝手','禮物派對','強哥','郁雯']}},
-  shoot:{label:'拍攝紀錄', unit:'件', val:'件數', br:['qp','yl'], date:true, cats:{qp:['雙套寫真','快閃','許願生日寫真','慢溫生日寫真','老芽快閃','親子快閃'], yl:['攝影師結案單']}}
+  shoot:{label:'拍攝紀錄', unit:'件', val:'件數', br:['qp','yl'], date:true, cats:{qp:['雙套寫真','快閃','許願生日寫真','慢溫生日寫真','老芽快閃','親子快閃','攝影師結案單','每日結帳顧客'], yl:['攝影師結案單','每日結帳顧客']}}
 };
 const SECS = [
   {id:'money', name:'收支', kinds:['rev','exp']},
@@ -1040,6 +1040,21 @@ function autoRev(b,y,m){
   const paid=sum(out.map(e=>e.amt)); if(rev!==paid) out.push({id:id('diff'),cat:'每日結帳（自動）',item:'營收與收款差額',amt:rev-paid,note:'每日結帳營收和收款方式合計的差額',auto:true});
   return out;
 }
+const shootName=x=>{ let t=String(x||'').trim().replace(/臺/g,'台').replace(/[＊*]\s*\d+\s*位?$/,'').trim();
+  if(/證件照/.test(t)&&/雙人|情侶|情人節|閨蜜/.test(t)&&!/拍樣/.test(t)) return '雙人證件照';
+  if(/證件照/.test(t)&&/^(個人)?台式證件照$/.test(t)) return '台式證件照';
+  if(/沙龍$/.test(t)) t+='寫真';
+  return t; };
+function autoShoot(b,y,m){
+  const ym=`${y}-${pad(m)}`, out=[];
+  const sheets=Object.entries(S.crewlog||{}).filter(([,d])=>d.branch===b&&d.month===ym&&d.role!=='造型').sort((a,c)=>a[1].date<c[1].date?-1:1);
+  if(sheets.length){ sheets.forEach(([id,d])=>{ let prev=null; (d.rows||[]).forEach((r,i)=>{ const item=shootName(r.item); if(!item){ prev=null; return; } if(/精修加挑|加挑/.test(item)) return; const key=(r.customer||'')+'|'+item; if(prev===key) return; prev=key;
+      out.push({id:`auto-shoot-${id}-${i}`,cat:'攝影師結案單',item,amt:1,date:d.date,note:[r.customer,crewName(d.person)].filter(Boolean).join('・'),auto:true,src:'crew'}); }); });
+    return out; }
+  const re=b==='qp'?/寫真|快閃|拍/:/證件照|寫真|拍/;
+  dailyOf(b,y,m).sort((a,c)=>a.date<c.date?-1:1).forEach(d=>(Array.isArray(d.guests)?d.guests:[]).forEach((g,gi)=>[].concat(g.items||[]).forEach(it=>{ if(re.test(it)) out.push({id:`auto-shoot-g-${d.date}-${gi}-${it}`,cat:'每日結帳顧客',item:it,amt:1,date:d.date,note:[g.name,g.count?g.count+'人':''].filter(Boolean).join('・'),auto:true,src:'guest'}); })));
+  return out;
+}
 function autoCust(b,y,m){
   const gs=dailyOf(b,y,m).flatMap(d=>Array.isArray(d.guests)?d.guests:[]); if(!gs.length) return [];
   const cnt={}; const add=(cat,v)=>{ if(v==null||v==='') return; const k=cat+'|'+v; cnt[k]=(cnt[k]||0)+1; };
@@ -1056,6 +1071,7 @@ const listOf=(b,m,k,y=YEAR)=>{ const raw=listOfRaw(b,m,k,y);
   if(k==='rev') return raw.length?raw:autoRev(b,y,m);
   if(k==='cust') return raw.length?raw:autoCust(b,y,m);
   if(k==='crew') return raw.length?raw:(typeof autoCrew==='function'?autoCrew(b,y,m):[]);
+  if(k==='shoot'){ const a=autoShoot(b,y,m); if(!a.length) return raw; return (a[0].src==='crew'?raw.filter(e=>e.cat!=='攝影師結案單'):raw.filter(e=>e.cat!=='每日結帳顧客')).concat(a); }
   if(k==='pay') return raw.length?raw:(typeof autoPayroll==='function'?autoPayroll(b,y,m):[]);
   if(k==='exp'){ if(typeof autoCrew!=='function') return raw; let out=raw;
     if(!raw.some(e=>e.cat==='外包造型・攝影')){ const a=autoCrew(b,y,m); if(a.length) out=out.concat(a.map(e=>({id:e.id.replace('crew','crewx'),cat:'外包造型・攝影',item:`${e.item}（${e.cat}）`,amt:e.amt,date:'',note:e.note,auto:true,crewAuto:true}))); }
@@ -1201,7 +1217,7 @@ function formHTML(b,kind,e){
 
 /* ---------- month view: other sections ---------- */
 function secStats(m,y=YEAR){
-  const bs=branches(), L=(k)=>bs.flatMap(b=>((S.docs[didY(b,y,m)]||{})[k])||[]);
+  const bs=branches(), L=(k)=>bs.flatMap(b=>k==='shoot'&&m?listOf(b,m,k,y):((S.docs[didY(b,y,m)]||{})[k])||[]);
   const sumIt=(arr,f)=>sum(arr.filter(f).map(e=>+e.amt||0));
   switch(S.sec){
     case 'qty': { const q=L('qty'); return [['來客數',sumIt(q,e=>e.item==='來客數'),'人'],['旗袍租借',sumIt(q,e=>/^旗袍租借|旗袍短租/.test(e.cat)),'件'],['寫真・沙龍',sumIt(q,e=>/寫真/.test(e.cat)),'組'],['證件照',sumIt(q,e=>e.cat==='證件照'),'件']]; }
@@ -1209,7 +1225,7 @@ function secStats(m,y=YEAR){
       return [['得知管道 第一名',tops('得知管道'),''],['客源地 第一名',tops('客源地'),''],['回流客',sumIt(L('qty'),e=>e.item==='回流客'),'人'],['外國客',sumIt(L('qty'),e=>e.item==='外國客'),'人']]; }
     case 'team': return [['造型・攝影師',sumIt(L('crew'),()=>1),'元'],['薪資',sumIt(L('pay'),()=>1),'元'],['合計',sumIt(L('crew'),()=>1)+sumIt(L('pay'),()=>1),'元'],['佔營收',(()=>{const r=sum(bs.map(b=>sum((((S.docs[didY(b,y,m)]||{}).rev)||[]).map(e=>+e.amt||0))));const c=sumIt(L('crew'),()=>1)+sumIt(L('pay'),()=>1);return r?Math.round(c/r*100)+'%':'—';})(),'']];
     case 'chan': { const p=L('plat'), c=L('consign'), s3=f=>sum(p.map(e=>pc(e)[f])); return [['平台訂單',p.length,'筆'],['日租旗袍',s3('qipao'),'位'],['馬褂體驗',s3('magua'),'位'],['快速彩妝・彩妝',s3('quick')+s3('makeup'),'位'],['平台金額',sumIt(p,()=>1),'元'],['寄售銷售額',sumIt(c,()=>1),'元'],['寄售抽成',sum(c.map(e=>+e.fee||0)),'元'],['平均每筆',p.length?Math.round(sumIt(p,()=>1)/p.length):0,'元']]; }
-    case 'shoot': { const s=L('shoot'); return [['拍攝紀錄',sumIt(s,()=>1),'件'],['安平寫真',sumIt(s,e=>e.cat!=='攝影師結案單'),'件'],['永樂結案單',sumIt(s,e=>e.cat==='攝影師結案單'),'件'],['項目種類',new Set(s.map(e=>e.item)).size,'種']]; }
+    case 'shoot': { const s=L('shoot'); return [['拍攝紀錄',sumIt(s,()=>1),'件'],['來自結案單',sumIt(s,e=>e.cat==='攝影師結案單'),'件'],['來自顧客紀錄／寫真表',sumIt(s,e=>e.cat!=='攝影師結案單'),'件'],['項目種類',new Set(s.map(e=>e.item)).size,'種']]; }
   }
   return [];
 }
