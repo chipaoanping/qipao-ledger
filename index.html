@@ -817,7 +817,14 @@ table.opdays tr.na td{border-bottom:2px solid var(--rule)}
 .cr-sum{display:flex;flex-wrap:wrap;gap:8px 20px;align-items:center;font-size:14px;background:var(--soft);border-radius:10px;padding:10px 12px}.cr-fin b{color:var(--wine);font-size:18px}
 .cr-min{width:90px;display:inline-block;padding:6px 8px;margin-left:4px}
 .cr-act{display:flex;gap:8px}.btn.danger{color:#fff;background:var(--accent);border-color:var(--accent)}
-.cr-form{display:grid;gap:12px}.cr-pf{display:grid;gap:8px}.cr-top{align-items:start!important}.cr-day{display:grid;gap:12px}.cr-day .cr-form{border:1px solid var(--rule);box-shadow:none}
+.cr-form{display:grid;gap:12px}.cr-pf{display:grid;gap:8px}
+.cr-row2{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.cr-row2 label{display:grid;gap:3px}.cr-row2 span{font-size:11.5px;color:var(--ink-3)}.cr-row2 label{min-width:0}.cr-row2 .tin{padding:8px 10px;font-size:14px;width:100%;min-width:0;box-sizing:border-box}
+.cr-row2 .cr-req{grid-column:1/-1}.cr-row2 textarea{resize:vertical;font:inherit}
+.cr-row{padding:10px;border:1px solid var(--soft);border-radius:10px}
+.cr-reqr td{font-size:12.5px!important;color:var(--ink-2);background:var(--soft);white-space:pre-wrap}.cr-reqr b{color:var(--accent);font-weight:600;margin-right:4px}
+.cr-x{display:block;font-size:11px;color:var(--ink-3)}
+@media (max-width:640px){.cr-row2{grid-template-columns:1fr 1fr}}.cr-top{align-items:start!important}.cr-day{display:grid;gap:12px}.cr-day .cr-form{border:1px solid var(--rule);box-shadow:none}
 .cr-top{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,auto));gap:12px;align-items:end}
 .cr-rows{display:grid;gap:8px}
 .cr-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.6fr) 80px 130px 30px;gap:8px;align-items:center}
@@ -1784,7 +1791,7 @@ const crewOK=()=>typeof canImport==='function'?canImport():isBoss();
 const crewDocs=(b,ym)=>Object.entries(S.crewlog||{}).filter(([,d])=>d.branch===b&&d.month===ym).map(([id,d])=>({id,...d})).sort((a,c)=>a.date<c.date?-1:a.date>c.date?1:0);
 const crewSettle=d=>d.settle!=null&&d.settle!==''?+d.settle:Math.max(+d.minimum||0,sum((d.rows||[]).map(r=>+r.amt||0)));
 const ymShift=(ym,n)=>{const [y,m]=ym.split('-').map(Number);const x=new Date(y,m-1+n,1);return `${x.getFullYear()}-${pad(x.getMonth()+1)}`;};
-function crewNewDraft(){ const b=CR.branch, role='攝影'; return {date:todayStr().slice(0,7)===CR.ym?todayStr():CR.ym+'-01',role,person:'',rows:[{customer:'',item:'',amt:''}],minimum:FEES[b][role].minimum,note:'',settle:''}; }
+function crewNewDraft(){ const b=CR.branch, role='攝影'; return {date:todayStr().slice(0,7)===CR.ym?todayStr():CR.ym+'-01',role,person:'',rows:[{customer:'',item:'',amt:'',tone:'',retouch:'',toneDate:'',retouchDate:'',req:''}],minimum:FEES[b][role].minimum,note:'',settle:''}; }
 function crewRowsSum(dr){ return sum((dr.rows||[]).map(r=>+r.amt||0)); }
 function crewFormHTML(){
   const b=CR.branch, dr=CR.draft, f=FEES[b][dr.role]||{items:[],extras:[]};
@@ -1801,17 +1808,25 @@ function crewFormHTML(){
         <select class="tin" data-crr="${i}" data-k="item"><option value="">選擇項目…</option>${f.items.concat(f.extras).map(([n,a])=>`<option value="${esc(n)}" data-amt="${a}" ${r.item===n?'selected':''}>${esc(n)}（${fmt(a)}）</option>`).join('')}${r.item&&!f.items.concat(f.extras).some(x=>x[0]===r.item)?`<option selected value="${esc(r.item)}">${esc(r.item)}</option>`:''}</select>
         <input class="tin" data-crr="${i}" data-k="qty" type="number" inputmode="numeric" min="1" value="${esc(r.qty||'')}" placeholder="數量">
         <span class="din"><input data-crr="${i}" data-k="amt" type="number" inputmode="numeric" value="${esc(r.amt)}" placeholder="0"><small>元</small></span>
-        <button class="ibtn" data-crdelrow="${i}" aria-label="刪除這列">✕</button></div>`).join('')}</div>
+        <button class="ibtn" data-crdelrow="${i}" aria-label="刪除這列">✕</button>
+        ${dr.role==='攝影'?`<div class="cr-row2">
+          <label><span>調色張數</span><input class="tin" type="number" inputmode="numeric" min="0" data-crr="${i}" data-k="tone" value="${esc(r.tone??'')}"></label>
+          <label><span>精修張數</span><input class="tin" type="number" inputmode="numeric" min="0" data-crr="${i}" data-k="retouch" value="${esc(r.retouch??'')}"></label>
+          <label><span>調色出圖日</span><input class="tin" type="date" data-crr="${i}" data-k="toneDate" value="${esc(/^\d{4}-\d{2}-\d{2}$/.test(r.toneDate||'')?r.toneDate:'')}"></label>
+          <label><span>精修出圖日</span><input class="tin" type="date" data-crr="${i}" data-k="retouchDate" value="${esc(/^\d{4}-\d{2}-\d{2}$/.test(r.retouchDate||'')?r.retouchDate:'')}"></label>
+          <label class="cr-req"><span>精修需求</span><textarea class="tin" rows="2" data-crr="${i}" data-k="req" placeholder="例：在意手臂、眼睛稍微大一點">${esc(r.req||'')}</textarea></label>
+        </div>`:''}</div>`).join('')}</div>
     <button class="btn" data-craddrow="1">＋ 加一列</button>
     <div class="cr-sum num"><span>小計 <b>${fmt(sub)}</b></span><label>保底 <input class="tin cr-min" type="number" data-crf="minimum" value="${esc(dr.minimum)}"></label><span class="cr-fin">應付 <b>${fmt(fin)}</b></span></div>
     <label class="dfield"><span class="fl">備註</span><input class="tin" data-crf="note" value="${esc(dr.note||'')}" maxlength="120"></label>
     <p class="sp-err" id="crErr"></p>
     <button class="btn primary g-save" data-crsave="1">${CR.editing==='new'?'新增結案單':'儲存修改'}</button></div>`;
 }
+const crMD=v=>!v?'':/^\d{4}-\d{2}-\d{2}$/.test(v)?`${+v.slice(5,7)}/${+v.slice(8)}`:esc(v);
 function crewSheetHTML(d){
   const fin=crewSettle(d), sub=sum((d.rows||[]).map(r=>+r.amt||0)), op=CR.open===d.id;
   return `<div class="cr-card"><button class="cr-head" data-cropen="${d.id}"><span class="cr-d num">${+d.date.slice(5,7)}/${+d.date.slice(8)}<small>${wk(d.date)}</small></span><span class="cr-who"><b>${esc(crewName(d.person)||'—')}</b><small>${esc(d.role)}師・${(d.rows||[]).length} 件</small></span><span class="cr-amt num">${fmt(fin)}${fin>sub&&sub>=0?'<small>含保底</small>':''}</span><span class="cr-chev">${op?'▴':'▾'}</span></button>
-    ${op?`<div class="cr-det">${(d.rows||[]).length?`<div class="cr-tw"><table class="plain cr-tab"><tr><th>客人</th><th>項目</th><th>張數／數量</th><th>加價</th><th class="num">金額</th></tr>${d.rows.map(r=>`<tr><td>${esc(r.customer||'')}</td><td>${esc(r.item||(r.extra?'加購':''))||'<span class="hint">（同上）</span>'}</td><td>${r.tone||r.retouch?`調色 ${r.tone||0}／精修 ${r.retouch||0}`:esc(r.qty||'')}</td><td>${esc(r.extra||'')}</td><td class="num">${fmt(+r.amt||0)}</td></tr>`).join('')}</table></div>`:'<p class="hint">這天沒有拍攝項目</p>'}
+    ${op?`<div class="cr-det">${(d.rows||[]).length?`<div class="cr-tw"><table class="plain cr-tab"><tr><th>客人</th><th>項目</th><th class="num">調色</th><th class="num">精修</th><th>調色出圖</th><th>精修出圖</th><th class="num">金額</th></tr>${d.rows.map(r=>`<tr><td>${esc(r.customer||'')}</td><td>${esc(r.item||'')||'<span class="hint">—</span>'}${r.qty?` ×${esc(r.qty)}`:''}${r.extra?`<small class="cr-x">＋${esc(r.extra)}</small>`:''}</td><td class="num">${r.tone===''||r.tone==null?'':esc(r.tone)}</td><td class="num">${r.retouch===''||r.retouch==null?'':esc(r.retouch)}</td><td>${crMD(r.toneDate)}</td><td>${crMD(r.retouchDate)}</td><td class="num">${fmt(+r.amt||0)}</td></tr>${r.req||r.note?`<tr class="cr-reqr"><td colspan="7">${r.req?`<b>精修需求</b> ${esc(r.req)}`:''}${r.note&&r.note!==r.req?`${r.req?'　':''}<b>備註</b> ${esc(r.note)}`:''}</td></tr>`:''}`).join('')}</table></div>`:'<p class="hint">這天沒有拍攝項目</p>'}
       <div class="cr-sum num"><span>小計 <b>${fmt(sub)}</b></span>${+d.minimum?`<span>保底 ${fmt(+d.minimum)}</span>`:''}<span class="cr-fin">應付 <b>${fmt(fin)}</b></span></div>
       ${d.note?`<p class="hint">備註：${esc(d.note)}</p>`:''}<p class="hint">${d.source?'從舊結案單匯入':esc(d.by||'')+' 記錄'}</p>
       <div class="cr-act"><button class="btn" data-credit="${d.id}">修改</button><button class="btn ${CR.confirm===d.id?'danger':''}" data-crdel="${d.id}">${CR.confirm===d.id?'確定刪除':'刪除'}</button></div></div>`:''}</div>`;
@@ -1848,7 +1863,7 @@ function drawCrew(){
 async function crewSave(){
   const dr=CR.draft; const err=t=>{const e=$('#crErr'); if(e) e.textContent=t;};
   if(!dr.date) return err('請選日期'); if(!dr.person.trim()) return err('請填人員名字');
-  const rows=dr.rows.filter(r=>r.customer||r.item||+r.amt).map(r=>({customer:(r.customer||'').trim(),item:r.item||'',qty:r.qty?+r.qty:'',amt:Math.round(+r.amt||0)}));
+  const rows=dr.rows.filter(r=>r.customer||r.item||+r.amt||r.req).map(r=>({customer:(r.customer||'').trim(),item:r.item||'',qty:r.qty?+r.qty:'',amt:Math.round(+r.amt||0),tone:r.tone!==''&&r.tone!=null?+r.tone:'',retouch:r.retouch!==''&&r.retouch!=null?+r.retouch:'',toneDate:r.toneDate||'',retouchDate:r.retouchDate||'',req:(r.req||'').trim(),extra:r.extra||'',note:r.note||''}));
   const sub=sum(rows.map(r=>r.amt)), doc={branch:CR.branch,date:dr.date,month:dr.date.slice(0,7),role:dr.role,person:crewName(dr.person),rows,subtotal:sub,minimum:Math.round(+dr.minimum||0),settle:Math.max(Math.round(+dr.minimum||0),sub),note:(dr.note||'').trim(),by:W.name||'',updatedAt:new Date().toISOString()};
   const id=CR.editing==='new'?`${CR.branch}-${dr.date}-${uid()}`:CR.editing;
   try{ await S.db.doc('crewlog/'+id).set(doc); S.crewlog={...S.crewlog,[id]:doc}; if(CR.ctx!=='daily') CR.ym=doc.month; CR.editing=null; CR.draft=null; CR.open=id; crewRedraw(); toast('結案單已儲存'); }
@@ -1869,11 +1884,11 @@ function bindCrew(){
     else if(t.dataset.crcancel){ CR.editing=null; CR.draft=null; crewRedraw(); }
     else if(t.dataset.crperson){ CR.draft.person=t.dataset.crperson; crewRedraw(); }
     else if(t.dataset.crrole){ CR.draft.role=t.dataset.crrole; CR.draft.minimum=FEES[CR.branch][t.dataset.crrole].minimum; crewRedraw(); }
-    else if(t.dataset.craddrow){ CR.draft.rows.push({customer:'',item:'',amt:''}); crewRedraw(); }
-    else if(t.dataset.crdelrow){ CR.draft.rows.splice(+t.dataset.crdelrow,1); if(!CR.draft.rows.length) CR.draft.rows.push({customer:'',item:'',amt:''}); crewRedraw(); }
+    else if(t.dataset.craddrow){ CR.draft.rows.push({customer:'',item:'',amt:'',tone:'',retouch:'',toneDate:'',retouchDate:'',req:''}); crewRedraw(); }
+    else if(t.dataset.crdelrow){ CR.draft.rows.splice(+t.dataset.crdelrow,1); if(!CR.draft.rows.length) CR.draft.rows.push({customer:'',item:'',amt:'',tone:'',retouch:'',toneDate:'',retouchDate:'',req:''}); crewRedraw(); }
     else if(t.dataset.crsave) crewSave();
     else if(t.dataset.cropen){ CR.open=CR.open===t.dataset.cropen?null:t.dataset.cropen; CR.confirm=null; crewRedraw(); }
-    else if(t.dataset.credit){ const d=(S.crewlog||{})[t.dataset.credit]; if(!d) return; CR.ctx=dly?'daily':'crew'; if(dly) CR.branch=D.branch; CR.editing=t.dataset.credit; CR.draft={date:d.date,role:d.role,person:crewName(d.person),rows:(d.rows||[]).map(r=>({customer:r.customer||'',item:r.item||'',qty:r.qty||'',amt:r.amt??''})),minimum:d.minimum||0,note:d.note||''}; if(!CR.draft.rows.length) CR.draft.rows.push({customer:'',item:'',amt:''}); crewRedraw(); }
+    else if(t.dataset.credit){ const d=(S.crewlog||{})[t.dataset.credit]; if(!d) return; CR.ctx=dly?'daily':'crew'; if(dly) CR.branch=D.branch; CR.editing=t.dataset.credit; CR.draft={date:d.date,role:d.role,person:crewName(d.person),rows:(d.rows||[]).map(r=>({customer:r.customer||'',item:r.item||'',qty:r.qty||'',amt:r.amt??'',tone:r.tone??'',retouch:r.retouch??'',toneDate:r.toneDate||'',retouchDate:r.retouchDate||'',req:r.req||'',extra:r.extra||'',note:r.note||''})),minimum:d.minimum||0,note:d.note||''}; if(!CR.draft.rows.length) CR.draft.rows.push({customer:'',item:'',amt:'',tone:'',retouch:'',toneDate:'',retouchDate:'',req:''}); crewRedraw(); }
     else if(t.dataset.crdel){ const id=t.dataset.crdel; if(CR.confirm!==id){CR.confirm=id;crewRedraw();return;} CR.confirm=null; S.db.doc('crewlog/'+id).delete().then(()=>{const o={...S.crewlog}; delete o[id]; S.crewlog=o; crewRedraw(); toast('已刪除');}).catch(()=>toast('刪除失敗')); }
   });
 }
