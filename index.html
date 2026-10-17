@@ -691,6 +691,7 @@ body.locked{padding-bottom:40px}
 .cs-res{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px;font-size:14px;border-radius:10px;padding:10px 12px;background:var(--soft)}
 .cs-res .ok{color:var(--pos);font-weight:700}.cs-res .bad{color:#b07a12;font-weight:700}
 .cs-lock{margin:0;text-align:center;font-size:13.5px;color:var(--ink-3);background:var(--soft);border-radius:12px;padding:12px}
+.din .pm{flex:none;border:1px solid var(--rule);background:var(--paper);color:var(--ink-2);border-radius:8px;min-width:30px;height:28px;padding:0 6px;font-size:15px;font-weight:700;cursor:pointer;margin-right:6px}.din .pm:active{background:var(--soft)}
 .cs-until{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:10px 12px;background:var(--soft);border-radius:10px}.cs-until .tin{width:auto;padding:7px 10px}.cs-until .fl{font-weight:600;font-size:13px}.cs-until .hint{flex-basis:100%;font-size:12px}.cs-at{font-style:normal;color:var(--ink-3);font-size:11.5px}
 .cs-go{padding:13px;font-size:15px;border-radius:12px}
 .cs-hist li{grid-template-columns:auto minmax(0,1fr) auto auto}
@@ -1885,7 +1886,7 @@ function crewFormHTML(){
         <input class="tin" data-crr="${i}" data-k="customer" value="${esc(r.customer||'')}" placeholder="客人">
         <select class="tin" data-crr="${i}" data-k="item"><option value="">選擇項目…</option>${f.items.concat(f.extras).map(([n,a])=>`<option value="${esc(n)}" data-amt="${a}" ${r.item===n?'selected':''}>${esc(n)}（${fmt(a)}）</option>`).join('')}${r.item&&!f.items.concat(f.extras).some(x=>x[0]===r.item)?`<option selected value="${esc(r.item)}">${esc(r.item)}</option>`:''}</select>
         <input class="tin" data-crr="${i}" data-k="qty" type="number" inputmode="numeric" min="1" value="${esc(r.qty||'')}" placeholder="數量">
-        <span class="din"><input data-crr="${i}" data-k="amt" type="number" inputmode="numeric" value="${esc(r.amt)}" placeholder="0"><small>元</small></span>
+        <span class="din"><input data-crr="${i}" data-k="amt" type="number" inputmode="numeric" value="${esc(r.amt)}" placeholder="0">${PM}<small>元</small></span>
         <button class="ibtn" data-crdelrow="${i}" aria-label="刪除這列">✕</button>
         ${dr.role==='攝影'?`<div class="cr-row2">
           <label><span>調色張數</span><input class="tin" type="number" inputmode="numeric" min="0" data-crr="${i}" data-k="tone" value="${esc(r.tone??'')}"></label>
@@ -2043,9 +2044,9 @@ function prCardHTML(id,r){
       <label><span>職務津貼</span>${prIn(id,'duty',r.duty)}</label>`}
       <label><span>勞健保自付（扣）</span>${prIn(id,'ins',r.ins)}</label>
     </div>
-    <div class="pr-x pr-al"><div class="pr-xh"><b>補貼明細</b><span class="num" id="prAl-${id}">合計 ${fmt(prAllow(r))} 元</span></div>${(r.allows||[]).map((x,i)=>`<div class="pr-xr"><input class="tin" data-pra="${id}|${i}" data-k="label" value="${esc(x.label||'')}" placeholder="例：APP補貼、外出補貼、餐費"><span class="din"><input data-pra="${id}|${i}" data-k="amt" type="number" inputmode="numeric" value="${esc(x.amt??'')}" placeholder="0"><small>元</small></span><button class="ibtn" data-prdela="${id}|${i}" aria-label="刪除">✕</button></div>`).join('')}
+    <div class="pr-x pr-al"><div class="pr-xh"><b>補貼明細</b><span class="num" id="prAl-${id}">合計 ${fmt(prAllow(r))} 元</span></div>${(r.allows||[]).map((x,i)=>`<div class="pr-xr"><input class="tin" data-pra="${id}|${i}" data-k="label" value="${esc(x.label||'')}" placeholder="例：APP補貼、外出補貼、餐費"><span class="din"><input data-pra="${id}|${i}" data-k="amt" type="number" inputmode="numeric" value="${esc(x.amt??'')}" placeholder="0">${PM}<small>元</small></span><button class="ibtn" data-prdela="${id}|${i}" aria-label="刪除">✕</button></div>`).join('')}
       <button class="btn pr-addx" data-pradda="${id}">＋ 新增補貼</button></div>
-    <div class="pr-x"><div class="pr-xh"><b>其他加項／扣項</b></div>${(r.extras||[]).map((x,i)=>`<div class="pr-xr"><input class="tin" data-prx="${id}|${i}" data-k="label" value="${esc(x.label||'')}" placeholder="項目，例：加班、機票、代購"><span class="din"><input data-prx="${id}|${i}" data-k="amt" type="number" inputmode="numeric" value="${esc(x.amt??'')}" placeholder="扣款請打負數"><small>元</small></span><button class="ibtn" data-prdelx="${id}|${i}" aria-label="刪除">✕</button></div>`).join('')}
+    <div class="pr-x"><div class="pr-xh"><b>其他加項／扣項</b></div>${(r.extras||[]).map((x,i)=>`<div class="pr-xr"><input class="tin" data-prx="${id}|${i}" data-k="label" value="${esc(x.label||'')}" placeholder="項目，例：加班、機票、代購"><span class="din"><input data-prx="${id}|${i}" data-k="amt" type="number" inputmode="numeric" value="${esc(x.amt??'')}" placeholder="扣款按 ±">${PM}<small>元</small></span><button class="ibtn" data-prdelx="${id}|${i}" aria-label="刪除">✕</button></div>`).join('')}
       <button class="btn pr-addx" data-praddx="${id}">＋ 新增加項／扣項</button></div>
     <label class="dfield"><span class="fl">備註</span><input class="tin" data-pr="${id}" data-k="note" value="${esc(r.note||'')}" placeholder="例：APP補貼 250+74、伯虎支援 4/21"></label>
     <div class="pr-foot"><span class="hint num" id="prSum-${id}">應發 ${fmt(g)}・扣勞健保 ${fmt(+r.ins||0)}・補貼 ${fmt(prAllow(r))}・其他 ${fmt(sum((r.extras||[]).map(x=>+x.amt||0)))}</span>
@@ -2555,8 +2556,8 @@ function cashCard(b){
       ${list.length?list.map(r=>((+r.cash||0)?`<div class="cs-li"><span>${md(r.date)}（${wk(r.date)}）現金營收${r.staff?`<small>${esc(r.staff)}</small>`:''}</span><b class="num">${fmt(+r.cash||0)}</b></div>`:'')+((+r.deposit||0)?`<div class="cs-li dep"><span>${md(r.date)}（${wk(r.date)}）存入台新${r.staff?`<small>${esc(r.staff)}</small>`:''}</span><b class="num">−${fmt(+r.deposit)}</b></div>`:'')).join(''):'<div class="cs-li empty"><span>上次結帳後沒有新的現金營收</span></div>'}
       <div class="cs-li tot"><span>應有現金</span><b class="num">${fmt(exp)}</b></div></div>
     <div class="cs-form"${isBoss()?'':' hidden'}>
-      <label class="dfield"><span class="fl">實點現金</span><span class="din"><input id="cs-${b}-cash-counted" data-cs="cash" data-b="${b}" data-k="counted" type="number" inputmode="numeric" min="0" value="${esc(dr.counted??'')}" placeholder="${exp}"><small>元</small></span></label>
-      <label class="dfield"><span class="fl">其中存入台新（可不填）</span><span class="din"><input id="cs-${b}-cash-deposit" data-cs="cash" data-b="${b}" data-k="deposit" type="number" inputmode="numeric" min="0" value="${esc(dr.deposit??'')}" placeholder="0"><small>元</small></span></label>
+      <label class="dfield"><span class="fl">實點現金</span><span class="din"><input id="cs-${b}-cash-counted" data-cs="cash" data-b="${b}" data-k="counted" type="number" inputmode="numeric" value="${esc(dr.counted??'')}" placeholder="${exp}">${PM}<small>元</small></span></label>
+      <label class="dfield"><span class="fl">其中存入台新（可不填）</span><span class="din"><input id="cs-${b}-cash-deposit" data-cs="cash" data-b="${b}" data-k="deposit" type="number" inputmode="numeric" value="${esc(dr.deposit??'')}" placeholder="0">${PM}<small>元</small></span></label>
       <label class="dfield wide"><span class="fl">備註</span><input class="tin" id="cs-${b}-cash-note" data-cs="cash" data-b="${b}" data-k="note" maxlength="60" value="${esc(dr.note??'')}" placeholder="可不填"></label>
     </div>
     <div class="cs-res num" id="csr-${b}-cash"${isBoss()?'':' hidden'}>${counted==null?'<span class="hint">填入實點現金後會自動對帳</span>':`<span class="${diff===0?'ok':'bad'}">${diff===0?'✓ 現金相符':`現金${diff>0?'多':'少'} ${fmt(Math.abs(diff))} 元`}</span><span>結算後營業現金歸 0</span>`}</div>
@@ -2573,7 +2574,7 @@ function pettyCard(b){
     <div class="cs-list">${list.length?list.map(e=>`<div class="cs-li"><span>${md(e.date)} ${esc(e.item)}<small>${esc(e.cat)}${e.by?'・'+esc(e.by):''}</small></span>${e.receipt?`<a class="cs-r" href="${rcptURL(e.receipt)}" target="_blank" rel="noopener">收據</a>`:'<em class="cs-nr">無收據</em>'}<b class="num">${fmt(+e.amt||0)}</b></div>`).join(''):'<div class="cs-li empty"><span>上次結帳後沒有零用金支出</span></div>'}
       <div class="cs-li tot"><span>已用 ${fmt(used)}・應剩</span><b class="num">${fmt(should)}</b></div></div>
     <div class="cs-form"${isBoss()?'':' hidden'}>
-      <label class="dfield"><span class="fl">實點零用金</span><span class="din"><input data-cs="petty" data-b="${b}" data-k="counted" id="cs-${b}-petty-counted" type="number" inputmode="numeric" min="0" value="${esc(dr.counted??'')}" placeholder="${should}"><small>元</small></span></label>
+      <label class="dfield"><span class="fl">實點零用金</span><span class="din"><input data-cs="petty" data-b="${b}" data-k="counted" id="cs-${b}-petty-counted" type="number" inputmode="numeric" value="${esc(dr.counted??'')}" placeholder="${should}">${PM}<small>元</small></span></label>
       <label class="dfield"><span class="fl">補回金額</span><span class="din ro"><input id="cs-${b}-petty-refill" readonly tabindex="-1" value="${refill}"><small>元</small></span></label>
       <label class="dfield wide"><span class="fl">備註</span><input class="tin" data-cs="petty" data-b="${b}" data-k="note" id="cs-${b}-petty-note" maxlength="60" value="${esc(dr.note??'')}" placeholder="可不填"></label>
     </div>
@@ -2602,11 +2603,10 @@ async function saveSettle(type,b){
   if(!isBoss()){toast(`只有${BOSS}可以結帳`);return;}
   if(!S.db){toast('資料庫沒有連線');return;}
   const dr=(C.draft[type][b])||{}; if(dr.counted===undefined||dr.counted===''){toast('請先填入實點金額');$(`#cs-${b}-${type}-counted`)?.focus();return;}
-  if(+dr.counted<0||+(dr.deposit||0)<0){toast('金額不能是負數');return;}
   const counted=Math.round(+dr.counted), at=new Date().toISOString(), date=csUntil(type,b);
   let doc;
   if(type==='cash'){ const l=lastSettle(b,'cash'), list=cashPending(b), carry=0, expected=carry+sum(list.map(r=>(+r.cash||0)-(+r.deposit||0))), deposit=Math.round(+dr.deposit||0);
-    if(deposit>counted){toast('存入金額不能大於實點現金');return;}
+    if(deposit>0&&counted>=0&&deposit>counted){toast('存入金額不能大於實點現金');return;}
     doc={branch:b,type,date,at,by:W.name,uid:W.uid||'',expected,counted,deposit,keep:0,diff:counted-expected,note:(dr.note||'').trim(),covered:list.map(r=>r.id)};
   } else { const list=pettyPending(b), used=sum(list.map(e=>+e.amt||0)), expected=PETTY[b]-used;
     doc={branch:b,type,date,at,by:W.name,uid:W.uid||'',limit:PETTY[b],used,expected,counted,refill:PETTY[b]-counted,diff:counted-expected,note:(dr.note||'').trim(),covered:list.map(e=>e.id)}; }
@@ -2614,8 +2614,8 @@ async function saveSettle(type,b){
   try{ await S.db.doc('settle/'+id).set(doc); S.settle={...S.settle,[id]:doc}; C.draft[type][b]={}; drawCash(); toast(`${b==='qp'?'旗跑':'旗時'}${type==='cash'?'營收現金':'零用金'}結帳完成${doc.diff?`（${doc.diff>0?'多':'少'} ${fmt(Math.abs(doc.diff))} 元）`:''}`); }
   catch(e){ toast('儲存失敗，請稍後再試'); }
 }
-document.addEventListener('input',ev=>{ const t=ev.target; if(t.type==='number'&&t.min!==''&&+t.min>=0&&t.value.trim().startsWith('-')){ t.value=t.value.replace(/-/g,''); t.dispatchEvent(new Event('input',{bubbles:true})); toast('金額不能是負數'); } },true);
-document.addEventListener('keydown',ev=>{ const t=ev.target; if(t.type==='number'&&t.min!==''&&+t.min>=0&&(ev.key==='-'||ev.key==='e')) ev.preventDefault(); },true);
+document.addEventListener('click',ev=>{ const t=ev.target.closest('[data-pm]'); if(!t) return; ev.preventDefault(); ev.stopPropagation(); const inp=t.parentElement.querySelector('input'); if(!inp) return; const v=String(inp.value||'').trim(); if(!v||+v===0){ toast('先輸入金額，再按 ± 變成負數'); inp.focus(); return; } inp.value=v.startsWith('-')?v.slice(1):'-'+v; inp.dispatchEvent(new Event('input',{bubbles:true})); },true);
+const PM='<button type="button" class="pm" data-pm aria-label="切換正負號">±</button>';
 function bindCash(){
   const main=$('#main');
   main.addEventListener('input',ev=>{ if(S.mode!=='cash') return; const t=ev.target; if(!t.dataset.cs) return;
