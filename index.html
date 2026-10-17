@@ -1019,6 +1019,7 @@ const listOf=(b,m,k,y=YEAR)=>{ const raw=listOfRaw(b,m,k,y);
   if(k==='rev') return raw.length?raw:autoRev(b,y,m);
   if(k==='cust') return raw.length?raw:autoCust(b,y,m);
   if(k==='crew') return raw.length?raw:(typeof autoCrew==='function'?autoCrew(b,y,m):[]);
+  if(k==='exp'){ if(typeof autoCrew!=='function'||raw.some(e=>e.cat==='外包造型・攝影')) return raw; const a=autoCrew(b,y,m); return a.length?raw.concat(a.map(e=>({id:e.id.replace('crew','crewx'),cat:'外包造型・攝影',item:`${e.item}（${e.cat}）`,amt:e.amt,date:'',note:e.note,auto:true,crewAuto:true}))):raw; }
   if(k==='qty'){ const a=autoQty(b,y,m,raw); return a.length?raw.concat(a):raw; }
   return raw; };
 const tot=(b,m,k)=>sum(listOf(b,m,k).map(e=>+e.amt||0));
@@ -1112,7 +1113,7 @@ function bookHTML(b,m,kind,ro){
   const editable=!ro && S.canWrite!==false && S.db;
   const title=(S.branch==='all'&&!K.money)?`${B[b].short} ・ ${K.label}`:K.label;
   const head=K.nosum?`<span class="hint">依類別統計</span>`:`<span class="sum num">${fmt(total)}<small class="u"> ${K.unit}</small></span>`;
-  let h=`<section class="book" data-kind="${kind}"><div class="book-h"><div class="t"><h2>${title}</h2><span class="hint">${list.length} 筆${list.length&&list.every(e=>e.auto)?'・由每日結帳自動計算':list.some(e=>e.auto)?'・含每日結帳來客':''}</span></div>${head}</div>`;
+  let h=`<section class="book" data-kind="${kind}"><div class="book-h"><div class="t"><h2>${title}</h2><span class="hint">${list.length} 筆${list.some(e=>e.crewAuto)?(list.every(e=>e.auto)?'・由攝影造型結案單自動計算':'・含攝影造型結案單'):list.length&&list.every(e=>e.auto)?'・由每日結帳自動計算':list.some(e=>e.auto)?'・含每日結帳來客':''}</span></div>${head}</div>`;
   if(!list.length) h+=`<div class="emptyb">${m} 月沒有${K.label}紀錄${editable?'，用下方按鈕新增第一筆':''}。</div>`;
   if(kind==='plat'&&list.length){ h+=platSummary(list)+`<details class="orders"${S.editing&&S.editing.kind==='plat'||S.confirmDel&&list.some(e=>e.id===S.confirmDel)?' open':''}><summary>訂單明細（${list.length} 筆）</summary>`; }
   for(const [c,items,ct] of groupBy(list,cats)){
@@ -1936,7 +1937,7 @@ function crewStmtHTML(k){
   const jobs=sum(sheets.map(d=>(d.rows||[]).filter(r=>r.customer||r.item).length)), mins=sheets.filter(d=>crewSettle(d)>sum((d.rows||[]).map(r=>+r.amt||0))).length;
   return `<div class="stmt" id="stmtDoc">
     <div class="st-head"><div><div class="st-brand">${bn}<small>${esc(B[b].name)}</small></div><div class="st-title">${esc(p.role)}師費用對帳單</div></div>
-      <div class="st-meta"><div><span>${esc(p.role)}師</span><b>${esc(p.person)}</b></div><div><span>結算期間</span><b class="num">${y}/${m}/1 – ${m}/${last}</b></div><div><span>開立日期</span><b class="num">${todayStr().replace(/-/g,'/')}</b></div></div></div>
+      <div class="st-meta"><div><span>${esc(p.role)}師</span><b>${esc(p.person)}</b></div><div><span>分店</span><b>${bn}（${esc(B[b].name.replace(/^.*・/,''))}）</b></div><div><span>結算期間</span><b class="num">${y}/${m}/1 – ${m}/${last}</b></div><div><span>開立日期</span><b class="num">${todayStr().replace(/-/g,'/')}</b></div></div></div>
     <table class="st-tab"><thead><tr><th>日期</th><th>客人</th><th>項目</th>${photo?'<th class="num">調色</th><th class="num">精修</th>':''}<th class="num">項目金額</th><th class="num">當日應付</th></tr></thead><tbody>${body}</tbody></table>
     <div class="st-sum"><div class="st-sl"><span>出勤 <b>${p.days}</b> 天</span><span>拍攝／服務 <b>${jobs}</b> 件</span>${mins?`<span>保底計算 <b>${mins}</b> 天</span>`:''}${photo&&FEES[b]['攝影'].minimum?`<span class="st-mute">攝影師每日保底 ${fmt(FEES[b]['攝影'].minimum)} 元</span>`:''}</div>
       <div class="st-tot"><span>本月應付合計</span><b class="num">NT$ ${fmt(p.fin)}</b></div></div>
@@ -2173,7 +2174,7 @@ const pettyUsed=(b,day)=>sum(pettyPending(b).map(e=>+e.amt||0));
 const pettyLeft=(b,day)=>PETTY[b]-pettyUsed(b,day);
 const spYM=day=>[+day.slice(0,4),+day.slice(5,7)];
 const spList=(b,day)=>{const [y,m]=spYM(day);return listOf(b,m,'exp',y).filter(e=>e.date===day);};
-const spMonth=(b,day)=>{const [y,m]=spYM(day);return listOf(b,m,'exp',y);};
+const spMonth=(b,day)=>{const [y,m]=spYM(day);return listOf(b,m,'exp',y).filter(e=>!e.crewAuto);};
 const ICON0={
   daily:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M3 9h18M8 14h3M8 17h6M15.5 14h.01"/></svg>',
   spend:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>',
@@ -2476,7 +2477,7 @@ $('#main').addEventListener('click',async ev=>{
   }
   if(t.dataset.copy){
     const b=S.branch,m=S.month,d=clone(b,m);
-    d.exp=(d.exp||[]).concat(listOf(b,m-1,'exp').filter(e=>RECUR.includes(e.cat)).map(e=>({id:uid(),cat:e.cat,item:e.item,amt:e.amt,date:'',note:''})));
+    d.exp=(d.exp||[]).concat(listOf(b,m-1,'exp').filter(e=>!e.auto&&RECUR.includes(e.cat)).map(e=>({id:uid(),cat:e.cat,item:e.item,amt:e.amt,date:'',note:''})));
     await save(b,m,d,`已帶入 ${m-1} 月固定支出，金額有變動請直接修改`); return;
   }
   if(t.dataset.copypay){
