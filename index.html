@@ -2602,6 +2602,7 @@ async function saveSettle(type,b){
   if(!isBoss()){toast(`只有${BOSS}可以結帳`);return;}
   if(!S.db){toast('資料庫沒有連線');return;}
   const dr=(C.draft[type][b])||{}; if(dr.counted===undefined||dr.counted===''){toast('請先填入實點金額');$(`#cs-${b}-${type}-counted`)?.focus();return;}
+  if(+dr.counted<0||+(dr.deposit||0)<0){toast('金額不能是負數');return;}
   const counted=Math.round(+dr.counted), at=new Date().toISOString(), date=csUntil(type,b);
   let doc;
   if(type==='cash'){ const l=lastSettle(b,'cash'), list=cashPending(b), carry=0, expected=carry+sum(list.map(r=>(+r.cash||0)-(+r.deposit||0))), deposit=Math.round(+dr.deposit||0);
@@ -2613,6 +2614,8 @@ async function saveSettle(type,b){
   try{ await S.db.doc('settle/'+id).set(doc); S.settle={...S.settle,[id]:doc}; C.draft[type][b]={}; drawCash(); toast(`${b==='qp'?'旗跑':'旗時'}${type==='cash'?'營收現金':'零用金'}結帳完成${doc.diff?`（${doc.diff>0?'多':'少'} ${fmt(Math.abs(doc.diff))} 元）`:''}`); }
   catch(e){ toast('儲存失敗，請稍後再試'); }
 }
+document.addEventListener('input',ev=>{ const t=ev.target; if(t.type==='number'&&t.min!==''&&+t.min>=0&&t.value.trim().startsWith('-')){ t.value=t.value.replace(/-/g,''); t.dispatchEvent(new Event('input',{bubbles:true})); toast('金額不能是負數'); } },true);
+document.addEventListener('keydown',ev=>{ const t=ev.target; if(t.type==='number'&&t.min!==''&&+t.min>=0&&(ev.key==='-'||ev.key==='e')) ev.preventDefault(); },true);
 function bindCash(){
   const main=$('#main');
   main.addEventListener('input',ev=>{ if(S.mode!=='cash') return; const t=ev.target; if(!t.dataset.cs) return;
