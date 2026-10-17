@@ -1,7 +1,8 @@
 <!doctype html>
-<html lang="zh-Hant">
+<html lang="zh-Hant" data-theme="light" style="color-scheme:light only">
 <head>
 <meta charset="utf-8">
+<meta name="color-scheme" content="light only">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>旗跑・旗時 收支總覽</title>
 <meta name="theme-color" content="#732d2e">
@@ -49,7 +50,7 @@ body::before{content:"";display:block;height:env(safe-area-inset-top,0px)}
   --f-display:"Noto Serif TC","Songti TC",serif;
   --f-body:"Noto Sans TC","PingFang TC","Heiti TC",system-ui,sans-serif;
 }
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+@media (prefers-color-scheme:dark) and (min-width:99999px){:root:not([data-theme="light"]){
   --bg:#101412; --paper:#171c19; --ink:#eef1ee; --ink-2:#b4bdb7; --ink-3:#7c8680;
   --rule:#2a312d; --soft:#212723; --hover:#1d2320;
   --qp:#3987e5; --yl:#d95926; --exp:#55605a; --jade:#7cc4a8; --y1:#2f5a4a; --y2:#4f9a7d; --y3:#9fd9c1;
@@ -247,7 +248,7 @@ details.notes ul{margin:10px 0 0;padding-left:1.2em;color:var(--ink-2);font-size
 :root{--bg:#f4f5f3;--paper:#ffffff;--ink:#1c2420;--ink-2:#55605a;--ink-3:#8b958f;--rule:#e4e8e5;--soft:#f1f3f1;--hover:#f6f8f6;
   --jade:#1f6a52;--jade-soft:#e6f1ec;--accent:#b03a48;--mast:#1f6a52;--mast-ink:#ffffff;
   --shadow:0 1px 2px rgba(22,40,32,.04),0 2px 8px rgba(22,40,32,.04);--r:14px}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1311;--paper:#171c19;--ink:#ecf0ed;--ink-2:#b3bcb6;--ink-3:#7f8983;--rule:#262d29;--soft:#1d231f;--hover:#1b211e;--jade:#6cc3a0;--jade-soft:#18302a;--accent:#e07a86;--mast:#6cc3a0;--mast-ink:#0f1311;--shadow:none}}
+@media (prefers-color-scheme:dark) and (min-width:99999px){:root:not([data-theme="light"]){--bg:#0f1311;--paper:#171c19;--ink:#ecf0ed;--ink-2:#b3bcb6;--ink-3:#7f8983;--rule:#262d29;--soft:#1d231f;--hover:#1b211e;--jade:#6cc3a0;--jade-soft:#18302a;--accent:#e07a86;--mast:#6cc3a0;--mast-ink:#0f1311;--shadow:none}}
 :root[data-theme="dark"]{--bg:#0f1311;--paper:#171c19;--ink:#ecf0ed;--ink-2:#b3bcb6;--ink-3:#7f8983;--rule:#262d29;--soft:#1d231f;--hover:#1b211e;--jade:#6cc3a0;--jade-soft:#18302a;--accent:#e07a86;--mast:#6cc3a0;--mast-ink:#0f1311;--shadow:none}
 body{padding-block:0 72px;background:var(--bg)}
 .wrap{max-width:1120px;gap:18px}
@@ -422,7 +423,7 @@ body.noscroll{overflow:hidden}
   --jade:#567252;--jade-soft:#e8eee4;--accent:#893714;--wine:#732d2e;--mustard:#e1b65a;--rose:#d9a38c;--gold:#b98a3c;--gold-soft:#f8ecd2;--mast-ink:#fffaf2;
   --qp:#567252;--yl:#c0612f;--y1:#e9c9a2;--y2:#c98a5a;--y3:#893714;
   --shadow:0 1px 0 rgba(115,45,46,.04),0 8px 20px -12px rgba(115,45,46,.25);--r:14px}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#171210;--paper:#211a17;--ink:#f3e9df;--ink-2:#c9b5a6;--ink-3:#93806f;--rule:#3a2e28;--soft:#2a211d;--hover:#2d2420;--jade:#9fbc96;--jade-soft:#26301f;--accent:#e9875d;--wine:#4a1d1e;--mustard:#e8c271;--rose:#d9a38c;--gold:#e1b65a;--gold-soft:#33291b;--qp:#94b68b;--yl:#e9875d;--y1:#5a3a26;--y2:#a8683f;--y3:#f0b386;--shadow:none}}
+@media (prefers-color-scheme:dark) and (min-width:99999px){:root:not([data-theme="light"]){--bg:#171210;--paper:#211a17;--ink:#f3e9df;--ink-2:#c9b5a6;--ink-3:#93806f;--rule:#3a2e28;--soft:#2a211d;--hover:#2d2420;--jade:#9fbc96;--jade-soft:#26301f;--accent:#e9875d;--wine:#4a1d1e;--mustard:#e8c271;--rose:#d9a38c;--gold:#e1b65a;--gold-soft:#33291b;--qp:#94b68b;--yl:#e9875d;--y1:#5a3a26;--y2:#a8683f;--y3:#f0b386;--shadow:none}}
 :root[data-theme="dark"]{--bg:#171210;--paper:#211a17;--ink:#f3e9df;--ink-2:#c9b5a6;--ink-3:#93806f;--rule:#3a2e28;--soft:#2a211d;--hover:#2d2420;--jade:#9fbc96;--jade-soft:#26301f;--accent:#e9875d;--wine:#4a1d1e;--mustard:#e8c271;--rose:#d9a38c;--gold:#e1b65a;--gold-soft:#33291b;--qp:#94b68b;--yl:#e9875d;--y1:#5a3a26;--y2:#a8683f;--y3:#f0b386;--shadow:none}
 body{background:var(--bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .45 0 0 0 0 .3 0 0 0 0 .2 0 0 0 .05 0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E") 0 0/120px 120px}
 /* masthead: 酒紅花磚 */
