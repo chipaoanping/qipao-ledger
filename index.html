@@ -1951,7 +1951,7 @@ function crewStmtHTML(k){
     <div class="st-head"><div><div class="st-brand">旗跑・旗時<small>南風俱樂部</small></div><div class="st-title">${esc(a.role)}師費用對帳單</div></div>
       <div class="st-meta"><div><span>${esc(a.role)}師</span><b>${esc(a.person)}</b></div><div><span>結算期間</span><b class="num">${y}/${m}/1 – ${m}/${last}</b></div><div><span>開立日期</span><b class="num">${todayStr().replace(/-/g,'/')}</b></div></div></div>
     ${brs.map(sec).join('')}
-    <div class="st-sum"><div class="st-sl">${brs.map(b=>`<span>${BNM(b)} <b class="num">${fmt(a[b].fin)}</b></span>`).join('<span class="st-mute">＋</span>')}<span>共出勤 <b>${a.days}</b> 天</span>${photo?`<span class="st-mute">攝影師每日保底 ${fmt(FEES.yl['攝影'].minimum)} 元</span>`:''}</div>
+    <div class="st-sum"><div class="st-sl">${brs.map(b=>`<span>${BNM(b)} <b class="num">${fmt(a[b].fin)}</b></span>`).join('<span class="st-mute">＋</span>')}<span>共出勤 <b>${a.days}</b> 天</span></div>
       <div class="st-tot"><span>${brs.length>1?'兩館合計應付':'本月應付合計'}</span><b class="num">NT$ ${fmt(a.fin)}</b></div></div>
     <div class="st-foot"><div class="st-pay">${paid?`<span class="st-stamp">已付款</span><span>${esc(String(pd.at||'').slice(0,10).replace(/-/g,'/'))} 結清・${esc(pd.by||'')}</span>`:pd?`<span>已先付 ${fmt(+pd.amt)} 元，尚差 ${fmt(a.fin-(+pd.amt))} 元</span>`:'<span>尚未付款</span>'}</div>
       <div class="st-sign"><div>${esc(a.role)}師確認簽名</div><div>店家確認</div></div>
