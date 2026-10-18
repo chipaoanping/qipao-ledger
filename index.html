@@ -2581,7 +2581,7 @@ function renderHome(){
   if(D.day.slice(0,7)!==today.slice(0,7)){ D.day=today; }
   subDaily();
   const name=b=>b==='qp'?'旗跑':'旗時';
-  const dRow=b=>{const d=dStatusOf(D.docs[dId(b,today)])?D.docs[dId(b,today)]:null;return `<li><i style="background:var(${B[b].color})"></i>${name(b)}<span class="${d?(dStatusOf(d)==='營業'?'ok':'off'):''}">${d?(dStatusOf(d)==='營業'?`已結帳・${fmt(+d.revenue||0)} 元`:dStatusOf(d)):'尚未結帳'}</span></li>`;};
+  const dRow=b=>{const d=dStatusOf(D.docs[dId(b,today)])?D.docs[dId(b,today)]:null;return `<li><i style="background:var(${B[b].color})"></i>${name(b)}<span class="${d?(dStatusOf(d)==='營業'?'ok':'off'):''}">${d?(dStatusOf(d)==='營業'?`已結帳・${fmt(+d.revenue||0)} 元・來客 ${fmt(+d.visitors||0)} 人`:dStatusOf(d)):'尚未結帳'}</span></li>`;};
   const sRow=b=>{const l=spList(b,today);return `<li><i style="background:var(${B[b].color})"></i>${name(b)}<span>${l.length?`今天 ${l.length} 筆・${fmt(sum(l.map(e=>+e.amt||0)))} 元`:'今天還沒有支出'}<small class="${pettyLeft(b,today)<0?'neg':''}">零用金剩 ${fmt(pettyLeft(b,today))}</small></span></li>`;};
   const lRow=b=>{const r=sum(listOf(b,m,'rev',y).map(e=>+e.amt||0)), x=sum(listOf(b,m,'exp',y).map(e=>+e.amt||0));return `<li><i style="background:var(${B[b].color})"></i>${name(b)}<span>${m} 月營收 ${fmt(r)}・支出 ${fmt(x)}</span></li>`;};
   const card=(k,t,sub,rows,go)=>`<button class="hcard" data-home="${k}"><span class="hc-ic">${ICON[k]}</span><span class="hc-t">${t}</span><span class="hc-s">${sub}</span><ul class="hc-l">${rows}</ul><span class="hc-go">${go} →</span></button>`;
