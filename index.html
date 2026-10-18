@@ -853,6 +853,7 @@ table.opdays tr.na td{border-bottom:2px solid var(--rule)}
 .bk-ov{position:fixed;inset:0;z-index:300;background:rgba(40,25,22,.5);display:flex;align-items:center;justify-content:center;padding:16px}
 .bk-dlg{background:var(--paper);border-radius:16px;width:min(520px,100%);max-height:88vh;overflow:auto;padding:18px 20px;display:grid;gap:12px;border-top:5px solid var(--bc);box-shadow:0 20px 60px rgba(0,0,0,.3)}
 .bk-dh{display:flex;align-items:center;gap:10px}.bk-dh b{font-size:19px;flex:1}.bk-dh .bk-b{padding:2px 8px;font-size:12px;color:#fff;background:var(--bc);border-radius:6px}
+.bk-ph a{color:var(--wine);text-decoration:none;border-bottom:1px dashed}
 .bk-dt{font-weight:600;color:var(--ink-2)}
 .bk-dg{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px}.bk-dg div{background:var(--soft);border-radius:10px;padding:8px 10px;display:grid;gap:2px}.bk-dg span{font-size:11.5px;color:var(--ink-3)}.bk-dg b{font-size:14px}
 .bk-dl{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 12px;margin:0;font-size:13.5px}.bk-dl dt{color:var(--ink-3);max-width:12em}.bk-dl dd{margin:0;white-space:pre-wrap;word-break:break-word}
@@ -2487,11 +2488,11 @@ const bkRow=e=>{ BKEV[e.id+'|'+e.start]=e; return `<button type="button" class="
     <span class="bk-m">${e.kind==='booking'?`<b>${esc(e.name||'—')}</b>${e.people?`<em>${esc(e.people)} 人</em>`:''}<small>${esc(e.item||'')}</small>`:`<b>${esc(e.title)}</b>`}</span>${e.status?`<span class="bk-s ${/已付款|完成/.test(e.status)&&!/訂金/.test(e.status)?'ok':''}">${esc(e.status)}</span>`:'<span></span>'}</button>`; };
 function bkDetail(e){
   const time=e.allDay?(bkS(e)===bkE(e)?'全天':`${md(bkS(e))} – ${md(bkE(e))} 全天`):`${bkTime(e.start)} – ${bkTime(e.end)}`;
-  const det=(e.details||[]).filter(([k])=>!/^(項目|預訂編號|預約狀態|Service|Order ID|開始時間|預約旗袍體驗人數.*|預約數量)$/.test(k));
+  const det=(e.details||[]).filter(([k])=>!/^(項目|預訂編號|預約狀態|Service|Order ID|開始時間|預約旗袍體驗人數.*|預約數量|顧客狀態|總時間長度|.*電話)$/.test(k));
   const v=document.createElement('div'); v.className='bk-ov'; v.innerHTML=`<div class="bk-dlg" role="dialog" aria-modal="true" style="--bc:var(${B[e.branch].color})">
     <div class="bk-dh"><span class="bk-b">${e.branch==='qp'?'旗跑':'旗時'}</span><b>${esc(e.kind==='booking'?(e.name||'—'):e.title)}</b><button class="ibtn" data-bkclose aria-label="關閉">✕</button></div>
     <div class="bk-dt num">${md(bkS(e))}（${wk(bkS(e))}）${time}</div>
-    ${e.kind==='booking'?`<div class="bk-dg">${e.item?`<div><span>項目</span><b>${esc(e.item)}</b></div>`:''}${e.people?`<div><span>人數</span><b>${esc(e.people)} 人</b></div>`:''}${e.status?`<div><span>狀態</span><b>${esc(e.status)}</b></div>`:''}${e.no?`<div><span>預約編號</span><b>${esc(e.no)}</b></div>`:''}</div>`:''}
+    ${e.kind==='booking'?`<div class="bk-dg">${e.item?`<div><span>項目</span><b>${esc(e.item)}</b></div>`:''}${e.people?`<div><span>人數</span><b>${esc(e.people)} 人</b></div>`:''}${e.status?`<div><span>狀態</span><b>${esc(e.status)}</b></div>`:''}${e.no?`<div><span>預約編號</span><b>${esc(e.no)}</b></div>`:''}${(()=>{const ph=e.phone||((e.details||[]).find(([k])=>/電話/.test(k))||[])[1]; return ph?`<div class="bk-ph"><span>電話</span><b><a href="tel:${esc(String(ph).replace(/[^0-9+]/g,''))}">${esc(ph)}</a></b></div>`:'';})()}</div>`:''}
     ${det.length?`<dl class="bk-dl">${det.map(([k,val])=>`<dt>${esc(k)}</dt><dd>${esc(val)}</dd>`).join('')}</dl>`:''}
     ${e.staffNote?`<div class="bk-note"><span>工作人員備註</span><p>${esc(e.staffNote)}</p></div>`:''}
     ${e.kind==='booking'&&!e.details?'<p class="hint">要顯示更多詳情，請把 Apps Script 更新成最新版本。</p>':''}
