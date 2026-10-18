@@ -2364,16 +2364,17 @@ function bindLogin(){
 /* 人員與資料管理（只有妃妃） */
 const IMPORTERS=['郁雯'];  /* 除了老闆以外，可以匯入／下載備份的人 */
 const canImport=()=>isBoss()||(!!W.name&&IMPORTERS.includes(W.name));
+const DATA_ADMIN='郁雯';  /* 只有這位看得到資料管理與測試通知 */
+const isDataAdmin=()=>!!W.name&&W.name===DATA_ADMIN;
 function adminHTML(){
-  if(!canImport()) return '';
+  if(!isDataAdmin()&&!isBoss()) return '';
   const bkRow=`<div class="adm-bk"><span class="fl">預約日曆連結</span><input class="tin" id="bkUrlIn" value="${esc(((S.misc||{}).booking||{}).url||'')}" placeholder="貼上 Apps Script 網址（含 ?k=…）"><button class="btn" data-bksave="1">儲存</button></div><div class="adm-bk"><span class="fl">推播金鑰（VAPID）</span><input class="tin" id="vapidIn" value="${esc(((S.misc||{}).push||{}).vapid||'')}" placeholder="Firebase 雲端通訊的網路推播憑證金鑰"><button class="btn" data-vapidsave="1">儲存</button></div>`;
   const dataRow=`<div class="adm-data"><label class="btn">匯入備份資料<input type="file" accept="application/json,.json" id="impFile" hidden></label><button class="btn" data-export="1">下載備份</button><span class="hint" id="impMsg">${esc(IMP.msg||"從舊網頁搬資料、或定期備份用")}</span></div>`;
   if(!isBoss()) return `<section class="panel adm"><div class="ph"><h2>資料管理</h2><span class="hint">匯入與備份</span></div>${dataRow}${bkRow}</section>`;
-  return `<section class="panel adm"><div class="ph"><h2>人員與資料管理</h2><span class="hint">只有${esc(BOSS)}看得到人員管理</span></div>
+  return `<section class="panel adm"><div class="ph"><h2>人員管理</h2><span class="hint">只有${esc(BOSS)}看得到</span></div>
     <div class="adm-people">${people().map(p=>`<div class="adm-p"><i>${esc(p.name.slice(0,1))}</i><b>${esc(p.name)}</b>${p.name===BOSS?'<small>老闆</small>':`<button class="chip" data-pwreset="${esc(p.name)}">重設密碼</button><button class="chip danger" data-staffdel="${esc(p.name)}">移除</button>`}</div>`).join('')}</div>
     <form class="lg-add" id="staffForm"><input id="staffNew" maxlength="12" placeholder="新增人員名字" autocomplete="off"><button class="btn primary" type="submit">新增人員</button></form>
-    <div class="adm-data"><label class="btn">匯入備份資料<input type="file" accept="application/json,.json" id="impFile" hidden></label><button class="btn" data-export="1">下載備份</button><span class="hint" id="impMsg">${esc(IMP.msg||"從舊網頁搬資料、或定期備份用")}</span></div>
-  ${bkRow}</section>`;
+  </section>`;
 }
 const IMP={msg:''};
 /* Firestore 不支援「陣列裡面再放陣列」，這種資料改存成文字 */
@@ -2427,7 +2428,7 @@ function pushHTML(){
   if(isIOS&&!isStandalone()) st='iPhone 要先把這個網頁「加入主畫面」，再從主畫面的圖示打開，才能開啟通知。';
   else if(!pushOK()) st='這支手機或瀏覽器不支援通知（iPhone 需 iOS 16.4 以上）。';
   else if(Notification.permission==='denied') st='通知被封鎖了，請到手機「設定 → 通知」找到這個 App 打開。';
-  else if(pushOn()){ st='✓ 這支手機已開啟提醒：每天 19:00 還沒結帳、明天有預約時會通知。'; btn='<button class="btn" data-pushoff="1">關閉通知</button><button class="btn" data-pushtest="1">傳一則測試</button>'; }
+  else if(pushOn()){ st='✓ 這支手機已開啟提醒：每天 19:00 還沒結帳、明天有預約時會通知。'; btn='<button class="btn" data-pushoff="1">關閉通知</button>'+(isDataAdmin()?'<button class="btn" data-pushtest="1">傳一則測試</button>':''); }
   else { st='開啟後，每天 19:00 還沒完成每日結帳、或明天有預約時，手機會跳出提醒。'; btn='<button class="btn primary" data-pushon="1">🔔 開啟這支手機的通知</button>'; }
   return `<section class="panel"><div class="ph"><h2>手機通知</h2></div><div class="pushbox"><span class="hint">${st}</span>${btn}</div></section>`;
 }
@@ -2523,7 +2524,7 @@ function bkDetail(e){
 document.addEventListener('click',ev=>{ const t=ev.target.closest('[data-bkev]'); if(!t) return; const e=BKEV[t.dataset.bkev]; if(e) bkDetail(e); });
 
 function bookingsHTML(){
-  if(!bkURL()) return (typeof canImport==='function'&&canImport())?`<div class="panel bk" id="bkPanel"><div class="ph"><h2>今明預約</h2><span class="hint">尚未連結 Google 日曆</span></div><p class="hint">在首頁下方「資料管理」貼上預約日曆連結後，這裡就會顯示兩館的預約。</p></div>`:'';
+  if(!bkURL()) return (typeof isDataAdmin==='function'&&isDataAdmin())?`<div class="panel bk" id="bkPanel"><div class="ph"><h2>今明預約</h2><span class="hint">尚未連結 Google 日曆</span></div><p class="hint">在首頁下方「資料管理」貼上預約日曆連結後，這裡就會顯示兩館的預約。</p></div>`:'';
   const t=todayStr(), tm=addDays(t,1); bkFetch('home',t,2,false);
   const c=BK.cache.home, evs=(c&&c.data&&c.data.events)||[];
   const col=(d,l)=>{ const l2=evs.filter(e=>bkOn(e,d)), n=l2.filter(e=>e.kind==='booking').length;
@@ -2535,7 +2536,7 @@ function bookingsHTML(){
 function drawBooking(){
   if(!W.name){ renderLogin(); return; }
   const ym=BK.ym, [y,m]=ym.split('-').map(Number), n=new Date(y,m,0).getDate(), key='m'+ym;
-  if(!bkURL()){ $('#main').innerHTML=`<div class="panel emptyb">還沒有連結預約日曆。${canImport()?'請到首頁下方「資料管理」貼上預約日曆連結。':'請找妃妃或郁雯設定。'}</div>`; return; }
+  if(!bkURL()){ $('#main').innerHTML=`<div class="panel emptyb">還沒有連結預約日曆。${(typeof isDataAdmin==='function'&&isDataAdmin())?'請到首頁下方「資料管理」貼上預約日曆連結。':'請找郁雯設定。'}</div>`; return; }
   bkFetch(key,`${ym}-01`,n,false);
   const c=BK.cache[key], evs=((c&&c.data&&c.data.events)||[]).filter(e=>BK.br==='all'||e.branch===BK.br), t=todayStr();
   const first=new Date(y,m-1,1).getDay(), cells=[]; for(let i=0;i<first;i++) cells.push(null); for(let d=1;d<=n;d++) cells.push(`${ym}-${pad(d)}`);
