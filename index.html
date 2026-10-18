@@ -847,6 +847,15 @@ table.opdays tr.na td{border-bottom:2px solid var(--rule)}
 .bk-d{font-weight:700;font-size:13px;color:var(--ink-2);margin-top:8px;padding:4px 2px;border-bottom:1px solid var(--rule)}
 .bk-two{display:grid;grid-template-columns:1fr 1fr;gap:6px 22px}.bk-col{min-width:0}.bk-d span{float:right;font-weight:400;color:var(--ink-3);font-size:12px}.bk-none{padding:10px 2px}
 @media (max-width:720px){.bk-two{grid-template-columns:1fr}}
+.bk-r{all:unset;box-sizing:border-box;width:100%;cursor:pointer;display:grid;grid-template-columns:46px 38px minmax(0,1fr) auto;gap:10px;align-items:center;padding:9px 2px;border-bottom:1px solid var(--soft)}.bk-r:hover{background:var(--hover)}
+.bk-ov{position:fixed;inset:0;z-index:300;background:rgba(40,25,22,.5);display:flex;align-items:center;justify-content:center;padding:16px}
+.bk-dlg{background:var(--paper);border-radius:16px;width:min(520px,100%);max-height:88vh;overflow:auto;padding:18px 20px;display:grid;gap:12px;border-top:5px solid var(--bc);box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.bk-dh{display:flex;align-items:center;gap:10px}.bk-dh b{font-size:19px;flex:1}.bk-dh .bk-b{padding:2px 8px;font-size:12px;color:#fff;background:var(--bc);border-radius:6px}
+.bk-dt{font-weight:600;color:var(--ink-2)}
+.bk-dg{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px}.bk-dg div{background:var(--soft);border-radius:10px;padding:8px 10px;display:grid;gap:2px}.bk-dg span{font-size:11.5px;color:var(--ink-3)}.bk-dg b{font-size:14px}
+.bk-dl{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 12px;margin:0;font-size:13.5px}.bk-dl dt{color:var(--ink-3);max-width:12em}.bk-dl dd{margin:0;white-space:pre-wrap;word-break:break-word}
+.bk-note{background:#fbf4e6;border-radius:10px;padding:10px 12px}.bk-note span{font-size:12px;color:#a0672a;font-weight:600}.bk-note p{margin:4px 0 0;white-space:pre-wrap}
+@media (max-width:560px){.bk-dl{grid-template-columns:1fr;gap:2px}.bk-dl dt{margin-top:6px;max-width:none}}
 .bk-go{margin-left:auto;padding:6px 12px;font-size:13px}
 .bk-cal{display:grid;gap:10px}.bk-sum{font-size:13px;color:var(--ink-3)}.bk-sum b{color:var(--wine);font-size:16px}
 .bk-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
@@ -2432,8 +2441,26 @@ const bkDay=iso=>new Date(iso).toLocaleDateString('sv',{timeZone:'Asia/Taipei'})
 const bkTime=iso=>new Date(iso).toLocaleTimeString('en-GB',{timeZone:'Asia/Taipei',hour:'2-digit',minute:'2-digit',hour12:false});
 const bkS=e=>bkDay(e.start), bkE=e=>e.allDay?addDays(bkDay(e.end),-1):bkDay(e.start);
 const bkOn=(e,d)=>bkS(e)<=d&&bkE(e)>=d;
-const bkRow=e=>`<div class="bk-r ${e.kind==='note'?'note':''}" style="--bc:var(${B[e.branch].color})"><span class="bk-t num">${e.allDay?'全天':bkTime(e.start)}</span><span class="bk-b">${e.branch==='qp'?'旗跑':'旗時'}</span>
-    <span class="bk-m">${e.kind==='booking'?`<b>${esc(e.name||'—')}</b>${e.people?`<em>${esc(e.people)} 人</em>`:''}<small>${esc(e.item||'')}</small>`:`<b>${esc(e.title)}</b>`}</span>${e.status?`<span class="bk-s ${/已付款|完成/.test(e.status)&&!/訂金/.test(e.status)?'ok':''}">${esc(e.status)}</span>`:'<span></span>'}</div>`;
+const BKEV={};
+const bkRow=e=>{ BKEV[e.id+'|'+e.start]=e; return `<button type="button" class="bk-r ${e.kind==='note'?'note':''}" data-bkev="${esc(e.id+'|'+e.start)}" style="--bc:var(${B[e.branch].color})"><span class="bk-t num">${e.allDay?'全天':bkTime(e.start)}</span><span class="bk-b">${e.branch==='qp'?'旗跑':'旗時'}</span>
+    <span class="bk-m">${e.kind==='booking'?`<b>${esc(e.name||'—')}</b>${e.people?`<em>${esc(e.people)} 人</em>`:''}<small>${esc(e.item||'')}</small>`:`<b>${esc(e.title)}</b>`}</span>${e.status?`<span class="bk-s ${/已付款|完成/.test(e.status)&&!/訂金/.test(e.status)?'ok':''}">${esc(e.status)}</span>`:'<span></span>'}</button>`; };
+function bkDetail(e){
+  const time=e.allDay?(bkS(e)===bkE(e)?'全天':`${md(bkS(e))} – ${md(bkE(e))} 全天`):`${bkTime(e.start)} – ${bkTime(e.end)}`;
+  const det=(e.details||[]).filter(([k])=>!/^(項目|預訂編號|預約狀態|Service|Order ID|開始時間|預約旗袍體驗人數.*|預約數量)$/.test(k));
+  const v=document.createElement('div'); v.className='bk-ov'; v.innerHTML=`<div class="bk-dlg" role="dialog" aria-modal="true" style="--bc:var(${B[e.branch].color})">
+    <div class="bk-dh"><span class="bk-b">${e.branch==='qp'?'旗跑':'旗時'}</span><b>${esc(e.kind==='booking'?(e.name||'—'):e.title)}</b><button class="ibtn" data-bkclose aria-label="關閉">✕</button></div>
+    <div class="bk-dt num">${md(bkS(e))}（${wk(bkS(e))}）${time}</div>
+    ${e.kind==='booking'?`<div class="bk-dg">${e.item?`<div><span>項目</span><b>${esc(e.item)}</b></div>`:''}${e.people?`<div><span>人數</span><b>${esc(e.people)} 人</b></div>`:''}${e.status?`<div><span>狀態</span><b>${esc(e.status)}</b></div>`:''}${e.no?`<div><span>預約編號</span><b>${esc(e.no)}</b></div>`:''}</div>`:''}
+    ${det.length?`<dl class="bk-dl">${det.map(([k,val])=>`<dt>${esc(k)}</dt><dd>${esc(val)}</dd>`).join('')}</dl>`:''}
+    ${e.staffNote?`<div class="bk-note"><span>工作人員備註</span><p>${esc(e.staffNote)}</p></div>`:''}
+    ${e.kind==='booking'&&!e.details?'<p class="hint">要顯示更多詳情，請把 Apps Script 更新成最新版本。</p>':''}
+  </div>`;
+  document.body.appendChild(v); document.body.classList.add('noscroll');
+  const close=()=>{ v.remove(); document.body.classList.remove('noscroll'); };
+  v.addEventListener('click',ev=>{ if(ev.target===v||ev.target.closest('[data-bkclose]')) close(); });
+}
+document.addEventListener('click',ev=>{ const t=ev.target.closest('[data-bkev]'); if(!t) return; const e=BKEV[t.dataset.bkev]; if(e) bkDetail(e); });
+
 function bookingsHTML(){
   if(!bkURL()) return (typeof canImport==='function'&&canImport())?`<div class="panel bk" id="bkPanel"><div class="ph"><h2>今明預約</h2><span class="hint">尚未連結 Google 日曆</span></div><p class="hint">在首頁下方「資料管理」貼上預約日曆連結後，這裡就會顯示兩館的預約。</p></div>`:'';
   const t=todayStr(), tm=addDays(t,1); bkFetch('home',t,2,false);
