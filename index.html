@@ -860,6 +860,9 @@ table.opdays tr.na td{border-bottom:2px solid var(--rule)}
 .bk-dl{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 12px;margin:0;font-size:13.5px}.bk-dl dt{color:var(--ink-3);max-width:12em}.bk-dl dd{margin:0;white-space:pre-wrap;word-break:break-word}
 .bk-note{background:#fbf4e6;border-radius:10px;padding:10px 12px}.bk-note span{font-size:12px;color:#a0672a;font-weight:600}.bk-note p{margin:4px 0 0;white-space:pre-wrap}
 @media (max-width:560px){.bk-dl{grid-template-columns:1fr;gap:2px}.bk-dl dt{margin-top:6px;max-width:none}}
+.spm{display:grid;gap:10px}.spm-f{display:flex;gap:8px;align-items:flex-start}.spm-f .fl{flex:none;font-size:12.5px;color:var(--ink-3);padding-top:7px;width:2.6em}.spm-f .chips{flex-wrap:wrap}.spm-f .chip small{color:var(--ink-3);margin-left:3px}.spm-f .chip.on small{color:inherit;opacity:.8}
+.spm-d{display:grid}.spm-dh{all:unset;cursor:pointer;display:flex;justify-content:space-between;align-items:baseline;padding:8px 2px;border-bottom:1px solid var(--rule);margin-top:6px}.spm-dh b{font-size:14px}.spm-dh span{font-size:12.5px;color:var(--ink-3)}.spm-dh:hover b{color:var(--wine)}
+.spm-go{color:var(--wine)}
 .bk-go{margin-left:auto;padding:6px 12px;font-size:13px}
 .bk-cal{display:grid;gap:10px}.bk-sum{font-size:13px;color:var(--ink-3)}.bk-sum b{color:var(--wine);font-size:16px}
 .bk-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
@@ -2608,6 +2611,23 @@ function spendChooser(){
       <span class="pk-go">開始記支出 →</span></button>`;};
   return `<div class="chooser"><button class="mclose" data-mclose="1" aria-label="關閉">×</button><div class="ch-head sp"><h2 id="pickTitle">今天要記哪一間店的支出？</h2><p class="hint">${+today.slice(5,7)} 月 ${+today.slice(8)} 日・星期${wk(today)}</p></div><div class="picks">${card('qp')}${card('yl')}</div></div>`;
 }
+function spMonthHTML(b,day){
+  const [y,m]=spYM(day), all=spMonth(b,day).slice().sort((a,c)=>(a.date||'')<(c.date||'')?1:(a.date||'')>(c.date||'')?-1:0);
+  const payOf=e=>PAYS.find(p=>p!=='其他'&&(e.note||'').split('・').includes(p))||'其他';
+  const cats=[...new Set(all.map(e=>e.cat))], pays=[...new Set(all.map(payOf))];
+  if(SP.mcat&&!cats.includes(SP.mcat)) SP.mcat=''; if(SP.mpay&&!pays.includes(SP.mpay)) SP.mpay='';
+  const list=all.filter(e=>(!SP.mcat||e.cat===SP.mcat)&&(!SP.mpay||payOf(e)===SP.mpay)), tot=sum(list.map(e=>+e.amt||0));
+  const byCat={}; all.forEach(e=>byCat[e.cat]=(byCat[e.cat]||0)+(+e.amt||0));
+  const byPay={}; all.forEach(e=>{const p=payOf(e); byPay[p]=(byPay[p]||0)+(+e.amt||0);});
+  const days={}; list.forEach(e=>(days[e.date||'月結項目（沒有日期）']??=[]).push(e));
+  const chip=(k,v,lab,on)=>`<button type="button" class="chip ${on?'on':''}" data-${k}="${esc(v)}">${lab}</button>`;
+  return `<div class="panel spm" id="spMonth"><div class="ph"><h2>${m} 月支出明細</h2><span class="hint num">${SP.mcat||SP.mpay?`篩選後 ${list.length} 筆・${fmt(tot)} 元／`:''}全月 ${all.length} 筆・${fmt(sum(all.map(e=>+e.amt||0)))} 元</span></div>
+    ${all.length?`<div class="spm-f"><span class="fl">類別</span><span class="chips">${chip('smcat','', '全部',!SP.mcat)}${Object.entries(byCat).sort((a,c)=>c[1]-a[1]).map(([c,v])=>chip('smcat',c,`${esc(c)} <small class="num">${fmt(v)}</small>`,SP.mcat===c)).join('')}</span></div>
+      <div class="spm-f"><span class="fl">付款</span><span class="chips">${chip('smpay','','全部',!SP.mpay)}${Object.entries(byPay).sort((a,c)=>c[1]-a[1]).map(([p,v])=>chip('smpay',p,`${esc(p)} <small class="num">${fmt(v)}</small>`,SP.mpay===p)).join('')}</span></div>
+      ${Object.keys(days).length?Object.entries(days).map(([d,l])=>`<div class="spm-d"><button type="button" class="spm-dh" data-sday="${esc(d)}"><b>${/^\d{4}-/.test(d)?`${+d.slice(5,7)}/${+d.slice(8)}（${wk(d)}）`:esc(d)}</b><span class="num">${l.length} 筆・${fmt(sum(l.map(e=>+e.amt||0)))} 元</span></button>
+        <ul class="sp-list">${l.map(e=>`<li><span class="spl-c">${esc(e.cat)}</span><span class="spl-i">${esc(e.item)}<small>${esc([e.note,e.by?e.by+' 記錄':''].filter(Boolean).join('・'))}</small></span>${e.receipt?`<a class="spl-r" href="${rcptURL(e.receipt)}" target="_blank" rel="noopener" aria-label="看收據"><img src="${rcptURL(e.receipt)}" alt="收據" loading="lazy"></a>`:'<span></span>'}<b class="num">${fmt(+e.amt||0)}</b><span></span></li>`).join('')}</ul></div>`).join(''):'<p class="hint">沒有符合篩選的支出。</p>'}`
+    :'<p class="hint">這個月還沒有支出。</p>'}</div>`;
+}
 function renderSpend(b){
   const editable=S.canWrite!==false&&S.db, day=SP.day, list=spList(b,day), tot=sum(list.map(e=>+e.amt||0));
   const cats=CATS[b].exp; if(!cats.includes(SP.cat)) SP.cat='雜支耗材';
@@ -2645,14 +2665,15 @@ function renderSpend(b){
           <div class="sc-big num"><span>這天支出</span><b>${fmt(tot)}</b></div>
           ${Object.keys(byCat).length?`<div class="sp-cats">${Object.entries(byCat).sort((a,c)=>c[1]-a[1]).map(([c,v])=>`<div class="spc"><span>${esc(c)}</span><i><b style="width:${v/mx*100}%"></b></i><em class="num">${fmt(v)}</em></div>`).join('')}</div>`:'<div class="recon idle">新增後會在這裡依類別加總</div>'}
           <div class="petty ${pettyLeft(b,day)<0?'over':pettyLeft(b,day)<PETTY[b]*.2?'low':''}"><div class="pt-h"><span>零用金餘額</span><b class="num">剩 ${fmt(pettyLeft(b,day))}</b></div><i><b style="width:${Math.max(0,Math.min(100,pettyLeft(b,day)/PETTY[b]*100))}%"></b></i><small class="num">額度 ${fmt(PETTY[b])}・上次結帳後已用 ${fmt(pettyUsed(b,day))}${pettyLeft(b,day)<0?'・已超支':''}</small></div>
-          <div class="sc-grid num"><div><span>${+day.slice(5,7)} 月支出累計</span><b>${fmt(mTot)}</b><small>${mList.length} 筆</small></div><div><span>記錄人</span><b>${esc(W.name||'—')}</b></div></div>
+          <div class="sc-grid num"><div><span>${+day.slice(5,7)} 月支出累計</span><b>${fmt(mTot)}</b><small>${mList.length} 筆・<a href="#spMonth" class="spm-go">看明細</a></small></div><div><span>記錄人</span><b>${esc(W.name||'—')}</b></div></div>
         </div>
         ${editable?`<button class="btn primary big-save" data-ssave="${b}">新增支出</button>`:'<p class="hint">你目前只能檢視。</p>'}
       </aside>
     </div>
     <div class="panel"><div class="ph"><h2>${+day.slice(5,7)} 月 ${+day.slice(8)} 日支出明細</h2><span class="hint">會同步到營業分析「收支」的支出</span></div>
       ${list.length?`<ul class="sp-list">${list.map(e=>`<li><span class="spl-c">${esc(e.cat)}</span><span class="spl-i">${esc(e.item)}<small>${esc([e.note,e.by?e.by+' 記錄':''].filter(Boolean).join('・'))}</small></span>${e.receipt?`<a class="spl-r" href="${rcptURL(e.receipt)}" target="_blank" rel="noopener" aria-label="看收據"><img src="${rcptURL(e.receipt)}" alt="收據" loading="lazy"></a>`:editable?`<button class="spl-r add" data-srcpt="${e.id}" aria-label="補收據照片">＋收據</button>`:'<span></span>'}<b class="num">${fmt(+e.amt||0)}</b>${editable?`<button class="ibtn ${SP.confirmDel===e.id?'danger':''}" data-sdel="${e.id}">${SP.confirmDel===e.id?'確定刪除':'刪除'}</button>`:''}</li>`).join('')}<li class="tot"><span></span><span>合計 ${list.length} 筆</span><span></span><b class="num">${fmt(tot)}</b>${editable?'<span></span>':''}</li></ul>`:'<p class="emptyb">這天還沒有支出紀錄。</p>'}
-    </div>`;
+    </div>
+    ${spMonthHTML(b,day)}`;
 }
 function drawSpend(){
   if(!W.name){ renderLogin(); return; }
@@ -2706,6 +2727,9 @@ function bindSpend(){
     else if(t.dataset.stoday) setSpendDay(todayStr());
     else if(t.dataset.scat){ SP.cat=t.dataset.scat; drawSpend(); }
     else if(t.dataset.spay){ SP.pay=t.dataset.spay; drawSpend(); }
+    else if(t.dataset.smcat!=null){ SP.mcat=t.dataset.smcat; drawSpend(); }
+    else if(t.dataset.smpay!=null){ SP.mpay=t.dataset.smpay; drawSpend(); }
+    else if(t.dataset.sday){ if(/^\d{4}-/.test(t.dataset.sday)){ setSpendDay(t.dataset.sday); scrollTo({top:0,behavior:'smooth'}); } }
     else if(t.dataset.ssave) spendAdd(t.dataset.ssave);
     else if(t.dataset.sphotox){ clearPhoto(); drawSpend(); }
     else if(t.dataset.srcpt){ let inp=$('#s-photo2'); if(!inp){ inp=document.createElement('input'); inp.type='file'; inp.accept='image/*'; inp.id='s-photo2'; inp.hidden=true; main.appendChild(inp); } inp.dataset.for=t.dataset.srcpt; inp.value=''; inp.click(); }
