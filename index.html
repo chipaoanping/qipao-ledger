@@ -35,6 +35,7 @@ body::before{content:"";display:block;height:env(safe-area-inset-top,0px)}
 .adm-p small{font-size:12px;color:var(--ink-3)}
 .adm-p .chip{padding:3px 10px;font-size:12px}.chip.danger{color:var(--accent)}
 .adm-data{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.pa-dlg{text-align:center;justify-items:center;width:min(380px,100%)}.pa-ic{font-size:40px}.pa-t{font-size:19px}.pa-p{margin:0;color:var(--ink-2);font-size:14px;line-height:1.6}.pa-ios{background:var(--soft);border-radius:10px;padding:10px 12px;text-align:left}.pa-b{display:flex;gap:10px;justify-content:center;margin-top:4px}.pa-b .btn{min-width:110px}
 .pushbox{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px}.pushbox .hint{flex:1;min-width:200px}
 .adm-bk{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:12px}.adm-bk .tin{flex:1;min-width:200px}.adm-bk .fl{font-weight:600;font-size:13px}
 .adm-data label.btn{cursor:pointer}
@@ -2453,6 +2454,24 @@ document.addEventListener('click',async ev=>{ const t=ev.target.closest('[data-p
   else if(t.dataset.vapidsave){ const v=(($('#vapidIn')||{}).value||'').trim(); try{ await FB.fs.doc('misc/push').set({vapid:v,by:W.name||'',at:new Date().toISOString()}); S.misc={...(S.misc||{}),push:{vapid:v}}; toast(v?'推播金鑰已儲存':'已移除推播金鑰'); renderHome(); }catch(e){ toast('儲存失敗'); } }
 });
 
+/* 第一次打開（或更新後）自動詢問要不要開啟通知；iPhone 必須由使用者按按鈕才能跳出系統詢問 */
+const PUSH_ASK_VER='1';
+function pushMaybeAsk(){
+  if(!W.name||!pushVapid()||document.querySelector('.push-ask')) return;
+  let asked=''; try{ asked=localStorage.getItem('push-asked')||''; }catch(e){}
+  const iosWeb=isIOS&&!isStandalone(), akey=W.name+'|'+PUSH_ASK_VER+(iosWeb?'|web':'');
+  if(asked===akey||pushOn()) return;
+  if(!iosWeb&&(!pushOK()||Notification.permission!=='default')) return;
+  const v=document.createElement('div'); v.className='bk-ov push-ask';
+  v.innerHTML=`<div class="bk-dlg pa-dlg" role="dialog" aria-modal="true"><div class="pa-ic">🔔</div><b class="pa-t">要開啟手機提醒嗎？</b>
+    <p class="pa-p">開啟後，每天 19:00 如果還沒完成每日結帳，或明天有預約，手機會跳出通知提醒你。</p>
+    ${iosWeb?`<p class="pa-p pa-ios">iPhone 要先把這個網頁「加入主畫面」：點 Safari 下方的 <b>分享</b> → <b>加入主畫面</b>，再從主畫面的圖示打開，就能開啟通知。</p><div class="pa-b"><button class="btn primary" data-palater>我知道了</button></div>`
+    :`<div class="pa-b"><button class="btn" data-palater>以後再說</button><button class="btn primary" data-payes>開啟通知</button></div>`}</div>`;
+  document.body.appendChild(v);
+  const done=()=>{ try{ localStorage.setItem('push-asked',akey); }catch(e){} v.remove(); };
+  v.addEventListener('click',ev=>{ if(ev.target.closest('[data-payes]')){ done(); pushEnable(); } else if(ev.target.closest('[data-palater]')){ done(); toast('之後可以在首頁下方「手機通知」開啟'); } });
+}
+
 
 /* ---------- 首頁 & 當日支出 ---------- */
 const SP={branch:null, day:todayStr(), cat:'', pay:'零用金', draft:{}, confirmDel:null};
@@ -2954,7 +2973,7 @@ function startData(){
   FB.unsubs.push(db.collection('crewlog').onSnapshot(snap=>{ const o={}; snap.docs.forEach(d=>{o[d.id]=d.data();}); S.crewlog=o; if((S.mode==='crew'||S.mode==='daily')&&!CR.editing) crewRedraw(); else if(S.mode==='home') renderHome(); },()=>{}));
   FB.unsubs.push(db.collection('crewpay').onSnapshot(snap=>{ const o={}; snap.docs.forEach(d=>{o[d.id]=d.data();}); S.crewpay=o; if(S.mode==='crew'&&!CR.editing) drawCrew(); },()=>{}));
   FB.unsubs.push(db.collection('payroll').onSnapshot(snap=>{ const o={}; snap.docs.forEach(d=>{o[d.id]=d.data();}); S.payroll=o; if(S.mode==='payroll'&&!PR.dirty){ PR.draft=null; drawPay(); } else if(S.mode==='home') renderHome(); },()=>{}));
-  FB.unsubs.push(db.collection('misc').onSnapshot(snap=>{ const m={}; snap.docs.forEach(d=>{m[d.id]=fsDec(d.data());}); S.misc=m; S.miscLoaded=true; if(S.mode==='home') renderHome(); if(S.loaded&&!S.editing&&!S.adding&&S.mode==='ledger'&&S.month===0&&S.sec==='chan') render(); },()=>{}));
+  FB.unsubs.push(db.collection('misc').onSnapshot(snap=>{ const m={}; snap.docs.forEach(d=>{m[d.id]=fsDec(d.data());}); S.misc=m; S.miscLoaded=true; if(S.mode==='home') renderHome(); setTimeout(()=>{ if(typeof pushMaybeAsk==='function') pushMaybeAsk(); },1200); if(S.loaded&&!S.editing&&!S.adding&&S.mode==='ledger'&&S.month===0&&S.sec==='chan') render(); },()=>{}));
 }
 function applyAuth(){
   const u=FB.auth&&FB.auth.currentUser;
