@@ -860,6 +860,17 @@ table.opdays tr.na td{border-bottom:2px solid var(--rule)}
 .bk-dl{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 12px;margin:0;font-size:13.5px}.bk-dl dt{color:var(--ink-3);max-width:12em}.bk-dl dd{margin:0;white-space:pre-wrap;word-break:break-word}
 .bk-note{background:#fbf4e6;border-radius:10px;padding:10px 12px}.bk-note span{font-size:12px;color:#a0672a;font-weight:600}.bk-note p{margin:4px 0 0;white-space:pre-wrap}
 @media (max-width:560px){.bk-dl{grid-template-columns:1fr;gap:2px}.bk-dl dt{margin-top:6px;max-width:none}}
+.fx{display:grid;gap:8px}.fx .ph{flex-wrap:wrap;gap:8px}.fx-set{margin-left:auto;padding:6px 12px;font-size:13px}
+.fx-l{list-style:none;margin:0;padding:0;display:grid}
+.fx-l li{display:grid;grid-template-columns:42px auto minmax(0,1fr) auto auto;gap:10px;align-items:center;padding:9px 2px;border-bottom:1px solid var(--soft)}
+.fx-l li.ok{opacity:.75}.fx-d{font-size:13px;color:var(--ink-3)}.fx-i{display:grid}.fx-i small{font-size:12px;color:var(--ink-3)}
+.fx-st{font-size:13px;color:#4f7a52;grid-column:span 2;text-align:right}.fx-st.todo{color:#a0672a}
+.fx-amt{width:120px;padding:0 10px}.fx-amt input{padding:7px 0;font-size:15px}
+.fx-act{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.fx-act .sp{flex:1}
+.fx-ed{display:grid;gap:8px}.fx-er{display:grid;grid-template-columns:130px minmax(0,1fr) 130px 120px 90px 30px;gap:8px;align-items:center}.fx-er .tin{padding:8px 10px;min-width:0}.fx-er .din{padding:0 10px}.fx-er .din input{padding:8px 0}
+.fx-day{display:flex;align-items:center;gap:4px;font-size:13px;white-space:nowrap}.fx-day input{width:52px;padding:7px 6px}
+@media (max-width:640px){.fx-l li{grid-template-columns:38px minmax(0,1fr) auto;row-gap:6px}.fx-l li .spl-c{display:none}.fx-amt{width:100px}.fx-l li .btn{grid-column:3}.fx-l li .fx-amt{grid-column:2;justify-self:end}
+  .fx-er{grid-template-columns:1fr 1fr;padding:10px;border:1px solid var(--soft);border-radius:10px}.fx-er input[data-k="item"]{grid-column:1/-1;order:-1}.fx-er .ibtn{justify-self:end}}
 .spm{display:grid;gap:10px}.spm-f{display:flex;gap:8px;align-items:flex-start}.spm-f .fl{flex:none;font-size:12.5px;color:var(--ink-3);padding-top:7px;width:2.6em}.spm-f .chips{flex-wrap:wrap}.spm-f .chip small{color:var(--ink-3);margin-left:3px}.spm-f .chip.on small{color:inherit;opacity:.8}
 .spm-d{display:grid}.spm-dh{all:unset;cursor:pointer;display:flex;justify-content:space-between;align-items:baseline;padding:8px 2px;border-bottom:1px solid var(--rule);margin-top:6px}.spm-dh b{font-size:14px}.spm-dh span{font-size:12.5px;color:var(--ink-3)}.spm-dh:hover b{color:var(--wine)}
 .spm-go{color:var(--wine)}
@@ -2611,6 +2622,43 @@ function spendChooser(){
       <span class="pk-go">開始記支出 →</span></button>`;};
   return `<div class="chooser"><button class="mclose" data-mclose="1" aria-label="關閉">×</button><div class="ch-head sp"><h2 id="pickTitle">今天要記哪一間店的支出？</h2><p class="hint">${+today.slice(5,7)} 月 ${+today.slice(8)} 日・星期${wk(today)}</p></div><div class="picks">${card('qp')}${card('yl')}</div></div>`;
 }
+/* ---------- 每月固定支出 ---------- */
+const FX={edit:false,draft:null,amt:{}};
+const fxList=b=>((((S.misc||{}).fixedexp)||{})[b])||[];
+function fxDone(b,day,id){ return spMonth(b,day).find(e=>e.fixed===id); }
+function fixedHTML(b,day){
+  const can=crewOK(), [y,m]=spYM(day), list=fxList(b), last=new Date(y,m,0).getDate();
+  if(!list.length&&!can) return '';
+  if(FX.edit&&can){ const dl=FX.draft;
+    return `<div class="panel fx" id="fxPanel"><div class="ph"><h2>設定每月固定支出</h2><span class="hint">${b==='qp'?'旗跑':'旗時'}</span></div>
+      <div class="fx-ed">${dl.map((x,i)=>`<div class="fx-er">
+        <select class="tin" data-fxe="${i}" data-k="cat">${CATS[b].exp.map(c=>`<option ${c===x.cat?'selected':''}>${esc(c)}</option>`).join('')}</select>
+        <input class="tin" data-fxe="${i}" data-k="item" value="${esc(x.item||'')}" placeholder="項目，例：房租">
+        <span class="din"><input data-fxe="${i}" data-k="amt" type="number" inputmode="numeric" value="${esc(x.amt??'')}" placeholder="金額"><small>元</small></span>
+        <label class="fx-day">每月 <input class="tin" data-fxe="${i}" data-k="day" type="number" min="1" max="31" value="${esc(x.day||1)}"> 號</label>
+        <select class="tin" data-fxe="${i}" data-k="pay">${PAYS.map(p=>`<option ${p===(x.pay||'轉帳')?'selected':''}>${p}</option>`).join('')}</select>
+        <button class="ibtn" data-fxdel="${i}" aria-label="刪除">✕</button></div>`).join('')||'<p class="hint">還沒有固定支出，按下方新增。</p>'}</div>
+      <div class="fx-act"><button class="btn" data-fxadd="1">＋ 新增一項</button>${(()=>{const pm=m>1?m-1:12, py=m>1?y:y-1, prev=listOf(b,pm,'exp',py).filter(e=>!e.auto&&!e.fixed&&['房租','水電網路','金流・平台費','稅費'].includes(e.cat)); return prev.length?`<button class="btn" data-fximport="${pm}|${py}">從 ${pm} 月帶入（${prev.length} 項）</button>`:'';})()}<span class="sp"></span><button class="btn" data-fxcancel="1">取消</button><button class="btn primary" data-fxsave="1">儲存設定</button></div>
+      <p class="hint">金額不固定的（例如水電）可以先填大約金額，記入時再改。</p></div>`; }
+  const done=list.filter(x=>fxDone(b,day,x.id)), todo=list.filter(x=>!fxDone(b,day,x.id));
+  const totAll=sum(list.map(x=>+x.amt||0));
+  return `<div class="panel fx" id="fxPanel"><div class="ph"><h2>${m} 月固定支出</h2><span class="hint num">${list.length?`已記 ${done.length}／${list.length} 項・每月約 ${fmt(totAll)} 元`:'尚未設定'}</span>${can?`<button class="btn fx-set" data-fxedit="1">${list.length?'設定':'＋ 設定固定支出'}</button>`:''}</div>
+    ${list.length?`<ul class="fx-l">${list.map(x=>{ const d=fxDone(b,day,x.id), dd=Math.min(+x.day||1,last);
+      return `<li class="${d?'ok':''}"><span class="fx-d num">${m}/${dd}</span><span class="spl-c">${esc(x.cat)}</span><span class="fx-i">${esc(x.item)}<small>${esc(x.pay||'')}</small></span>
+        ${d?`<span class="fx-st">✓ 已記 <b class="num">${fmt(+d.amt||0)}</b></span>`:can?`<span class="din fx-amt"><input data-fxamt="${x.id}" type="number" inputmode="numeric" value="${esc(FX.amt[x.id]??x.amt??'')}"><small>元</small></span><button class="btn primary" data-fxrec="${x.id}">記入</button>`:`<span class="fx-st todo num">未記・約 ${fmt(+x.amt||0)}</span>`}</li>`; }).join('')}</ul>
+      ${can&&todo.length>1?`<div class="fx-act"><span class="sp"></span><button class="btn primary" data-fxall="1">全部記入 ${m} 月（${todo.length} 項）</button></div>`:''}`
+    :'<p class="hint">把房租、水電、網路、軟體月費等每月都會有的支出設定好，每個月按一下就能記入。</p>'}</div>`;
+}
+async function fxSaveList(b,list){ const cur=((S.misc||{}).fixedexp)||{}, doc={...cur,[b]:list};
+  await S.db.doc('misc/fixedexp').set(doc); S.misc={...(S.misc||{}),fixedexp:doc}; }
+async function fxRecord(b,day,ids){
+  const [y,m]=spYM(day), last=new Date(y,m,0).getDate(), list=fxList(b).filter(x=>ids.includes(x.id)&&!fxDone(b,day,x.id)); if(!list.length) return;
+  const ym=`${y}-${pad(m)}`;
+  const add=list.map(x=>({id:uid(),cat:x.cat,item:x.item,amt:Math.round(+(FX.amt[x.id]??x.amt)||0),date:`${ym}-${pad(Math.min(+x.day||1,last))}`,note:[x.pay&&x.pay!=='其他'?x.pay:'','固定支出'].filter(Boolean).join('・'),by:W.name||'',uid:W.uid||'',fixed:x.id}));
+  if(add.some(e=>!e.amt)){ toast('有金額是 0，請先填金額'); return; }
+  list.forEach(x=>delete FX.amt[x.id]);
+  await spendWrite(b,`${ym}-01`,l=>l.concat(add),add.length>1?`已記入 ${add.length} 項固定支出`:`已記入 ${add[0].item} ${fmt(add[0].amt)} 元`);
+}
 function spMonthHTML(b,day){
   const [y,m]=spYM(day), all=spMonth(b,day).slice().sort((a,c)=>(a.date||'')<(c.date||'')?1:(a.date||'')>(c.date||'')?-1:0);
   const payOf=e=>PAYS.find(p=>p!=='其他'&&(e.note||'').split('・').includes(p))||'其他';
@@ -2673,6 +2721,7 @@ function renderSpend(b){
     <div class="panel"><div class="ph"><h2>${+day.slice(5,7)} 月 ${+day.slice(8)} 日支出明細</h2><span class="hint">會同步到營業分析「收支」的支出</span></div>
       ${list.length?`<ul class="sp-list">${list.map(e=>`<li><span class="spl-c">${esc(e.cat)}</span><span class="spl-i">${esc(e.item)}<small>${esc([e.note,e.by?e.by+' 記錄':''].filter(Boolean).join('・'))}</small></span>${e.receipt?`<a class="spl-r" href="${rcptURL(e.receipt)}" target="_blank" rel="noopener" aria-label="看收據"><img src="${rcptURL(e.receipt)}" alt="收據" loading="lazy"></a>`:editable?`<button class="spl-r add" data-srcpt="${e.id}" aria-label="補收據照片">＋收據</button>`:'<span></span>'}<b class="num">${fmt(+e.amt||0)}</b>${editable?`<button class="ibtn ${SP.confirmDel===e.id?'danger':''}" data-sdel="${e.id}">${SP.confirmDel===e.id?'確定刪除':'刪除'}</button>`:''}</li>`).join('')}<li class="tot"><span></span><span>合計 ${list.length} 筆</span><span></span><b class="num">${fmt(tot)}</b>${editable?'<span></span>':''}</li></ul>`:'<p class="emptyb">這天還沒有支出紀錄。</p>'}
     </div>
+    ${fixedHTML(b,day)}
     ${spMonthHTML(b,day)}`;
 }
 function drawSpend(){
@@ -2708,6 +2757,8 @@ function setSpendDay(d){SP.day=d;SP.confirmDel=null;drawSpend();}
 function bindSpend(){
   const main=$('#main');
   main.addEventListener('input',ev=>{ if(S.mode!=='spend') return; const id=ev.target.id;
+    if(ev.target.dataset.fxe!=null){ FX.draft[+ev.target.dataset.fxe][ev.target.dataset.k]=ev.target.value; return; }
+    if(ev.target.dataset.fxamt){ FX.amt[ev.target.dataset.fxamt]=ev.target.value; return; }
     if(id==='s-item') SP.draft.item=ev.target.value; else if(id==='s-amt') SP.draft.amt=ev.target.value; else if(id==='s-note') SP.draft.note=ev.target.value;
     const er=$('#sErr'); if(er) er.textContent=''; });
   main.addEventListener('change',async ev=>{ if(S.mode!=='spend') return; const t=ev.target;
@@ -2727,6 +2778,14 @@ function bindSpend(){
     else if(t.dataset.stoday) setSpendDay(todayStr());
     else if(t.dataset.scat){ SP.cat=t.dataset.scat; drawSpend(); }
     else if(t.dataset.spay){ SP.pay=t.dataset.spay; drawSpend(); }
+    else if(t.dataset.fxedit){ FX.edit=true; FX.draft=JSON.parse(JSON.stringify(fxList(SP.branch))); drawSpend(); }
+    else if(t.dataset.fxcancel){ FX.edit=false; FX.draft=null; drawSpend(); }
+    else if(t.dataset.fxadd){ FX.draft.push({id:'f'+uid(),cat:CATS[SP.branch].exp.includes('其他')?'其他':CATS[SP.branch].exp[0],item:'',amt:'',day:1,pay:'轉帳'}); drawSpend(); }
+    else if(t.dataset.fxdel){ FX.draft.splice(+t.dataset.fxdel,1); drawSpend(); }
+    else if(t.dataset.fximport){ const [pm,py]=t.dataset.fximport.split('|').map(Number); listOf(SP.branch,pm,'exp',py).filter(e=>!e.auto&&!e.fixed&&['房租','水電網路','金流・平台費','稅費'].includes(e.cat)).forEach(e=>{ if(!FX.draft.some(x=>x.item===e.item&&x.cat===e.cat)) FX.draft.push({id:'f'+uid(),cat:e.cat,item:e.item,amt:+e.amt||0,day:1,pay:'轉帳'}); }); drawSpend(); }
+    else if(t.dataset.fxsave){ const l=FX.draft.filter(x=>(x.item||'').trim()).map(x=>({...x,item:x.item.trim(),amt:Math.round(+x.amt||0),day:Math.min(31,Math.max(1,Math.round(+x.day||1)))})); fxSaveList(SP.branch,l).then(()=>{ FX.edit=false; FX.draft=null; drawSpend(); toast('固定支出設定已儲存'); }).catch(()=>toast('儲存失敗')); }
+    else if(t.dataset.fxrec){ fxRecord(SP.branch,SP.day,[t.dataset.fxrec]); }
+    else if(t.dataset.fxall){ fxRecord(SP.branch,SP.day,fxList(SP.branch).map(x=>x.id)); }
     else if(t.dataset.smcat!=null){ SP.mcat=t.dataset.smcat; drawSpend(); }
     else if(t.dataset.smpay!=null){ SP.mpay=t.dataset.smpay; drawSpend(); }
     else if(t.dataset.sday){ if(/^\d{4}-/.test(t.dataset.sday)){ setSpendDay(t.dataset.sday); scrollTo({top:0,behavior:'smooth'}); } }
