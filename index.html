@@ -1730,7 +1730,7 @@ async function saveDaily(b){
   for(const [k] of DF){const el=$(`#d-${b}-${k}`);data[k]=el&&el.value!==''?Math.round(+el.value):0;}
   data.staff=W.name||''; data.by=W.uid||''; {const el=$(`#d-${b}-deposit`); data.deposit=el&&el.value!==''?Math.round(+el.value):0;} data.note=($(`#d-${b}-note`).value||'').trim(); data.updatedAt=new Date().toISOString();
   data.status=val(b,'status')||'營業'; data.closed=true;
-  if(data.status==='營業'&&DF.every(([k])=>!data[k])&&!data.deposit){toast('請先填入營收或收款');return;}
+  { const rv=($(`#d-${b}-revenue`)||{}).value; if(data.status==='營業'&&DF.every(([k])=>!data[k])&&!data.deposit&&(rv===undefined||rv==='')){toast('今天沒有營收的話，請在「當日營收」填 0 再按完成結帳');const r=$(`#d-${b}-revenue`); r&&r.focus(); return;} }
   const btn=document.querySelector('.big-save'); if(btn) btn.disabled=true;
   try{ await S.db.doc('daily/'+dId(b,D.day)).set(data); D.docs[dId(b,D.day)]=data; delete D.dirty[b]; D.edit=false;
     const diff=sum(PAYK.map(k=>data[k]))-data.revenue;
