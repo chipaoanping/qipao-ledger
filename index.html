@@ -35,6 +35,7 @@ body::before{content:"";display:block;height:env(safe-area-inset-top,0px)}
 .adm-p small{font-size:12px;color:var(--ink-3)}
 .adm-p .chip{padding:3px 10px;font-size:12px}.chip.danger{color:var(--accent)}
 .adm-data{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.lg-forgot{text-align:left;background:var(--soft);border-radius:12px;padding:12px 14px;font-size:13.5px;line-height:1.6;margin-top:4px}.lg-forgot ol{margin:6px 0;padding-left:20px}.lg-forgot p{margin:4px 0 0;color:var(--ink-3);font-size:12.5px}
 .pa-dlg{text-align:center;justify-items:center;width:min(380px,100%)}.pa-ic{font-size:40px}.pa-t{font-size:19px}.pa-p{margin:0;color:var(--ink-2);font-size:14px;line-height:1.6}.pa-ios{background:var(--soft);border-radius:10px;padding:10px 12px;text-align:left}.pa-b{display:flex;gap:10px;justify-content:center;margin-top:4px}.pa-b .btn{min-width:110px}
 .pushbox{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px}.pushbox .hint{flex:1;min-width:200px}
 .adm-bk{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:12px}.adm-bk .tin{flex:1;min-width:200px}.adm-bk .fl{font-weight:600;font-size:13px}
@@ -2308,7 +2309,7 @@ function renderLogin(){
         <p class="lg-err" role="alert">${esc(A.err)}</p>
         <button class="btn primary lg-go" type="submit" ${A.busy?'disabled':''}>建立並登入</button></form>`;
   } else if(A.name){
-    const n=A.name, first=A.mode==='set';
+    const n=A.name, first=A.mode==='set'; if(first) A.forgot=false;
     body=`<div class="lg-who"><i>${esc(n.slice(0,1))}</i><b>${esc(n)}</b></div>
       <h2>${first?'第一次登入，請設定密碼':'請輸入密碼'}</h2>
       <p class="hint">登入後這台裝置會記住你，下次打開就自動登入</p>
@@ -2319,6 +2320,9 @@ function renderLogin(){
         <p class="lg-err" role="alert">${esc(A.err)}</p>
         <button class="btn primary lg-go" type="submit" ${A.busy?'disabled':''}>${first?'設定密碼並登入':'登入'}</button>
         <button class="lg-back" type="button" data-lgmode="${first?'login':'set'}">${first?'已經設定過密碼？直接登入':'第一次登入，設定密碼'}</button>
+        ${first?'':`<button class="lg-back" type="button" data-lgforgot="1">忘記密碼？</button>`}
+        ${A.forgot&&!first?(n===BOSS?`<div class="lg-forgot"><b>老闆帳號忘記密碼</b><p>老闆帳號沒辦法在 App 裡自己重設，請聯絡郁雯協助：到 Firebase 主控台「Authentication」刪除${esc(BOSS)}的登入帳號後，回到這裡按「第一次登入，設定密碼」重新設定，資料不會受影響。</p></div>`
+          :`<div class="lg-forgot"><b>忘記密碼怎麼辦？</b><ol><li>請${esc(BOSS)}打開 App 首頁最下面「人員管理」，在「${esc(n)}」旁邊按「重設密碼」。</li><li>重設好後，回到這裡按「第一次登入，設定密碼」，輸入新密碼就能登入。</li></ol><p>其他資料都不會受影響。</p></div>`):''}
         <button class="lg-back" type="button" data-lgback="1">‹ 不是 ${esc(n)}？換人</button>
       </form>`;
   } else {
@@ -2362,7 +2366,8 @@ function bindLogin(){
     const t=ev.target.closest('button'); if(!t) return;
     if(t.dataset.logout) logout();
     else if(t.dataset.login){ A.name=t.dataset.login; A.mode='login'; A.err=''; renderLogin(); }
-    else if(t.dataset.lgback){ A.name=null; A.err=''; renderLogin(); }
+    else if(t.dataset.lgforgot){ A.forgot=!A.forgot; renderLogin(); }
+    else if(t.dataset.lgback){ A.name=null; A.err=''; A.forgot=false; renderLogin(); }
     else if(t.dataset.lgmode){ A.mode=t.dataset.lgmode; A.err=''; renderLogin(); }
     else if(t.dataset.staffdel){ const n=t.dataset.staffdel; if(n===BOSS) return; if(await savePeople(people().filter(p=>p.name!==n))) toast(`已移除 ${n}`); }
     else if(t.dataset.pwreset){ const n=t.dataset.pwreset; if(n===BOSS) return; if(await savePeople(people().map(p=>p.name===n?{...p,v:(p.v||1)+1}:p))) toast(`${n} 的密碼已重設，下次登入請按「第一次登入」重新設定`); }
