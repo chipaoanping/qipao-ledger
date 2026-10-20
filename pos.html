@@ -201,6 +201,9 @@ const ITEMS=Object.fromEntries(MENU[BR].flatMap(c=>c.items.map(i=>[i.id,{...i,ca
 /* 收款方式和收支總覽「每日結帳」的欄位相同，之後可以直接加總 */
 const PAY=[['cash','現金'],['card','信用卡'],['linepay','LINE Pay'],['transfer','轉帳'],['platform','旅遊平台'],['culture','文化幣']];
 const payName=k=>(PAY.find(p=>p[0]===k)||[,k])[1];
+/* 每筆的收款明細 {cash:1000, transfer:700}；舊交易只有 pay 一種 */
+const paysOf=o=>o.pays||{[o.pay]:o.total};
+const payLabel=o=>PAY.filter(([k])=>paysOf(o)[k]).map(([,n])=>n).join('＋')||payName(o.pay);
 
 /* ---------- 這台裝置的設定（收據機） ---------- */
 const CFG_DEF={printer:'passprnt',paper:80,auto:true,drawer:false,head:'',foot:'謝謝光臨，歡迎再來旗跑'};
@@ -213,7 +216,7 @@ const P={staff:null,loaded:false};
 const A={name:null,mode:'login',err:'',busy:false};
 const FB={auth:null,fs:null,unsub:null,day:null};
 const T={tab:'reg',orders:{},loaded:false};
-const newCart=()=>({lines:{},pay:'cash',paid:'',people:null,foreign:0,returning:0,note:'',busy:false});
+const newCart=()=>({lines:{},pay:'cash',paid:'',split:false,sel:[],amt:{},people:null,foreign:0,returning:0,note:'',busy:false});
 let C=newCart();
 
 const hexOf=s=>[...new TextEncoder().encode(s)].map(b=>b.toString(16).padStart(2,'0')).join('');
@@ -228,6 +231,10 @@ const cartLines=()=>Object.entries(C.lines).filter(([,q])=>q>0).map(([id,q])=>({
 const cartTotal=()=>sum(cartLines().map(l=>l.amt));
 const cartQty=()=>sum(cartLines().map(l=>l.qty));
 const peopleOf=()=>C.people??cartQty();
+/* 分開付款：前面幾種各自填金額，最後一種自動補足剩下的 */
+const splitAmts=()=>{ const o={}, ks=C.sel; ks.slice(0,-1).forEach(k=>{o[k]=Math.round(+C.amt[k]||0);}); if(ks.length) o[ks[ks.length-1]]=cartTotal()-sum(Object.values(o)); return o; };
+const splitOK=()=>{ const a=splitAmts(); return C.sel.length>=2&&Object.values(a).every(v=>v>0); };
+const payOK=()=>C.split?splitOK():(C.pay!=='cash'||!C.paid||+C.paid>=cartTotal());
 const dayOrders=()=>Object.values(T.orders).sort((a,b)=>a.seq-b.seq||(a.at<b.at?-1:1));
 const nextSeq=()=>Math.max(0,...dayOrders().map(o=>o.seq||0))+1;
 const recNo=o=>`${B[o.branch].prefix}${o.date.replace(/-/g,'').slice(2)}-${pad(o.seq).padStart(3,'0')}`;
@@ -247,8 +254,8 @@ function menuHTML(){
   return MENU[BR].map(c=>`<div class="cat">${esc(c.cat)}</div><div class="items">${c.items.map(i=>`<button class="item" data-add="${i.id}"><span class="tile">${esc(i.mark)}</span><span class="nm">${esc(i.name)}</span><span class="pr num">$${fmt(i.price)}</span>${qtyOf(i.id)?`<span class="ct">${qtyOf(i.id)}</span>`:''}</button>`).join('')}</div>`).join('');
 }
 function cartHTML(){
-  const ls=cartLines(), tot=cartTotal(), paid=+C.paid||0, cash=C.pay==='cash';
-  const ok=ls.length&&!C.busy&&(!cash||!C.paid||paid>=tot);
+  const ls=cartLines(), tot=cartTotal(), cash=!C.split&&C.pay==='cash';
+  const ok=ls.length&&!C.busy&&payOK();
   const step=(k,v,min)=>`<div class="step"><button data-cnt="${k}" data-d="-1" aria-label="減少"${v<=min?' disabled':''}>−</button><span class="num">${v}</span><button data-cnt="${k}" data-d="1" aria-label="增加">+</button></div>`;
   return `<div class="cart-h"><h2>這一筆</h2>${ls.length?'<button class="btn ghost" data-clear="1">清除</button>':`<span class="hint">第 ${nextSeq()} 筆</span>`}</div>
   <div class="cart-body">
@@ -260,21 +267,30 @@ function cartHTML(){
       <div class="cnt">人數${step('people',peopleOf(),1)}</div>
       <div class="cnt">外國旅客${step('foreign',C.foreign,0)}</div>
       <div class="cnt">回流客${step('returning',C.returning,0)}</div></div></div>
-    <div class="sec"><span class="lab">收款方式</span><div class="pays">${PAY.map(([k,n])=>`<button data-pay="${k}" aria-pressed="${C.pay===k}">${n}</button>`).join('')}</div>
+    <div class="sec"><div class="row2" style="justify-content:space-between"><span class="lab">收款方式${C.split?'（可複選）':''}</span><button class="btn ghost" style="padding:2px 6px;font-size:14px" data-split="1">${C.split?'改回單一付款':'分開付款'}</button></div>
+      <div class="pays">${PAY.map(([k,n])=>`<button data-pay="${k}" aria-pressed="${C.split?C.sel.includes(k):C.pay===k}">${n}</button>`).join('')}</div>
+      ${C.split?splitHTML():''}
       ${cash?`<div class="row2"><span class="lab" style="white-space:nowrap">收現金</span><input class="tin num" id="paidIn" type="number" inputmode="numeric" min="0" step="1" placeholder="${tot}" value="${esc(C.paid)}"></div>
       <div class="quick">${[...new Set([tot,Math.ceil(tot/500)*500,Math.ceil(tot/1000)*1000,Math.ceil(tot/1000)*1000+1000])].filter(v=>v>=tot).slice(0,4).map(v=>`<button data-paid="${v}">${v===tot?'剛好':'$'+fmt(v)}</button>`).join('')}</div>
       <div class="chg" id="chg">${chgHTML()}</div>`:''}
-      ${C.pay==='linepay'?'<p class="hint" style="margin:0">LINE Pay 目前請用店裡的收款碼收款，這裡只記錄金額。</p>':''}</div>
+      ${(C.split?C.sel.includes('linepay'):C.pay==='linepay')?'<p class="hint" style="margin:0">LINE Pay 目前請用店裡的收款碼收款，這裡只記錄金額。</p>':''}</div>
     <div class="sec"><span class="lab">備註</span><input class="tin" id="noteIn" maxlength="80" placeholder="例：顧客姓名、團體" value="${esc(C.note)}"></div>`:''}
   </div>
   <div class="cart-f"><div class="tot"><span>合計 ${ls.length?cartQty()+' 件':''}</span><b class="num">$${fmt(tot)}</b></div>
-    <button class="btn primary go" data-checkout="1" ${ok?'':'disabled'}>${C.busy?'處理中…':'完成結帳'}${ok&&CFG.auto?'並印收據':''}</button></div>`;
+    <button class="btn primary go" data-checkout="1" ${ok?'':'disabled'}>${C.busy?'處理中…':'完成結帳'}${CFG.auto&&CFG.printer!=='off'?'並印收據':''}</button></div>`;
 }
+function splitHTML(){
+  if(C.sel.length<2) return `<p class="hint" style="margin:0">請再選一種付款方式</p>`;
+  const last=C.sel[C.sel.length-1];
+  return C.sel.slice(0,-1).map(k=>`<div class="row2"><span class="lab" style="white-space:nowrap;min-width:64px">${payName(k)}</span><input class="tin num" data-amt="${k}" type="number" inputmode="numeric" min="0" step="1" placeholder="金額" value="${esc(C.amt[k]??'')}"></div>`).join('')
+    +`<div class="chg"><span>${payName(last)}（剩下的）</span><b class="num" id="splitRem">${remHTML()}</b></div>`;
+}
+function remHTML(){ const r=splitAmts()[C.sel[C.sel.length-1]]; return r>0?`$${fmt(r)}`:`<span style="color:var(--neg)">金額超過合計</span>`; }
 function chgHTML(){ const tot=cartTotal(), paid=+C.paid||0; if(!C.paid) return `<span class="hint">不填就當作收剛好</span>`; if(paid<tot) return `<span style="color:var(--neg)">還差</span><b class="num" style="color:var(--neg)">$${fmt(tot-paid)}</b>`; return `<span>找零</span><b class="num">$${fmt(paid-tot)}</b>`; }
 
 function todayHTML(){
   const os=dayOrders(), live=os.filter(o=>!o.void), tot=sum(live.map(o=>o.total));
-  const byPay=PAY.map(([k,n])=>[n,sum(live.filter(o=>o.pay===k).map(o=>o.total))]).filter(x=>x[1]);
+  const byPay=PAY.map(([k,n])=>[n,sum(live.map(o=>paysOf(o)[k]||0))]).filter(x=>x[1]);
   const d=todayStr();
   return `<div class="today">
     <section class="panel sum">
@@ -285,7 +301,7 @@ function todayHTML(){
     </section>
     <section class="panel orders">${os.length?os.slice().reverse().map(o=>`<div class="ord${o.void?' void':''}">
       <div><div class="no num">#${o.seq}</div><div class="t num">${hm(o.at)}</div></div>
-      <div class="it">${o.items.map(i=>`${esc(i.name)} × ${i.qty}`).join('、')}<span class="tag">${esc(payName(o.pay))}</span>${o.void?'<span class="tag">已作廢</span>':''}<div class="t">${esc(o.staff)}${o.note?'・'+esc(o.note):''}${o.void?`・${esc(o.void.by)} 作廢`:''}</div></div>
+      <div class="it">${o.items.map(i=>`${esc(i.name)} × ${i.qty}`).join('、')}<span class="tag">${esc(payLabel(o))}</span>${o.void?'<span class="tag">已作廢</span>':''}<div class="t">${esc(o.staff)}${o.note?'・'+esc(o.note):''}${o.void?`・${esc(o.void.by)} 作廢`:''}</div></div>
       <div class="am num">$${fmt(o.total)}</div>
       <div class="act">${o.void?'':`<button class="btn" data-reprint="${o.id}">補印</button><button class="btn danger" data-void="${o.id}">作廢</button>`}</div></div>`).join(''):'<p class="empty">今天還沒有交易</p>'}</section></div>`;
 }
@@ -338,7 +354,7 @@ function receiptHTML(o,test){
     <hr style="border:0;border-top:2px dashed #000;margin:8px 0">
     <table style="width:100%;border-collapse:collapse;font-size:1em">${items}</table>
     <hr style="border:0;border-top:2px dashed #000;margin:8px 0">
-    <table style="width:100%;border-collapse:collapse">${row('<b>合計</b>',`<b>$${fmt(o.total)}</b>`,'font-size:1.25em')}${row('付款方式',esc(payName(o.pay)))}${cashRow}</table>
+    <table style="width:100%;border-collapse:collapse">${row('<b>合計</b>',`<b>$${fmt(o.total)}</b>`,'font-size:1.25em')}${o.pays&&Object.keys(o.pays).length>1?PAY.filter(([k])=>o.pays[k]).map(([k,n])=>row(n,`$${fmt(o.pays[k])}`)).join(''):row('付款方式',esc(payLabel(o)))}${cashRow}</table>
     ${CFG.foot?`<div style="text-align:center;margin-top:12px">${esc(CFG.foot)}</div>`:''}
     <div style="text-align:center;font-size:.75em;margin-top:6px">此為收據，非統一發票</div></div>`;
 }
@@ -348,20 +364,21 @@ function printReceipt(o,test){
   if(CFG.printer==='browser'){ $('#printArea').innerHTML=html; setTimeout(()=>window.print(),50); return; }
   /* Star PassPRNT：把收據 HTML 交給 App 列印，印完自動回到這個網頁 */
   const q=new URLSearchParams({back:location.href.split('#')[0],html:`<html><body style="margin:0">${html}</body></html>`,size:CFG.paper==58?'2':'3',cut:'partial',popup:'disable'});
-  if(CFG.drawer&&o.pay==='cash'&&!test) q.set('drawer','on');
+  if(CFG.drawer&&paysOf(o).cash&&!test) q.set('drawer','on');
   location.href='starpassprnt://v1/print/nopreview?'+q.toString();
 }
 
 /* ---------- 結帳 ---------- */
 async function checkout(){
   const ls=cartLines(); if(!ls.length||C.busy) return;
-  const tot=cartTotal(), paid=C.pay==='cash'?(C.paid===''?tot:Math.round(+C.paid)):0;
-  if(C.pay==='cash'&&paid<tot){ toast('收的現金不夠'); return; }
+  const tot=cartTotal(), paid=!C.split&&C.pay==='cash'?(C.paid===''?tot:Math.round(+C.paid)):0;
+  if(!payOK()){ toast(C.split?'分開付款的金額不對':'收的現金不夠'); return; }
+  const pays=C.split?splitAmts():{[C.pay]:tot};
   const now=new Date(), date=todayStr(), seq=nextSeq();
   const id=`${BR}-${date}-${pad(seq).padStart(3,'0')}-${Math.random().toString(36).slice(2,6)}`;
   const o={id,branch:BR,date,month:date.slice(0,7),seq,at:now.toISOString(),
     items:ls.map(l=>({id:l.id,name:l.name,cat:l.cat,price:l.price,qty:l.qty,amt:l.amt})),
-    total:tot,pay:C.pay,paid:C.pay==='cash'?paid:0,people:peopleOf(),foreign:C.foreign,returning:C.returning,
+    total:tot,pay:C.split?'split':C.pay,pays,paid,people:peopleOf(),foreign:C.foreign,returning:C.returning,
     note:C.note.trim(),staff:W.name,by:W.uid,void:null};
   C.busy=true; drawCart();
   /* 沒有網路時 Firestore 會先存在這台 iPad，連線後自動上傳；不讓結帳卡住 */
@@ -387,7 +404,8 @@ document.addEventListener('click',ev=>{
   else if(d.add){ C.lines[d.add]=qtyOf(d.add)+1; drawCart(); }
   else if(d.qty){ C.lines[d.qty]=Math.max(0,qtyOf(d.qty)+(+d.d)); if(!C.lines[d.qty]) delete C.lines[d.qty]; if(C.people!=null&&C.people>cartQty()&&!cartQty()) C.people=null; drawCart(); }
   else if(d.cnt){ const k=d.cnt, cur=k==='people'?peopleOf():C[k]; C[k]=Math.max(k==='people'?1:0,cur+(+d.d)); drawCart(); }
-  else if(d.pay){ C.pay=d.pay; if(d.pay!=='cash') C.paid=''; drawCart(); }
+  else if(d.pay){ if(C.split){ const i=C.sel.indexOf(d.pay); if(i>=0){ C.sel.splice(i,1); delete C.amt[d.pay]; } else C.sel.push(d.pay); } else { C.pay=d.pay; if(d.pay!=='cash') C.paid=''; } drawCart(); }
+  else if(d.split){ C.split=!C.split; C.paid=''; C.amt={}; C.sel=C.split?[C.pay]:[]; if(!C.split) C.pay='cash'; drawCart(); }
   else if(d.paid){ C.paid=d.paid; drawCart(); }
   else if(d.clear){ C=newCart(); drawCart(); }
   else if(d.checkout) checkout();
@@ -402,7 +420,8 @@ document.addEventListener('click',ev=>{
 });
 document.addEventListener('input',ev=>{
   const t=ev.target;
-  if(t.id==='paidIn'){ C.paid=t.value; const c=$('#chg'); if(c) c.innerHTML=chgHTML(); const g=$('[data-checkout]'); if(g){ const ok=!C.paid||+C.paid>=cartTotal(); g.disabled=!ok; } }
+  if(t.id==='paidIn'){ C.paid=t.value; const c=$('#chg'); if(c) c.innerHTML=chgHTML(); const g=$('[data-checkout]'); if(g) g.disabled=!payOK(); }
+  else if(t.dataset.amt){ C.amt[t.dataset.amt]=t.value; const r=$('#splitRem'); if(r) r.innerHTML=remHTML(); const g=$('[data-checkout]'); if(g) g.disabled=!payOK(); }
   else if(t.id==='noteIn') C.note=t.value;
   else if(t.id==='cfgHead'){ CFG.head=t.value; saveCfg(); }
   else if(t.id==='cfgFoot'){ CFG.foot=t.value; saveCfg(); }
