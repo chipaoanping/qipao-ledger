@@ -872,6 +872,7 @@ table.opdays tr.na td{border-bottom:2px solid var(--rule)}
 .fx-day{display:flex;align-items:center;gap:4px;font-size:13px;white-space:nowrap}.fx-day input{width:52px;padding:7px 6px}
 @media (max-width:640px){.fx-l li{grid-template-columns:38px minmax(0,1fr) auto;row-gap:6px}.fx-l li .spl-c{display:none}.fx-amt{width:100px}.fx-l li .btn{grid-column:3}.fx-l li .fx-amt{grid-column:2;justify-self:end}
   .fx-er{grid-template-columns:1fr 1fr;padding:10px;border:1px solid var(--soft);border-radius:10px}.fx-er input[data-k="item"]{grid-column:1/-1;order:-1}.fx-er .ibtn{justify-self:end}}
+.spl-btns{display:flex;gap:4px}.sp-editing{display:flex;align-items:center;justify-content:space-between;gap:8px;background:#fbf1e3;color:#a0672a;font-weight:600;font-size:13px;border-radius:10px;padding:8px 10px;margin-bottom:8px}
 .spm{display:grid;gap:10px}.spm-f{display:flex;gap:8px;align-items:flex-start}.spm-f .fl{flex:none;font-size:12.5px;color:var(--ink-3);padding-top:7px;width:2.6em}.spm-f .chips{flex-wrap:wrap}.spm-f .chip small{color:var(--ink-3);margin-left:3px}.spm-f .chip.on small{color:inherit;opacity:.8}
 .spm-d{display:grid}.spm-dh{all:unset;cursor:pointer;display:flex;justify-content:space-between;align-items:baseline;padding:8px 2px;border-bottom:1px solid var(--rule);margin-top:6px}.spm-dh b{font-size:14px}.spm-dh span{font-size:12.5px;color:var(--ink-3)}.spm-dh:hover b{color:var(--wine)}
 .spm-go{color:var(--wine)}
@@ -2678,7 +2679,7 @@ function spMonthHTML(b,day){
     ${all.length?`<div class="spm-f"><span class="fl">類別</span><span class="chips">${chip('smcat','', '全部',!SP.mcat)}${Object.entries(byCat).sort((a,c)=>c[1]-a[1]).map(([c,v])=>chip('smcat',c,`${esc(c)} <small class="num">${fmt(v)}</small>`,SP.mcat===c)).join('')}</span></div>
       <div class="spm-f"><span class="fl">付款</span><span class="chips">${chip('smpay','','全部',!SP.mpay)}${Object.entries(byPay).sort((a,c)=>c[1]-a[1]).map(([p,v])=>chip('smpay',p,`${esc(p)} <small class="num">${fmt(v)}</small>`,SP.mpay===p)).join('')}</span></div>
       ${Object.keys(days).length?Object.entries(days).map(([d,l])=>`<div class="spm-d"><button type="button" class="spm-dh" data-sday="${esc(d)}"><b>${/^\d{4}-/.test(d)?`${+d.slice(5,7)}/${+d.slice(8)}（${wk(d)}）`:esc(d)}</b><span class="num">${l.length} 筆・${fmt(sum(l.map(e=>+e.amt||0)))} 元</span></button>
-        <ul class="sp-list">${l.map(e=>`<li><span class="spl-c">${esc(e.cat)}</span><span class="spl-i">${esc(e.item)}<small>${esc([e.note,e.by?e.by+' 記錄':''].filter(Boolean).join('・'))}</small></span>${e.receipt?`<a class="spl-r" href="${rcptURL(e.receipt)}" target="_blank" rel="noopener" aria-label="看收據"><img src="${rcptURL(e.receipt)}" alt="收據" loading="lazy"></a>`:'<span></span>'}<b class="num">${fmt(+e.amt||0)}</b><span></span></li>`).join('')}</ul></div>`).join(''):'<p class="hint">沒有符合篩選的支出。</p>'}`
+        <ul class="sp-list">${l.map(e=>`<li><span class="spl-c">${esc(e.cat)}</span><span class="spl-i">${esc(e.item)}<small>${esc([e.note,e.by?e.by+' 記錄':''].filter(Boolean).join('・'))}</small></span>${e.receipt?`<a class="spl-r" href="${rcptURL(e.receipt)}" target="_blank" rel="noopener" aria-label="看收據"><img src="${rcptURL(e.receipt)}" alt="收據" loading="lazy"></a>`:'<span></span>'}<b class="num">${fmt(+e.amt||0)}</b>${S.canWrite!==false&&S.db?`<span class="spl-btns"><button class="ibtn" data-sedit="${e.id}" data-sedate="${esc(e.date||'')}">修改</button></span>`:'<span></span>'}</li>`).join('')}</ul></div>`).join(''):'<p class="hint">沒有符合篩選的支出。</p>'}`
     :'<p class="hint">這個月還沒有支出。</p>'}</div>`;
 }
 function renderSpend(b){
@@ -2720,11 +2721,11 @@ function renderSpend(b){
           <div class="petty ${pettyLeft(b,day)<0?'over':pettyLeft(b,day)<PETTY[b]*.2?'low':''}"><div class="pt-h"><span>零用金餘額</span><b class="num">剩 ${fmt(pettyLeft(b,day))}</b></div><i><b style="width:${Math.max(0,Math.min(100,pettyLeft(b,day)/PETTY[b]*100))}%"></b></i><small class="num">額度 ${fmt(PETTY[b])}・上次結帳後已用 ${fmt(pettyUsed(b,day))}${pettyLeft(b,day)<0?'・已超支':''}</small></div>
           <div class="sc-grid num"><div><span>${+day.slice(5,7)} 月支出累計</span><b>${fmt(mTot)}</b><small>${mList.length} 筆・<a href="#spMonth" class="spm-go">看明細</a></small></div><div><span>記錄人</span><b>${esc(W.name||'—')}</b></div></div>
         </div>
-        ${editable?`<button class="btn primary big-save" data-ssave="${b}">新增支出</button>`:'<p class="hint">你目前只能檢視。</p>'}
+        ${editable?`${SP.editId?`<div class="sp-editing">正在修改這筆支出<button class="btn" data-seditx="1">取消修改</button></div>`:''}<button class="btn primary big-save" data-ssave="${b}">${SP.editId?'儲存修改':'新增支出'}</button>`:'<p class="hint">你目前只能檢視。</p>'}
       </aside>
     </div>
     <div class="panel"><div class="ph"><h2>${+day.slice(5,7)} 月 ${+day.slice(8)} 日支出明細</h2><span class="hint">會同步到營業分析「收支」的支出</span></div>
-      ${list.length?`<ul class="sp-list">${list.map(e=>`<li><span class="spl-c">${esc(e.cat)}</span><span class="spl-i">${esc(e.item)}<small>${esc([e.note,e.by?e.by+' 記錄':''].filter(Boolean).join('・'))}</small></span>${e.receipt?`<a class="spl-r" href="${rcptURL(e.receipt)}" target="_blank" rel="noopener" aria-label="看收據"><img src="${rcptURL(e.receipt)}" alt="收據" loading="lazy"></a>`:editable?`<button class="spl-r add" data-srcpt="${e.id}" aria-label="補收據照片">＋收據</button>`:'<span></span>'}<b class="num">${fmt(+e.amt||0)}</b>${editable?`<button class="ibtn ${SP.confirmDel===e.id?'danger':''}" data-sdel="${e.id}">${SP.confirmDel===e.id?'確定刪除':'刪除'}</button>`:''}</li>`).join('')}<li class="tot"><span></span><span>合計 ${list.length} 筆</span><span></span><b class="num">${fmt(tot)}</b>${editable?'<span></span>':''}</li></ul>`:'<p class="emptyb">這天還沒有支出紀錄。</p>'}
+      ${list.length?`<ul class="sp-list">${list.map(e=>`<li><span class="spl-c">${esc(e.cat)}</span><span class="spl-i">${esc(e.item)}<small>${esc([e.note,e.by?e.by+' 記錄':''].filter(Boolean).join('・'))}</small></span>${e.receipt?`<a class="spl-r" href="${rcptURL(e.receipt)}" target="_blank" rel="noopener" aria-label="看收據"><img src="${rcptURL(e.receipt)}" alt="收據" loading="lazy"></a>`:editable?`<button class="spl-r add" data-srcpt="${e.id}" aria-label="補收據照片">＋收據</button>`:'<span></span>'}<b class="num">${fmt(+e.amt||0)}</b>${editable?`<span class="spl-btns"><button class="ibtn" data-sedit="${e.id}">修改</button><button class="ibtn ${SP.confirmDel===e.id?'danger':''}" data-sdel="${e.id}">${SP.confirmDel===e.id?'確定刪除':'刪除'}</button></span>`:''}</li>`).join('')}<li class="tot"><span></span><span>合計 ${list.length} 筆</span><span></span><b class="num">${fmt(tot)}</b>${editable?'<span></span>':''}</li></ul>`:'<p class="emptyb">這天還沒有支出紀錄。</p>'}
     </div>
     ${fixedHTML(b,day)}
     ${spMonthHTML(b,day)}`;
@@ -2750,6 +2751,12 @@ async function spendAdd(b){
   if(!item){err.textContent='請填項目';$('#s-item').focus();return;}
   if(raw===''||!Number.isFinite(amt)||amt<=0){err.textContent='請填金額';$('#s-amt').focus();return;}
   const extra=$('#s-note').value.trim(), note=[SP.pay==='其他'?'':SP.pay,extra].filter(Boolean).join('・');
+  if(SP.editId){ const id=SP.editId, old=spMonth(b,SP.day).find(x=>x.id===id)||{}; const keep=(old.note||'').split('・').filter(x=>x==='固定支出');
+    const upd={cat:SP.cat,item,amt,note:[SP.pay==='其他'?'':SP.pay,...keep,extra].filter(Boolean).join('・'),editedBy:W.name||'',editedAt:new Date().toISOString()};
+    const btn=document.querySelector('.big-save'); if(btn){btn.disabled=true;btn.textContent='儲存中…';}
+    if(SP.photo){ const rid=await uploadReceipt(SP.photo); if(rid) upd.receipt=rid; }
+    SP.editId=null; SP.draft={}; clearPhoto();
+    await spendWrite(b,SP.day,l=>l.map(x=>x.id===id?{...x,...upd}:x),`已修改 ${item} ${fmt(amt)} 元`); return; }
   const e={id:uid(),cat:SP.cat,item,amt,date:SP.day,note,by:W.name||'',uid:W.uid||''};
   const btn=document.querySelector('.big-save'); if(btn){btn.disabled=true;btn.textContent=SP.photo?'上傳收據中…':'儲存中…';}
   if(SP.photo){ const rid=await uploadReceipt(SP.photo); if(!rid){ if(btn){btn.disabled=false;btn.textContent='新增支出';} return; } e.receipt=rid; }
@@ -2758,7 +2765,7 @@ async function spendAdd(b){
   if(ok){ const i=$('#s-item'); i&&i.focus(); } else SP.draft={item,amt:raw,note:extra};
 }
 function clearPhoto(){ if(SP.photoURL) URL.revokeObjectURL(SP.photoURL); SP.photo=null; SP.photoURL=null; }
-function setSpendDay(d){SP.day=d;SP.confirmDel=null;drawSpend();}
+function setSpendDay(d){SP.day=d;SP.confirmDel=null;if(SP.editId){SP.editId=null;SP.draft={};}drawSpend();}
 function bindSpend(){
   const main=$('#main');
   main.addEventListener('input',ev=>{ if(S.mode!=='spend') return; const id=ev.target.id;
@@ -2797,6 +2804,11 @@ function bindSpend(){
     else if(t.dataset.ssave) spendAdd(t.dataset.ssave);
     else if(t.dataset.sphotox){ clearPhoto(); drawSpend(); }
     else if(t.dataset.srcpt){ let inp=$('#s-photo2'); if(!inp){ inp=document.createElement('input'); inp.type='file'; inp.accept='image/*'; inp.id='s-photo2'; inp.hidden=true; main.appendChild(inp); } inp.dataset.for=t.dataset.srcpt; inp.value=''; inp.click(); }
+    else if(t.dataset.sedit){ const id=t.dataset.sedit; if(t.dataset.sedate&&t.dataset.sedate!==SP.day) SP.day=t.dataset.sedate; const e=spMonth(SP.branch,SP.day).find(x=>x.id===id); if(!e) return;
+      const parts=(e.note||'').split('・'), pay=PAYS.find(p=>p!=='其他'&&parts.includes(p))||'其他';
+      SP.editId=id; SP.cat=e.cat; SP.pay=pay; SP.confirmDel=null; clearPhoto(); SP.draft={item:e.item||'',amt:String(e.amt??''),note:parts.filter(x=>x!==pay&&x!=='固定支出').join('・')};
+      drawSpend(); scrollTo({top:0,behavior:'smooth'}); setTimeout(()=>{const i=$('#s-amt'); i&&i.focus();},300); toast('已帶入表單，修改後按「儲存修改」'); }
+    else if(t.dataset.seditx){ SP.editId=null; SP.draft={}; clearPhoto(); drawSpend(); }
     else if(t.dataset.sdel){ const id=t.dataset.sdel; if(SP.confirmDel!==id){SP.confirmDel=id;drawSpend();return;} SP.confirmDel=null; spendWrite(SP.branch,SP.day,l=>l.filter(e=>e.id!==id),'已刪除'); }
   });
 }
