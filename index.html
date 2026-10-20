@@ -1046,7 +1046,7 @@ const KIND = {
   qty:{label:'銷售數量', unit:'件', val:'數量', br:['qp','yl'],
        cats:{qp:['來客','旗袍租借','旗袍租借（2小時）','配件加購','彩妝造型','寫真','旅遊平台','南風二館','太熱嘶聯名','其他'], yl:['證件照','旗袍短租','彩妝','沙龍寫真','其他']}},
   cust:{label:'顧客來源', unit:'人次', val:'人次', br:['qp','yl'], nosum:true,
-       cats:{qp:['得知管道','客源地','職業','同行關係','預約方式','體驗項目'], yl:['得知管道','客源地','同行關係','預約方式','體驗項目']}},
+       cats:{qp:['得知管道','客源地','國內／國外','國外客源國家','職業','同行關係','預約方式','體驗項目'], yl:['得知管道','客源地','國內／國外','國外客源國家','同行關係','預約方式','體驗項目']}},
   crew:{label:'造型・攝影師費用', unit:'元', val:'金額（元）', br:['qp','yl'], cats:{qp:['攝影師','造型師','導覽'], yl:['攝影師','造型師']}},
   pay:{label:'薪資', unit:'元', val:'實發金額（元）', br:['qp'], cats:{qp:['正職','時薪人員']}},
   plat:{label:'旅遊平台訂單', unit:'元', val:'金額（元）', br:['qp'], date:true, cats:{qp:['Klook','KKday']}},
@@ -1113,10 +1113,16 @@ function autoShoot(b,y,m){
   dailyOf(b,y,m).sort((a,c)=>a.date<c.date?-1:1).forEach(d=>(Array.isArray(d.guests)?d.guests:[]).forEach((g,gi)=>[].concat(g.items||[]).forEach(it=>{ if(re.test(it)) out.push({id:`auto-shoot-g-${d.date}-${gi}-${it}`,cat:'每日結帳顧客',item:it,amt:1,date:d.date,note:[g.name,g.count?g.count+'人':''].filter(Boolean).join('・'),auto:true,src:'guest'}); })));
   return out;
 }
+/* 客源地：國內／國外判斷 */
+const ORIGIN_COUNTRY=[['日本',/日本|東京|大阪|京都|名古屋|福岡|北海道|沖繩/],['韓國',/韓國|首爾|釜山|南韓/],['香港',/香港/],['澳門',/澳門/],['中國',/中國|大陸|上海|北京|廣州|深圳|福建|廈門/],
+  ['新加坡',/新加坡/],['馬來西亞',/馬來西亞|大馬|吉隆坡|檳城/],['泰國',/泰國|曼谷/],['越南',/越南/],['菲律賓',/菲律賓/],['印尼',/印尼/],
+  ['美國',/美國|美加/],['加拿大',/加拿大/],['英國',/英國/],['法國',/法國/],['德國',/德國/],['歐洲',/歐洲|歐美/],['澳洲',/澳洲/],['紐西蘭',/紐西蘭/],['東南亞',/東南亞/],['中南美洲',/哥斯大黎加|墨西哥|巴西|中南美/]];
+const originParts=v=>String(v||'').split(/[、,，＋+\/]/).map(x=>x.trim()).filter(Boolean);
+const countryOf=x=>{ for(const [c,re] of ORIGIN_COUNTRY) if(re.test(x)) return c; return /國外|外國|海外/.test(x)?'其他國家':null; };
 function autoCust(b,y,m){
   const gs=dailyOf(b,y,m).flatMap(d=>Array.isArray(d.guests)?d.guests:[]); if(!gs.length) return [];
   const cnt={}; const add=(cat,v)=>{ if(v==null||v==='') return; const k=cat+'|'+v; cnt[k]=(cnt[k]||0)+1; };
-  for(const g of gs){ add('預約方式',g.type); add('得知管道',g.source); String(g.origin||'').split(/[、,，]/).map(x=>x.trim()).filter(Boolean).forEach(x=>add('客源地',x)); add('同行關係',g.relation); [].concat(g.items||[]).forEach(x=>add('體驗項目',x)); add('來台南目的',g.purpose); }
+  for(const g of gs){ add('預約方式',g.type); add('得知管道',g.source); originParts(g.origin).forEach(x=>{ add('客源地',x); const c=countryOf(x); add('國內／國外',c?'國外':'國內'); if(c) add('國外客源國家',c); }); add('同行關係',g.relation); [].concat(g.items||[]).forEach(x=>add('體驗項目',x)); add('來台南目的',g.purpose); }
   return Object.entries(cnt).map(([k,n],i)=>{const [cat,item]=k.split('|');return {id:`auto-cust-${b}-${y}${pad(m)}-${i}`,cat,item,amt:n,note:'每日結帳顧客紀錄',auto:true};});
 }
 function autoQty(b,y,m,raw){
@@ -1127,7 +1133,9 @@ function autoQty(b,y,m,raw){
 }
 const listOf=(b,m,k,y=YEAR)=>{ const raw=listOfRaw(b,m,k,y);
   if(k==='rev') return raw.length?raw:autoRev(b,y,m);
-  if(k==='cust') return raw.length?raw:autoCust(b,y,m);
+  if(k==='cust'){ if(!raw.length) return autoCust(b,y,m); if(raw.some(e=>e.cat==='國內／國外')) return raw;
+    const g={}; raw.filter(e=>e.cat==='客源地').forEach(e=>{ const c=countryOf(e.item||''); const add=(cat,it)=>{const k=cat+'|'+it; g[k]=(g[k]||0)+(+e.amt||0);}; if(/未填|其他/.test(e.item||'')) return; add('國內／國外',c?'國外':'國內'); if(c) add('國外客源國家',c); });
+    return raw.concat(Object.entries(g).map(([k,n],i)=>{const [cat,item]=k.split('|');return {id:`auto-dom-${b}-${y}${pad(m)}-${i}`,cat,item,amt:n,note:'由客源地自動分類',auto:true};})); }
   if(k==='crew') return raw.length?raw:(typeof autoCrew==='function'?autoCrew(b,y,m):[]);
   if(k==='shoot'){ const a=autoShoot(b,y,m); if(!a.length) return raw; return (a[0].src==='crew'?raw.filter(e=>e.cat!=='攝影師結案單'):raw.filter(e=>e.cat!=='每日結帳顧客'&&e.cat!=='銷售數量')).concat(a); }
   if(k==='pay') return raw.length?raw:(typeof autoPayroll==='function'?autoPayroll(b,y,m):[]);
@@ -1303,11 +1311,11 @@ function voicesHTML(b){
 }
 function guestStatsHTML(b,ms,label){
   const docs=Object.values(S.allDaily||{}).filter(d=>d.branch===b&&Array.isArray(d.guests)&&+String(d.date).slice(0,4)===YEAR&&ms.includes(+String(d.date).slice(5,7)));
-  const gs=docs.flatMap(d=>d.guests.map(g=>({...g,date:d.date})));
+  const gs=docs.flatMap(d=>d.guests.map(g=>{ const ps=originParts(g.origin); return {...g,date:d.date,_dom:ps.length?[...new Set(ps.map(x=>countryOf(x)?'國外':'國內'))]:'',_cty:ps.map(countryOf).filter(Boolean)}; }));
   if(!gs.length) return `<div class="panel emptyb">${B[b].name}：${label}還沒有每日結帳的顧客紀錄。</div>`;
-  const cnt=(k,split)=>{const o={};gs.forEach(g=>{let v=g[k];if(v==null||v==='')return;const vs=Array.isArray(v)?v:split?String(v).split(/[、,，]/):[v];vs.map(x=>String(x).trim()).filter(Boolean).forEach(x=>o[x]=(o[x]||0)+1);});return Object.entries(o).sort((a,c)=>c[1]-a[1]).slice(0,8);};
+  const cnt=(k,split)=>{const o={};gs.forEach(g=>{let v=g[k];if(v==null||v==='')return;const vs=Array.isArray(v)?v:split?originParts(v):[v];vs.map(x=>String(x).trim()).filter(Boolean).forEach(x=>o[x]=(o[x]||0)+1);});return Object.entries(o).sort((a,c)=>c[1]-a[1]).slice(0,8);};
   const ppl=sum(gs.map(g=>+g.count||0)), col=bcol(b);
-  const blocks=[['預約／現場','type'],['體驗項目','items',1],['客源地','origin',1],['同行關係','relation'],['如何得知我們','source'],['來台南目的','purpose']];
+  const blocks=[['預約／現場','type'],['體驗項目','items',1],['客源地','origin',1],['國內／國外','_dom'],['國外客源國家','_cty'],['同行關係','relation'],['如何得知我們','source'],['來台南目的','purpose']];
   let h=`<div class="panel"><div class="ph"><h2>${B[b].name} ・ 每日結帳顧客分析</h2><span class="hint">${label}・${gs.length} 組${ppl?`・${ppl} 人`:''}</span></div><div class="grid3">${blocks.map(([lb,k,sp])=>{const r=cnt(k,sp);return `<div><div class="hint" style="margin-bottom:6px">${lb}</div>${r.length?hbars(r,col,'組'):'<p class="hint">—</p>'}</div>`;}).join('')}</div></div>`;
   return h;
 }
@@ -1770,7 +1778,7 @@ const GF=[
   ['name','預約姓名','text'],
   ['items','體驗項目','chipsN',{qp:['日租體驗','短租體驗','整體造型','快速彩妝','雙套寫真'],yl:['台式證件照','雙人證件照','沙龍寫真','旗袍短租','快速彩妝','整體造型','走讀活動']}],
   ['count','人數','num'],
-  ['origin','客源地','chipsN',['台南','高雄','台中','台北','新北','桃園','其他縣市','日本','韓國','香港','中國','東南亞','歐美']],
+  ['origin','客源地','chipsN',['台南','高雄','台中','台北','新北','桃園','其他縣市','日本','韓國','香港','澳門','中國','新加坡','馬來西亞','泰國','越南','菲律賓','美國','加拿大','歐洲','澳洲','其他國家']],
   ['relation','同行關係','chips1',['朋友','閨蜜','情侶','夫妻','家人','親子','獨自','同事']],
   ['source','如何得知我們','chips1',['Instagram','Threads','Facebook','Google','旅遊平台','小紅書','親友介紹','回流客','路過']],
   ['purpose','來台南目的','chips1',['旅遊','專程拍照','慶生','紀念日','畢業','出差工作','住在台南']],
