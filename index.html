@@ -2287,6 +2287,7 @@ const personOf=n=>people().find(p=>p.name===n);
 const lc=x=>String(x||'').trim().toLowerCase();
 const nameOfEmail=em=>{const e=lc(em); const p=people().find(p=>emailOf(p.name,p.v)===e||(p.mail&&lc(p.mail)===e));return p?p.name:null;};
 const maskMail=m=>{const [u,d]=String(m||'').split('@'); return u?`${u.slice(0,2)}${'•'.repeat(Math.max(1,u.length-2))}@${d||''}`:'';};
+const pwDone=n=>{ const p=personOf(n); return !!(p&&P.pwset&&P.pwset[n]===(p.v||1)); };
 const myMailOf=n=>{ try{ return localStorage.getItem('mail:'+n)||''; }catch(e){ return ''; } };
 const okMail=m=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(m||'').trim());
 const A={name:null,mode:'login',err:'',busy:false};
@@ -2300,7 +2301,7 @@ const authMsg=e=>{const c=(e&&e.code)||'';
   if(c==='auth/network-request-failed') return '網路連線失敗，請檢查網路';
   if(c==='auth/weak-password') return '密碼至少要 6 個字';
   if(c==='auth/email-already-in-use') return '這個名字已經設定過密碼了，請直接登入；忘記密碼請找妃妃重設';
-  if(/invalid-credential|wrong-password|user-not-found|invalid-login/.test(c)) return '密碼不對。第一次使用的話，請按下方「第一次登入，設定密碼」';
+  if(/invalid-credential|wrong-password|user-not-found|invalid-login/.test(c)) return (A.name&&pwDone(A.name))?'密碼不對，忘記密碼請按下方「忘記密碼？」':'密碼不對。第一次使用的話，請按下方「第一次登入，設定密碼」';
   if(c==='auth/operation-not-allowed') return 'Firebase 尚未開啟「電子郵件/密碼」登入，請依設定說明開啟';
   return '登入失敗（'+(c||'未知錯誤')+'）';};
 function renderLogin(){
@@ -2326,7 +2327,7 @@ function renderLogin(){
         ${first?'<input type="password" id="pw2" autocomplete="new-password" placeholder="再輸入一次" maxlength="64">':''}
         <p class="lg-err" role="alert">${esc(A.err)}</p>
         <button class="btn primary lg-go" type="submit" ${A.busy?'disabled':''}>${first?'設定密碼並登入':'登入'}</button>
-        <button class="lg-back" type="button" data-lgmode="${first?'login':'set'}">${first?'已經設定過密碼？直接登入':'第一次登入，設定密碼'}</button>
+        ${pwDone(n)&&!first?'':`<button class="lg-back" type="button" data-lgmode="${first?'login':'set'}">${first?'已經設定過密碼？直接登入':'第一次登入，設定密碼'}</button>`}
         ${first?'':`<button class="lg-back" type="button" data-lgforgot="1">忘記密碼？</button>`}
         ${A.forgot&&!first?(`<div class="lg-forgot"><b>有綁定 Email：寄重設密碼信</b><div class="lg-fm"><input class="tin" type="email" id="fgMail" value="${esc(myMailOf(n)||(personOf(n)&&personOf(n).mail)||'')}" placeholder="你綁定的 Email" autocomplete="email"><button class="btn primary" type="button" data-lgmail="1">寄出</button></div><p>打開信裡的連結設定新密碼，再回來登入。</p>
             <b style="display:block;margin-top:10px">沒有綁定 Email：</b>${n===BOSS?`<p style="color:inherit;font-size:13px">老闆帳號請郁雯到 Firebase 主控台「Authentication」刪除${esc(BOSS)}的登入帳號，再回來按「第一次登入，設定密碼」，資料不受影響。</p>`:`<ol><li>請${esc(BOSS)}打開 App 首頁最下面「人員管理」，在「${esc(n)}」旁邊按「重設密碼」。</li><li>重設好後，回到這裡按「第一次登入，設定密碼」。</li></ol>`}</div>`):''}
@@ -2362,7 +2363,7 @@ async function submitPw(setup){
     } else {
       const p=personOf(A.name); if(!p) return fail('名單裡沒有這個名字');
       const em=emailOf(p.name,p.v);
-      if(A.mode==='set') await FB.auth.createUserWithEmailAndPassword(em,p1);
+      if(A.mode==='set'){ await FB.auth.createUserWithEmailAndPassword(em,p1); FB.fs.doc('public/pwset').set({[p.name]:p.v||1},{merge:true}).catch(()=>{}); }
       else { const tries=[...new Set([myMailOf(p.name),p.mail].filter(Boolean).map(lc))].concat([em]); let last;
         for(const x of tries){ try{ await FB.auth.signInWithEmailAndPassword(x,p1); last=null; break; }catch(e1){ last=e1; if(/too-many|network/.test(e1.code||'')) break; } }
         if(last) throw last; }
@@ -2379,7 +2380,7 @@ function bindLogin(){
     else if(t.dataset.lgforgot){ A.forgot=!A.forgot; renderLogin(); }
     else if(t.dataset.lgmail){ const v=lc(($('#fgMail')||{}).value); if(!okMail(v)){ toast('請輸入你綁定的 Email'); return; } t.disabled=true; try{ await FB.auth.sendPasswordResetEmail(v); try{ localStorage.setItem('mail:'+A.name,v); }catch(e){} toast('如果這個 Email 有綁定帳號，重設信已寄出，請到信箱查看（也看一下垃圾郵件）'); }catch(e){ toast(e.code==='auth/invalid-email'?'Email 格式不對':'寄送失敗：'+(e.code||e.message)); } t.disabled=false; }
     else if(t.dataset.mailset){ const n=t.dataset.mailset, inp=document.querySelector(`[data-mailin="${CSS.escape(n)}"]`), v=lc(inp&&inp.value); if(v&&!okMail(v)){ toast('Email 格式不對'); return; } if(v&&people().some(p=>p.name!==n&&lc(p.mail)===v)){ toast('這個 Email 已經有人用了'); return; } if(await savePeople(people().map(p=>p.name===n?{...p,mail:v}:p))) toast(v?`已設定 ${n} 的 Email，請他登入後到首頁「我的帳號」按「寄驗證信」`:`已移除 ${n} 的 Email`); }
-    else if(t.dataset.mailbind){ const u=FB.auth.currentUser, v=lc(($('#bindMail')||{}).value); if(!u) return; if(!okMail(v)){ toast('Email 格式不對'); return; }
+    else if(t.dataset.mailbind){ const u=FB.auth.currentUser, v=lc(((t.closest('.lg-fm')||document).querySelector('input')||{}).value); if(!u) return; if(!okMail(v)){ toast('Email 格式不對'); return; }
       if(!/@qipao-ledger\.app$/.test(u.email)){ toast('你已經綁定 Email 了'); return; }
       t.disabled=true;
       try{ await FB.fs.doc('mailmap/'+v).set({mail:v,oldEmail:u.email,name:W.name,at:new Date().toISOString()});
@@ -2501,7 +2502,7 @@ document.addEventListener('click',async ev=>{ const t=ev.target.closest('[data-p
 /* 第一次打開（或更新後）自動詢問要不要開啟通知；iPhone 必須由使用者按按鈕才能跳出系統詢問 */
 const PUSH_ASK_VER='1';
 function pushMaybeAsk(){
-  if(!W.name||!pushVapid()||document.querySelector('.push-ask')) return;
+  if(!W.name||!pushVapid()||document.querySelector('.push-ask,.bk-ov')) return;
   let asked=''; try{ asked=localStorage.getItem('push-asked')||''; }catch(e){}
   const iosWeb=isIOS&&!isStandalone(), akey=W.name+'|'+PUSH_ASK_VER+(iosWeb?'|web':'');
   if(asked===akey||pushOn()) return;
@@ -2524,6 +2525,23 @@ function accountHTML(){
     :'綁定自己的 Email 後，忘記密碼就能自己寄重設信，不用找人重設。';
   return `<section class="panel"><div class="ph"><h2>我的帳號</h2><span class="hint">${esc(W.name)}</span></div><div class="pushbox acct"><span class="hint">${st}</span>
     ${bound?'':`<div class="lg-fm"><input class="tin" type="email" id="bindMail" value="${esc(pend)}" placeholder="你的 Email" autocomplete="email"><button class="btn primary" data-mailbind="1">${pend?'重新寄驗證信':'綁定 Email'}</button></div>`}</div></section>`;
+}
+
+/* 還沒綁定 Email：登入後跳出提醒（每天最多一次） */
+function mailMaybeAsk(){
+  if(!W.name||document.querySelector('.bk-ov')) return;
+  const cur=lc(W.email); if(!/@qipao-ledger\.app$/.test(cur)) return;
+  const day=todayStr(); let k=''; try{ k=localStorage.getItem('mail-ask:'+W.name)||''; }catch(e){}
+  if(k===day) return;
+  const pend=myMailOf(W.name);
+  const v=document.createElement('div'); v.className='bk-ov push-ask mail-ask';
+  v.innerHTML=`<div class="bk-dlg pa-dlg" role="dialog" aria-modal="true"><div class="pa-ic">✉️</div><b class="pa-t">${pend?'Email 還沒完成驗證':'請綁定你的 Email'}</b>
+    <p class="pa-p">${pend?`驗證信已寄到 ${esc(pend)}，請到信箱（含垃圾郵件）點連結，完成後登出再登入。沒收到可以重寄。`:'綁定後，忘記密碼就能自己用 Email 重設，不用找人幫忙。'}</p>
+    <div class="lg-fm" style="width:100%"><input class="tin" type="email" id="bindMail" value="${esc(pend)}" placeholder="你的 Email" autocomplete="email"><button class="btn primary" data-mailbind="1">${pend?'重寄':'綁定'}</button></div>
+    <div class="pa-b"><button class="btn" data-mlater>以後再說</button></div></div>`;
+  document.body.appendChild(v);
+  const done=()=>{ try{ localStorage.setItem('mail-ask:'+W.name,day); }catch(e){} v.remove(); setTimeout(()=>{ if(typeof pushMaybeAsk==='function') pushMaybeAsk(); },400); };
+  v.addEventListener('click',ev=>{ if(ev.target.closest('[data-mlater]')) done(); else if(ev.target.closest('[data-mailbind]')) setTimeout(()=>{ if(myMailOf(W.name)) done(); },1500); });
 }
 
 
@@ -3126,6 +3144,8 @@ function applyAuth(){
   if(!n){ W.name=null; stopData(); renderWho(); FB.auth.signOut(); A.err='這個帳號已被移除或重設密碼，請重新選擇名字登入'; render(); return; }
   const was=W.name; W.name=n; W.email=u.email; W.uid=u.uid; W.admin=!!(P.staff&&(P.staff.bossEmail===u.email||(viaOld&&P.staff.bossEmail===viaOld)||(P.staff.bossMail&&P.staff.bossMail===em)));
   renderWho(); startData();
+  { const pp=personOf(n); if(pp&&P.pwset&&P.pwset[n]!==(pp.v||1)) FB.fs.doc('public/pwset').set({[n]:pp.v||1},{merge:true}).catch(()=>{}); }
+  if(!was) setTimeout(()=>{ if(typeof mailMaybeAsk==='function') mailMaybeAsk(); },1500);
   if(!was){ S.mode='home'; const go=new URLSearchParams(location.search).get('go'); if(go==='booking') S.mode='booking'; if(go) history.replaceState(null,'',location.pathname); saveUI(); render(); if(go==='daily') setTimeout(()=>openPick('daily'),300); toast(`${n}，歡迎回來`); } else if(S.mode==='home') renderHome(); else if(S.mode==='cash') drawCash();
 }
 render();
@@ -3134,6 +3154,7 @@ render();
   if(!window.firebase||!cfg||!cfg.apiKey||/YOUR_/.test(cfg.apiKey)){ setStatus('ro','未設定'); render(); return; }
   FB.app=firebase.initializeApp(cfg); FB.auth=firebase.auth(); FB.fs=firebase.firestore();
   try{ FB.fs.enablePersistence({synchronizeTabs:true}).catch(()=>{}); }catch(e){}
+  FB.fs.doc('public/pwset').onSnapshot(d=>{ P.pwset=d.exists?d.data():{}; if(!FB.auth.currentUser&&A.name) renderLogin(); },()=>{ P.pwset={}; });
   FB.fs.doc('public/staff').onSnapshot(d=>{ P.staff=d.exists?d.data():null; P.loaded=true; if(FB.auth.currentUser) applyAuth(); else render(); },e=>{ P.loaded=true; A.err='讀不到人員名單：'+(e&&e.code||''); render(); });
   FB.auth.onAuthStateChanged(()=>applyAuth());
 })();
