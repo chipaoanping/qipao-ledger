@@ -29,14 +29,15 @@ body::before{content:"";display:block;height:env(safe-area-inset-top,0px)}
 .load-err{background:#fbe9e7;color:#8e2733;border:1px solid #f0c4bd;border-radius:12px;padding:12px 16px;font-size:14px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
 .load-err[hidden]{display:none}
 .adm{display:grid;gap:14px}
-.adm-people{display:flex;flex-wrap:wrap;gap:10px}
-.adm-p{display:flex;align-items:center;gap:8px;border:1px solid var(--rule);border-radius:999px;padding:5px 8px 5px 5px}
+.adm-people{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px}
+.adm-p{display:flex;flex-wrap:wrap;align-items:center;gap:8px;border:1px solid var(--rule);border-radius:14px;padding:8px 10px}.adm-p b{margin-right:auto}
 .adm-p i{font-style:normal;width:28px;height:28px;border-radius:50%;background:var(--gold-soft);color:var(--wine);display:grid;place-items:center;font-weight:700;font-size:13px}
 .adm-p small{font-size:12px;color:var(--ink-3)}
 .adm-p .chip{padding:3px 10px;font-size:12px}.chip.danger{color:var(--accent)}
 .adm-data{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
 .lg-forgot{text-align:left;background:var(--soft);border-radius:12px;padding:12px 14px;font-size:13.5px;line-height:1.6;margin-top:4px}.lg-forgot ol{margin:6px 0;padding-left:20px}.lg-forgot p{margin:4px 0 0;color:var(--ink-3);font-size:12.5px}
 .pa-dlg{text-align:center;justify-items:center;width:min(380px,100%)}.pa-ic{font-size:40px}.pa-t{font-size:19px}.pa-p{margin:0;color:var(--ink-2);font-size:14px;line-height:1.6}.pa-ios{background:var(--soft);border-radius:10px;padding:10px 12px;text-align:left}.pa-b{display:flex;gap:10px;justify-content:center;margin-top:4px}.pa-b .btn{min-width:110px}
+.adm-mail{display:flex;gap:6px;flex-basis:100%;margin-top:6px}.adm-mail .tin{flex:1;padding:7px 10px;font-size:13.5px;min-width:0}
 .pushbox{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px}.pushbox .hint{flex:1;min-width:200px}
 .adm-bk{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:12px}.adm-bk .tin{flex:1;min-width:200px}.adm-bk .fl{font-weight:600;font-size:13px}
 .adm-data label.btn{cursor:pointer}
@@ -2282,7 +2283,10 @@ const emailOf=(name,v)=>`s${hexOf(name)}${(v||1)>1?'-v'+v:''}@qipao-ledger.app`;
 const people=()=>(P.staff&&Array.isArray(P.staff.people))?P.staff.people:[];
 const staffList=()=>people().map(p=>p.name);
 const personOf=n=>people().find(p=>p.name===n);
-const nameOfEmail=em=>{const p=people().find(p=>emailOf(p.name,p.v)===em);return p?p.name:null;};
+const lc=x=>String(x||'').trim().toLowerCase();
+const nameOfEmail=em=>{const e=lc(em); const p=people().find(p=>emailOf(p.name,p.v)===e||(p.mail&&lc(p.mail)===e));return p?p.name:null;};
+const maskMail=m=>{const [u,d]=String(m||'').split('@'); return u?`${u.slice(0,2)}${'•'.repeat(Math.max(1,u.length-2))}@${d||''}`:'';};
+const okMail=m=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(m||'').trim());
 const A={name:null,mode:'login',err:'',busy:false};
 function renderWho(){
   document.body.classList.toggle('boss',isBoss());
@@ -2322,7 +2326,8 @@ function renderLogin(){
         <button class="btn primary lg-go" type="submit" ${A.busy?'disabled':''}>${first?'設定密碼並登入':'登入'}</button>
         <button class="lg-back" type="button" data-lgmode="${first?'login':'set'}">${first?'已經設定過密碼？直接登入':'第一次登入，設定密碼'}</button>
         ${first?'':`<button class="lg-back" type="button" data-lgforgot="1">忘記密碼？</button>`}
-        ${A.forgot&&!first?(n===BOSS?`<div class="lg-forgot"><b>老闆帳號忘記密碼</b><p>老闆帳號沒辦法在 App 裡自己重設，請聯絡郁雯協助：到 Firebase 主控台「Authentication」刪除${esc(BOSS)}的登入帳號後，回到這裡按「第一次登入，設定密碼」重新設定，資料不會受影響。</p></div>`
+        ${A.forgot&&!first?(n===BOSS&&!(personOf(n)&&personOf(n).mail)?`<div class="lg-forgot"><b>老闆帳號忘記密碼</b><p>老闆帳號沒辦法在 App 裡自己重設，請聯絡郁雯協助：到 Firebase 主控台「Authentication」刪除${esc(BOSS)}的登入帳號後，回到這裡按「第一次登入，設定密碼」重新設定，資料不會受影響。</p></div>`
+          :personOf(n)&&personOf(n).mail?`<div class="lg-forgot"><b>寄重設密碼信</b><p style="color:inherit;font-size:13.5px">會寄到 ${esc(maskMail(personOf(n).mail))}，打開信裡的連結設定新密碼，再回來登入。</p><button class="btn primary" type="button" data-lgmail="1">寄重設密碼信</button><p>收不到的話（可能還沒完成 Email 驗證），請${esc(BOSS)}在「人員管理」按「重設密碼」。</p></div>`
           :`<div class="lg-forgot"><b>忘記密碼怎麼辦？</b><ol><li>請${esc(BOSS)}打開 App 首頁最下面「人員管理」，在「${esc(n)}」旁邊按「重設密碼」。</li><li>重設好後，回到這裡按「第一次登入，設定密碼」，輸入新密碼就能登入。</li></ol><p>其他資料都不會受影響。</p></div>`):''}
         <button class="lg-back" type="button" data-lgback="1">‹ 不是 ${esc(n)}？換人</button>
       </form>`;
@@ -2337,7 +2342,8 @@ function renderLogin(){
 }
 async function savePeople(list){
   if(!isBoss()){toast(`只有${BOSS}可以修改人員名單`);return false;}
-  const data={...P.staff,people:list,emails:list.map(p=>emailOf(p.name,p.v)),updatedAt:new Date().toISOString()};
+  const bp=list.find(p=>p.name===BOSS)||{};
+  const data={...P.staff,people:list,emails:list.map(p=>emailOf(p.name,p.v)),mails:list.filter(p=>p.mail).map(p=>lc(p.mail)),bossMail:bp.mail?lc(bp.mail):'',updatedAt:new Date().toISOString()};
   try{ await FB.fs.doc('public/staff').set(data); return true; }
   catch(e){ toast('人員名單儲存失敗'); return false; }
 }
@@ -2356,6 +2362,7 @@ async function submitPw(setup){
       const p=personOf(A.name); if(!p) return fail('名單裡沒有這個名字');
       const em=emailOf(p.name,p.v);
       if(A.mode==='set') await FB.auth.createUserWithEmailAndPassword(em,p1);
+      else if(p.mail){ try{ await FB.auth.signInWithEmailAndPassword(lc(p.mail),p1); }catch(e1){ if(/too-many|network/.test(e1.code||'')) throw e1; await FB.auth.signInWithEmailAndPassword(em,p1); } }
       else await FB.auth.signInWithEmailAndPassword(em,p1);
     }
     A.busy=false; A.name=null; A.mode='login'; applyAuth();
@@ -2368,10 +2375,16 @@ function bindLogin(){
     if(t.dataset.logout) logout();
     else if(t.dataset.login){ A.name=t.dataset.login; A.mode='login'; A.err=''; renderLogin(); }
     else if(t.dataset.lgforgot){ A.forgot=!A.forgot; renderLogin(); }
+    else if(t.dataset.lgmail){ const p=personOf(A.name); if(!p||!p.mail) return; t.disabled=true; try{ await FB.auth.sendPasswordResetEmail(lc(p.mail)); toast('已寄出重設密碼信，請到信箱查看（也看一下垃圾郵件）'); }catch(e){ toast('寄送失敗：'+(e.code||e.message)); } t.disabled=false; }
+    else if(t.dataset.mailset){ const n=t.dataset.mailset, inp=document.querySelector(`[data-mailin="${CSS.escape(n)}"]`), v=lc(inp&&inp.value); if(v&&!okMail(v)){ toast('Email 格式不對'); return; } if(v&&people().some(p=>p.name!==n&&lc(p.mail)===v)){ toast('這個 Email 已經有人用了'); return; } if(await savePeople(people().map(p=>p.name===n?{...p,mail:v}:p))) toast(v?`已設定 ${n} 的 Email，請他登入後到首頁「我的帳號」按「寄驗證信」`:`已移除 ${n} 的 Email`); }
+    else if(t.dataset.mailverify){ const u=FB.auth.currentUser, p=personOf(W.name); if(!u||!p||!p.mail) return; t.disabled=true;
+      try{ await u.verifyBeforeUpdateEmail(lc(p.mail)); toast('驗證信已寄出，請到信箱點連結，完成後重新登入'); }
+      catch(e){ toast(e.code==='auth/requires-recent-login'?'為了安全，請先登出再登入一次，然後馬上按「寄驗證信」':e.code==='auth/email-already-in-use'?'這個 Email 已經被別的帳號用了':'寄送失敗：'+(e.code||e.message)); }
+      t.disabled=false; }
     else if(t.dataset.lgback){ A.name=null; A.err=''; A.forgot=false; renderLogin(); }
     else if(t.dataset.lgmode){ A.mode=t.dataset.lgmode; A.err=''; renderLogin(); }
     else if(t.dataset.staffdel){ const n=t.dataset.staffdel; if(n===BOSS) return; if(await savePeople(people().filter(p=>p.name!==n))) toast(`已移除 ${n}`); }
-    else if(t.dataset.pwreset){ const n=t.dataset.pwreset; if(n===BOSS) return; if(await savePeople(people().map(p=>p.name===n?{...p,v:(p.v||1)+1}:p))) toast(`${n} 的密碼已重設，下次登入請按「第一次登入」重新設定`); }
+    else if(t.dataset.pwreset){ const n=t.dataset.pwreset; if(n===BOSS) return; if(await savePeople(people().map(p=>p.name===n?{...p,v:(p.v||1)+1,mail:''}:p))) toast(`${n} 的密碼已重設，下次登入請按「第一次登入」重新設定（Email 綁定也清除了，之後可再設定）`); }
   });
   document.addEventListener('submit',async ev=>{
     const id=ev.target.id;
@@ -2392,7 +2405,7 @@ function adminHTML(){
   const dataRow=`<div class="adm-data"><label class="btn">匯入備份資料<input type="file" accept="application/json,.json" id="impFile" hidden></label><button class="btn" data-export="1">下載備份</button><span class="hint" id="impMsg">${esc(IMP.msg||"從舊網頁搬資料、或定期備份用")}</span></div>`;
   if(!isBoss()) return `<section class="panel adm"><div class="ph"><h2>資料管理</h2><span class="hint">匯入與備份</span></div>${dataRow}${bkRow}</section>`;
   return `<section class="panel adm"><div class="ph"><h2>人員管理</h2><span class="hint">只有${esc(BOSS)}看得到</span></div>
-    <div class="adm-people">${people().map(p=>`<div class="adm-p"><i>${esc(p.name.slice(0,1))}</i><b>${esc(p.name)}</b>${p.name===BOSS?'<small>老闆</small>':`<button class="chip" data-pwreset="${esc(p.name)}">重設密碼</button><button class="chip danger" data-staffdel="${esc(p.name)}">移除</button>`}</div>`).join('')}</div>
+    <div class="adm-people">${people().map(p=>`<div class="adm-p"><i>${esc(p.name.slice(0,1))}</i><b>${esc(p.name)}</b>${p.name===BOSS?'<small>老闆</small>':`<button class="chip" data-pwreset="${esc(p.name)}">重設密碼</button><button class="chip danger" data-staffdel="${esc(p.name)}">移除</button>`}<span class="adm-mail"><input class="tin" type="email" data-mailin="${esc(p.name)}" value="${esc(p.mail||'')}" placeholder="Email（忘記密碼時寄重設信）" autocomplete="off"><button class="chip" data-mailset="${esc(p.name)}">儲存</button></span></div>`).join('')}</div>
     <form class="lg-add" id="staffForm"><input id="staffNew" maxlength="12" placeholder="新增人員名字" autocomplete="off"><button class="btn primary" type="submit">新增人員</button></form>
   </section>`;
 }
@@ -2491,6 +2504,15 @@ function pushMaybeAsk(){
   document.body.appendChild(v);
   const done=()=>{ try{ localStorage.setItem('push-asked',akey); }catch(e){} v.remove(); };
   v.addEventListener('click',ev=>{ if(ev.target.closest('[data-payes]')){ done(); pushEnable(); } else if(ev.target.closest('[data-palater]')){ done(); toast('之後可以在首頁下方「手機通知」開啟'); } });
+}
+
+/* ---------- 我的帳號（Email 綁定） ---------- */
+function accountHTML(){
+  if(!W.name) return ''; const p=personOf(W.name)||{}, cur=lc(W.email), bound=p.mail&&cur===lc(p.mail);
+  const st=bound?`✓ 已綁定 Email ${esc(maskMail(p.mail))}。忘記密碼時，可以在登入畫面按「忘記密碼？」寄重設信。`
+    :p.mail?`${esc(BOSS)}已幫你設定 Email：${esc(p.mail)}。按「寄驗證信」，到信箱點連結完成綁定，之後忘記密碼就能自己用 Email 重設。`
+    :`還沒有綁定 Email。${W.name===BOSS?'可以在下方「人員管理」填上你的 Email，再回來按「寄驗證信」。':`請${esc(BOSS)}在「人員管理」幫你填 Email，忘記密碼時就能寄重設信。`}`;
+  return `<section class="panel"><div class="ph"><h2>我的帳號</h2><span class="hint">${esc(W.name)}</span></div><div class="pushbox"><span class="hint">${st}</span>${p.mail&&!bound?'<button class="btn primary" data-mailverify="1">寄驗證信</button>':''}</div></section>`;
 }
 
 
@@ -2614,6 +2636,7 @@ function renderHome(){
       ${crewOK()?card('payroll','薪資','每月薪資計算與薪資單',(()=>{const ym=todayStr().slice(0,7), d=(S.payroll||{})[ym], pm=ymShift(ym,-1), dp=(S.payroll||{})[pm]; const li=(x,lab)=>x?`<li><i style="background:var(--accent)"></i>${lab}<span>${Object.keys(x.rows||{}).length} 人・${fmt(x.total||0)} 元${Object.values(x.rows||{}).every(r=>r.paid)?'・已發放':''}</span></li>`:`<li><i style="background:var(--rule)"></i>${lab}<span>尚未建立</span></li>`; return li(dp,`${+pm.slice(5)} 月`)+li(d,`${+ym.slice(5)} 月`);})(),'開始計算'):''}
       ${card('cash','現金結算',`營收現金・零用金（僅${BOSS}可完成結算）`,['qp','yl'].map(b=>{const l=lastSettle(b,'cash'),p=lastSettle(b,'petty');return `<li><i style="background:var(${B[b].color})"></i>${b==='qp'?'旗跑':'旗時'}<span>現金 ${l?md(l.date):'未結'}・零用金 ${p?md(p.date):'未結'}</span></li>`;}).join(''),isBoss()?'開始結算':'查看結算')}
     </div>
+    ${accountHTML()}
     ${pushHTML()}
     ${adminHTML()}
   </section>`;
@@ -3082,7 +3105,7 @@ function applyAuth(){
   if(!P.staff||A.busy) return;
   const n=nameOfEmail(u.email);
   if(!n){ W.name=null; stopData(); renderWho(); FB.auth.signOut(); A.err='這個帳號已被移除或重設密碼，請重新選擇名字登入'; render(); return; }
-  const was=W.name; W.name=n; W.email=u.email; W.uid=u.uid; W.admin=!!(P.staff&&P.staff.bossEmail===u.email);
+  const was=W.name; W.name=n; W.email=u.email; W.uid=u.uid; W.admin=!!(P.staff&&(P.staff.bossEmail===u.email||(P.staff.bossMail&&P.staff.bossMail===String(u.email||'').toLowerCase())));
   renderWho(); startData();
   if(!was){ S.mode='home'; const go=new URLSearchParams(location.search).get('go'); if(go==='booking') S.mode='booking'; if(go) history.replaceState(null,'',location.pathname); saveUI(); render(); if(go==='daily') setTimeout(()=>openPick('daily'),300); toast(`${n}，歡迎回來`); } else if(S.mode==='home') renderHome(); else if(S.mode==='cash') drawCash();
 }
