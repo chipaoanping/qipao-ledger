@@ -802,6 +802,8 @@ table.opdays tr.na td{border-bottom:2px solid var(--rule)}
 .cl-nums div{background:var(--soft);border-radius:10px;padding:10px 12px;display:grid}.cl-nums span{font-size:11.5px;color:var(--ink-3)}.cl-nums b{font-size:20px}.cl-nums small{font-size:11px;color:var(--ink-3)}
 .cl-pays{display:flex;flex-wrap:wrap;gap:8px}
 .cl-pay{display:flex;align-items:center;gap:6px;border:1px solid var(--rule);border-radius:999px;padding:5px 12px;font-size:13px;color:var(--ink-2)}.cl-pay i{width:8px;height:8px;border-radius:50%}.cl-pay b{color:var(--ink)}
+a.hcard,a.hcard *{text-decoration:none;color:inherit}a.hcard .hc-go{color:var(--wine)}
+.cs-li.yj b{color:#4f7a52}.yj{margin-top:4px}
 .cl-extra{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13px;color:var(--ink-2)}
 .cl-edit{justify-self:start;font-weight:700;color:var(--wine);border-color:var(--mustard);background:var(--gold-soft);padding:9px 18px}
 .cl-off{display:grid;gap:6px}.cl-off p{margin:0}
@@ -1101,6 +1103,7 @@ const shootName=x=>{ let t=String(x||'').trim().replace(/臺/g,'台').replace(/[
   if(/證件照/.test(t)&&/^(個人)?台式證件照$/.test(t)) return '台式證件照';
   if(/沙龍$/.test(t)) t+='寫真';
   return t; };
+const consignOf=ym=>{ try{ const c=(S.misc||{}).consign; const j=c&&(c.json?JSON.parse(c.json):c); return ((j&&j.months)||{})[ym]||[]; }catch(e){ return []; } };
 function autoShoot(b,y,m){
   const ym=`${y}-${pad(m)}`, out=[];
   const sheets=Object.entries(S.crewlog||{}).filter(([,d])=>d.branch===b&&d.month===ym&&d.role!=='造型').sort((a,c)=>a[1].date<c[1].date?-1:1);
@@ -1141,6 +1144,7 @@ const listOf=(b,m,k,y=YEAR)=>{ const raw=listOfRaw(b,m,k,y);
   if(k==='pay') return raw.length?raw:(typeof autoPayroll==='function'?autoPayroll(b,y,m):[]);
   if(k==='exp'){ if(typeof autoCrew!=='function') return raw; let out=raw;
     if(!raw.some(e=>e.cat==='外包造型・攝影')){ const a=autoCrew(b,y,m); if(a.length) out=out.concat(a.map(e=>({id:e.id.replace('crew','crewx'),cat:'外包造型・攝影',item:`${e.item}（${e.cat}）`,amt:e.amt,date:'',note:e.note,auto:true,crewAuto:true}))); }
+    if(b==='yl'&&!raw.some(e=>e.cat==='寄售分潤')){ const c=consignOf(`${y}-${pad(m)}`); if(c.length) out=out.concat(c.filter(x=>+x.payout).map((x,i)=>({id:`auto-consign-${y}${pad(m)}-${i}`,cat:'寄售分潤',item:x.brand,amt:Math.round(+x.payout||0),date:'',note:`永樂庫存結算${x.paid?'・已付'+(x.paidOn?' '+x.paidOn:''):x.manual?'・手動結算':'・未付'}`,auto:true,crewAuto:true}))); }
     if(CATS[b].exp.includes('人事薪資')&&!raw.some(e=>e.cat==='人事薪資')){ const a=autoPayroll(b,y,m); if(a.length) out=out.concat(a.map(e=>({id:e.id.replace('pay','payx'),cat:'人事薪資',item:e.item,amt:e.amt,date:'',note:'薪資表',auto:true,crewAuto:true}))); }
     return out; }
   if(k==='qty'){ const a=autoQty(b,y,m,raw); return a.length?raw.concat(a):raw; }
@@ -1236,7 +1240,7 @@ function bookHTML(b,m,kind,ro){
   const editable=!ro && S.canWrite!==false && S.db;
   const title=(S.branch==='all'&&!K.money)?`${B[b].short} ・ ${K.label}`:K.label;
   const head=K.nosum?`<span class="hint">依類別統計</span>`:`<span class="sum num">${fmt(total)}<small class="u"> ${K.unit}</small></span>`;
-  let h=`<section class="book" data-kind="${kind}"><div class="book-h"><div class="t"><h2>${title}</h2><span class="hint">${list.length} 筆${list.some(e=>e.crewAuto)?(list.every(e=>e.auto)?'・由結案單／薪資表自動計算':'・含結案單／薪資表'):list.length&&list.every(e=>e.auto)?'・由每日結帳自動計算':list.some(e=>e.auto)?'・含每日結帳來客':''}</span></div>${head}</div>`;
+  let h=`<section class="book" data-kind="${kind}"><div class="book-h"><div class="t"><h2>${title}</h2><span class="hint">${list.length} 筆${list.some(e=>e.crewAuto)?(list.every(e=>e.auto)?'・由結案單／薪資表／庫存結算自動計算':'・含自動帶入項目'):list.length&&list.every(e=>e.auto)?'・由每日結帳自動計算':list.some(e=>e.auto)?'・含每日結帳來客':''}</span></div>${head}</div>`;
   if(!list.length) h+=`<div class="emptyb">${m} 月沒有${K.label}紀錄${editable?'，用下方按鈕新增第一筆':''}。</div>`;
   if(kind==='plat'&&list.length){ h+=platSummary(list)+`<details class="orders"${S.editing&&S.editing.kind==='plat'||S.confirmDel&&list.some(e=>e.id===S.confirmDel)?' open':''}><summary>訂單明細（${list.length} 筆）</summary>`; }
   for(const [c,items,ct] of groupBy(list,cats)){
@@ -1685,7 +1689,7 @@ function closedHTML(b,d){
       <div class="cl-main"><div class="cl-rev"><span>今日營收</span><b class="num">${fmt(rev)}</b><em class="${diff?'bad':'ok'}">${diff?`收款${diff>0?'多':'少'} ${fmt(Math.abs(diff))} 元`:'✓ 對帳相符'}</em></div>
         <div class="cl-nums num"><div><span>來客</span><b>${fmt(vis)}</b><small>人</small></div><div><span>外國旅客</span><b>${fmt(+d.foreign||0)}</b><small>人</small></div><div><span>回流客</span><b>${fmt(+d.returning||0)}</b><small>人</small></div><div><span>客單價</span><b>${vis?fmt(rev/vis):'—'}</b></div></div></div>
       ${pays?`<div class="cl-pays">${pays}</div>`:''}
-      ${(+d.deposit||0)||d.note?`<div class="cl-extra">${+d.deposit?`<span>台新存款 <b class="num">${fmt(+d.deposit)}</b></span>`:''}${d.note?`<span>備註：${esc(d.note)}</span>`:''}</div>`:''}
+      ${(+d.deposit||0)||d.note||+d.yajin||+d.yajinBack?`<div class="cl-extra">${+d.yajin?`<span>收押金 <b class="num">${fmt(+d.yajin)}</b></span>`:''}${+d.yajinBack?`<span>退押金 <b class="num">${fmt(+d.yajinBack)}</b></span>`:''}${+d.deposit?`<span>台新存款 <b class="num">${fmt(+d.deposit)}</b></span>`:''}${d.note?`<span>備註：${esc(d.note)}</span>`:''}</div>`:''}
       ${editable?`<button class="btn cl-edit" data-dedit="1">✎ 編輯結帳</button>`:''}
     </div>`;
   }
@@ -1710,6 +1714,9 @@ function renderSheet(b){
         <section class="dsec"><div class="ds-h"><span class="ds-n">3</span><h3>收款方式</h3><span class="hint">各種收款加起來應該等於當日營收</span></div><div class="dgrid3">${DF.filter(f=>f[3]==='pay').map(f=>field(b,f)).join('')}</div></section>
         <section class="dsec"><div class="ds-h"><span class="ds-n">4</span><h3>結帳資訊</h3></div>
           <label class="dfield dep"><span class="fl">台新存款<em>從店內現金存入銀行，會從現金結算扣除</em></span><span class="din"><input id="d-${b}-deposit" data-b="${b}" data-k="deposit" type="number" inputmode="numeric" min="0" step="1" value="${esc(val(b,'deposit'))}" placeholder="今天沒有存款就留空" ${editable?'':'disabled'}><small>元</small></span></label>
+          <div class="dgrid2 yj">
+          <label class="dfield"><span class="fl">收押金（現金）<em>不算營收，會算進店內現金</em></span><span class="din"><input id="d-${b}-yajin" data-b="${b}" data-k="yajin" type="number" inputmode="numeric" min="0" step="1" value="${esc(val(b,'yajin'))}" placeholder="0" ${editable?'':'disabled'}><small>元</small></span></label>
+          <label class="dfield"><span class="fl">退押金（現金）<em>從店內現金退給客人</em></span><span class="din"><input id="d-${b}-yajinBack" data-b="${b}" data-k="yajinBack" type="number" inputmode="numeric" min="0" step="1" value="${esc(val(b,'yajinBack'))}" placeholder="0" ${editable?'':'disabled'}><small>元</small></span></label></div>
           <div class="dgrid2">
           <label class="dfield"><span class="fl">結帳人（登入者）</span><input class="tin" id="d-${b}-staff" value="${esc(W.name||'')}" readonly tabindex="-1"></label>
           <label class="dfield"><span class="fl">備註</span><input class="tin" id="d-${b}-note" data-b="${b}" data-k="note" maxlength="160" value="${esc(val(b,'note'))}" placeholder="例：下雨、團體預約、零錢不足" ${editable?'':'disabled'}></label></div></section>
@@ -1740,9 +1747,9 @@ async function saveDaily(b){
   if(!S.db){toast('資料庫沒有連線，無法儲存');return;}
   const data={branch:b,date:D.day,month:dMonth()}; { const pg=(dDoc(b)||{}).guests; if(pg) data.guests=pg; }
   for(const [k] of DF){const el=$(`#d-${b}-${k}`);data[k]=el&&el.value!==''?Math.round(+el.value):0;}
-  data.staff=W.name||''; data.by=W.uid||''; {const el=$(`#d-${b}-deposit`); data.deposit=el&&el.value!==''?Math.round(+el.value):0;} data.note=($(`#d-${b}-note`).value||'').trim(); data.updatedAt=new Date().toISOString();
+  data.staff=W.name||''; data.by=W.uid||''; {const el=$(`#d-${b}-deposit`); data.deposit=el&&el.value!==''?Math.round(+el.value):0;} for(const k of ['yajin','yajinBack']){ const el=$(`#d-${b}-${k}`); data[k]=el&&el.value!==''?Math.round(+el.value):0; } data.note=($(`#d-${b}-note`).value||'').trim(); data.updatedAt=new Date().toISOString();
   data.status=val(b,'status')||'營業'; data.closed=true;
-  { const rv=($(`#d-${b}-revenue`)||{}).value; if(data.status==='營業'&&DF.every(([k])=>!data[k])&&!data.deposit&&(rv===undefined||rv==='')){toast('今天沒有營收的話，請在「當日營收」填 0 再按完成結帳');const r=$(`#d-${b}-revenue`); r&&r.focus(); return;} }
+  { const rv=($(`#d-${b}-revenue`)||{}).value; if(data.status==='營業'&&DF.every(([k])=>!data[k])&&!data.deposit&&!data.yajin&&!data.yajinBack&&(rv===undefined||rv==='')){toast('今天沒有營收的話，請在「當日營收」填 0 再按完成結帳');const r=$(`#d-${b}-revenue`); r&&r.focus(); return;} }
   const btn=document.querySelector('.big-save'); if(btn) btn.disabled=true;
   try{ await S.db.doc('daily/'+dId(b,D.day)).set(data); D.docs[dId(b,D.day)]=data; delete D.dirty[b]; D.edit=false;
     const diff=sum(PAYK.map(k=>data[k]))-data.revenue;
@@ -2671,6 +2678,7 @@ function renderHome(){
       ${card('ledger','營業分析','每月收支・銷售・顧客・師資',lRow('qp')+lRow('yl'),'打開營業分析')}
       ${crewOK()?card('crew','造型・攝影結案','每月造型師、攝影師費用',['qp','yl'].map(b=>{const l=crewDocs(b,todayStr().slice(0,7));return `<li><i style="background:var(${B[b].color})"></i>${b==='qp'?'旗跑':'旗時'}<span>${todayStr().slice(5,7)*1} 月 ${l.length} 張・${fmt(sum(l.map(crewSettle)))} 元</span></li>`;}).join(''),'開始記錄'):''}
       ${crewOK()?card('payroll','薪資','每月薪資計算與薪資單',(()=>{const ym=todayStr().slice(0,7), d=(S.payroll||{})[ym], pm=ymShift(ym,-1), dp=(S.payroll||{})[pm]; const li=(x,lab)=>x?`<li><i style="background:var(--accent)"></i>${lab}<span>${Object.keys(x.rows||{}).length} 人・${fmt(x.total||0)} 元${Object.values(x.rows||{}).every(r=>r.paid)?'・已發放':''}</span></li>`:`<li><i style="background:var(--rule)"></i>${lab}<span>尚未建立</span></li>`; return li(dp,`${+pm.slice(5)} 月`)+li(d,`${+ym.slice(5)} 月`);})(),'開始計算'):''}
+      <a class="hcard" href="https://chipaoanping.github.io/yongle-inventory/" target="_blank" rel="noopener"><span class="hc-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8l9-5 9 5v8l-9 5-9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/></svg></span><span class="hc-t">永樂庫存</span><span class="hc-s">寄售商品庫存、售出與品牌結算</span><ul class="hc-l"><li><i style="background:var(${B.yl.color})"></i>旗時・永樂<span>另開庫存 App（另外登入）</span></li>${(()=>{const c=consignOf(todayStr().slice(0,7)); return c.length?`<li><i style="background:var(--rule)"></i>本月已結算<span>${c.length} 個品牌・${fmt(sum(c.map(x=>+x.payout||0)))} 元</span></li>`:'';})()}</ul><span class="hc-go">打開庫存 ↗</span></a>
       ${card('cash','現金結算',`營收現金・零用金（僅${BOSS}可完成結算）`,['qp','yl'].map(b=>{const l=lastSettle(b,'cash'),p=lastSettle(b,'petty');return `<li><i style="background:var(${B[b].color})"></i>${b==='qp'?'旗跑':'旗時'}<span>現金 ${l?md(l.date):'未結'}・零用金 ${p?md(p.date):'未結'}</span></li>`;}).join(''),isBoss()?'開始結算':'查看結算')}
     </div>
     ${accountHTML()}
@@ -2890,7 +2898,7 @@ function pettyPending(b){const l=lastSettle(b,'petty'), base=l?l.date:monthStart
 function cashExpPending(b){const l=lastSettle(b,'cash'), base=l?l.date:'0000-00-00', cv=covered(b,'cash'), t=csUntil('cash',b);
   return allExp(b).filter(e=>/營收現金/.test(e.note||'')&&e.date>=base&&e.date<=t&&!cv.has(e.id)).sort((a,c)=>a.date<c.date?-1:1);}
 function cashPending(b){const l=lastSettle(b,'cash'), base=l?l.date:'0000-00-00', cv=covered(b,'cash'), t=csUntil('cash',b);
-  return Object.entries(C.daily).filter(([id,d])=>d.branch===b&&d.date>=base&&d.date<=t&&((+d.cash||0)>0||(+d.deposit||0)>0)&&!cv.has(id)).map(([id,d])=>({id,...d})).sort((a,c)=>a.date<c.date?-1:1);}
+  return Object.entries(C.daily).filter(([id,d])=>d.branch===b&&d.date>=base&&d.date<=t&&((+d.cash||0)>0||(+d.deposit||0)>0||(+d.yajin||0)>0||(+d.yajinBack||0)>0)&&!cv.has(id)).map(([id,d])=>({id,...d})).sort((a,c)=>a.date<c.date?-1:1);}
 function subCash(){
   if(!S.db||C.subB==='all') return; C.subB='all';
   C.unsub=S.db.collection('daily').where('month','in',(()=>{const a=[];const d=new Date();for(let i=0;i<3;i++){const x=new Date(d.getFullYear(),d.getMonth()-i,1);a.push(`${x.getFullYear()}-${pad(x.getMonth()+1)}`);}return a;})()).onSnapshot(snap=>{const o={};snap.docs.forEach(d=>{o[d.id]=d.data();});C.daily=o;if(S.mode==='cash')drawCash();else if(S.mode==='home')renderHome();},()=>{});
@@ -2899,14 +2907,14 @@ const md=d=>`${+d.slice(5,7)}/${+d.slice(8)}`;
 function csUntilHTML(type,b){ const u=csUntil(type,b), t=todayStr(), y=addDays(t,-1);
   return `<div class="cs-until"><span class="fl">結算到</span><input type="date" class="tin" data-csu="${type}" data-b="${b}" value="${u}" max="${t}"><span class="chips"><button type="button" class="chip ${u===t?'on':''}" data-csq="${type}|${b}|${t}">今天</button><button type="button" class="chip ${u===y?'on':''}" data-csq="${type}|${b}|${y}">昨天</button></span>${u<t?`<span class="hint">${md(u)} 之後的${type==='cash'?'現金營收':'支出'}留到下次結算</span>`:''}</div>`; }
 function cashCard(b){
-  const l=lastSettle(b,'cash'), list=cashPending(b), xl=cashExpPending(b), carry=0, exp=carry+sum(list.map(r=>(+r.cash||0)-(+r.deposit||0)))-sum(xl.map(e=>+e.amt||0)), first=list[0];
+  const l=lastSettle(b,'cash'), list=cashPending(b), xl=cashExpPending(b), carry=0, exp=carry+sum(list.map(r=>(+r.cash||0)-(+r.deposit||0)+(+r.yajin||0)-(+r.yajinBack||0)))-sum(xl.map(e=>+e.amt||0)), first=list[0];
   const dr=C.draft.cash[b]||{}, counted=dr.counted===undefined||dr.counted===''?null:+dr.counted, dep=+(dr.deposit||0)||0;
   const diff=counted==null?null:counted-exp, keep=counted==null?null:counted-dep;
   return `<section class="cs-card">
     <div class="cs-h"><span class="cs-ic">${ICON.daily}</span><div><h3>營收現金結帳</h3><p class="hint">${l?`上次結算到 ${md(l.date)}（${esc(l.by||'')}），之前的營業現金已歸 0`:`尚未結帳過，從 ${first?md(first.date):'有紀錄的第一天'} 起算`}</p></div></div>
     ${csUntilHTML('cash',b)}
     <div class="cs-list">${carry?`<div class="cs-li"><span>上次留店現金</span><b class="num">${fmt(carry)}</b></div>`:''}
-      ${list.length?list.map(r=>((+r.cash||0)?`<div class="cs-li"><span>${md(r.date)}（${wk(r.date)}）現金營收${r.staff?`<small>${esc(r.staff)}</small>`:''}</span><b class="num">${fmt(+r.cash||0)}</b></div>`:'')+((+r.deposit||0)?`<div class="cs-li dep"><span>${md(r.date)}（${wk(r.date)}）存入台新${r.staff?`<small>${esc(r.staff)}</small>`:''}</span><b class="num">−${fmt(+r.deposit)}</b></div>`:'')).join(''):'<div class="cs-li empty"><span>上次結帳後沒有新的現金營收</span></div>'}
+      ${list.length?list.map(r=>((+r.cash||0)?`<div class="cs-li"><span>${md(r.date)}（${wk(r.date)}）現金營收${r.staff?`<small>${esc(r.staff)}</small>`:''}</span><b class="num">${fmt(+r.cash||0)}</b></div>`:'')+((+r.yajin||0)?`<div class="cs-li yj"><span>${md(r.date)}（${wk(r.date)}）收押金<small>不是營收</small></span><b class="num">+${fmt(+r.yajin)}</b></div>`:'')+((+r.yajinBack||0)?`<div class="cs-li dep"><span>${md(r.date)}（${wk(r.date)}）退押金</span><b class="num">−${fmt(+r.yajinBack)}</b></div>`:'')+((+r.deposit||0)?`<div class="cs-li dep"><span>${md(r.date)}（${wk(r.date)}）存入台新${r.staff?`<small>${esc(r.staff)}</small>`:''}</span><b class="num">−${fmt(+r.deposit)}</b></div>`:'')).join(''):'<div class="cs-li empty"><span>上次結帳後沒有新的現金營收</span></div>'}
       ${xl.map(e=>`<div class="cs-li dep"><span>${md(e.date)} 支出・${esc(e.item)}<small>${esc(e.cat)}${e.by?'・'+esc(e.by):''}</small></span>${e.receipt?`<a class="cs-r" href="${rcptURL(e.receipt)}" target="_blank" rel="noopener">收據</a>`:''}<b class="num">−${fmt(+e.amt||0)}</b></div>`).join('')}
       <div class="cs-li tot"><span>應有現金</span><b class="num">${fmt(exp)}</b></div></div>
     <div class="cs-form"${isBoss()?'':' hidden'}>
@@ -2914,7 +2922,7 @@ function cashCard(b){
       <label class="dfield"><span class="fl">其中存入台新（可不填）</span><span class="din"><input id="cs-${b}-cash-deposit" data-cs="cash" data-b="${b}" data-k="deposit" type="number" inputmode="numeric" value="${esc(dr.deposit??'')}" placeholder="0">${PM}<small>元</small></span></label>
       <label class="dfield wide"><span class="fl">備註</span><input class="tin" id="cs-${b}-cash-note" data-cs="cash" data-b="${b}" data-k="note" maxlength="60" value="${esc(dr.note??'')}" placeholder="可不填"></label>
     </div>
-    <div class="cs-res num" id="csr-${b}-cash"${isBoss()?'':' hidden'}>${counted==null?'<span class="hint">填入實點現金後會自動對帳</span>':`<span class="${diff===0?'ok':'bad'}">${diff===0?'✓ 現金相符':`現金${diff>0?'多':'少'} ${fmt(Math.abs(diff))} 元`}</span><span>結算後營業現金歸 0</span>`}</div>
+    <div class="cs-res num" id="csr-${b}-cash"${isBoss()?'':' hidden'}>${counted==null?'<span class="hint">填入實點現金後會自動對帳</span>':`<span class="${diff===0?'ok':'bad'}">${diff===0?'✓ 現金相符':`現金${diff>0?'多':'少'} ${fmt(Math.abs(diff))} 元`}</span><span>結算後營業現金歸 0</span>${(()=>{const yj=sum(list.map(r=>(+r.yajin||0)-(+r.yajinBack||0)));return yj?`<span class="hint">其中押金淨額 ${fmt(yj)} 元（之後要退給客人）</span>`:'';})()}`}</div>
     ${isBoss()?`<button class="btn primary cs-go" data-csave="cash" data-b="${b}">完成營收現金結帳</button>`:`<p class="cs-lock">🔒 只有${BOSS}可以完成清點結算</p>`}
   </section>`;
 }
@@ -2959,9 +2967,9 @@ async function saveSettle(type,b){
   const dr=(C.draft[type][b])||{}; if(dr.counted===undefined||dr.counted===''){toast('請先填入實點金額');$(`#cs-${b}-${type}-counted`)?.focus();return;}
   const counted=Math.round(+dr.counted), at=new Date().toISOString(), date=csUntil(type,b);
   let doc;
-  if(type==='cash'){ const l=lastSettle(b,'cash'), list=cashPending(b), xl=cashExpPending(b), carry=0, expected=carry+sum(list.map(r=>(+r.cash||0)-(+r.deposit||0)))-sum(xl.map(e=>+e.amt||0)), spent=sum(xl.map(e=>+e.amt||0)), deposit=Math.round(+dr.deposit||0);
+  if(type==='cash'){ const l=lastSettle(b,'cash'), list=cashPending(b), xl=cashExpPending(b), carry=0, expected=carry+sum(list.map(r=>(+r.cash||0)-(+r.deposit||0)+(+r.yajin||0)-(+r.yajinBack||0)))-sum(xl.map(e=>+e.amt||0)), spent=sum(xl.map(e=>+e.amt||0)), deposit=Math.round(+dr.deposit||0);
     if(deposit>0&&counted>=0&&deposit>counted){toast('存入金額不能大於實點現金');return;}
-    doc={branch:b,type,date,at,by:W.name,uid:W.uid||'',expected,counted,deposit,keep:0,spent,diff:counted-expected,note:(dr.note||'').trim(),covered:list.map(r=>r.id).concat(xl.map(e=>e.id))};
+    doc={branch:b,type,date,at,by:W.name,uid:W.uid||'',expected,counted,deposit,keep:0,spent,yajin:sum(list.map(r=>(+r.yajin||0)-(+r.yajinBack||0))),diff:counted-expected,note:(dr.note||'').trim(),covered:list.map(r=>r.id).concat(xl.map(e=>e.id))};
   } else { const list=pettyPending(b), used=sum(list.map(e=>+e.amt||0)), expected=PETTY[b]-used;
     doc={branch:b,type,date,at,by:W.name,uid:W.uid||'',limit:PETTY[b],used,expected,counted,refill:PETTY[b]-counted,diff:counted-expected,note:(dr.note||'').trim(),covered:list.map(e=>e.id)}; }
   const id=`${b}-${type}-${Date.now()}`;
