@@ -896,6 +896,13 @@ a.hcard,a.hcard *{text-decoration:none;color:inherit}a.hcard .hc-go{color:var(--
 .bk-leg{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;font-size:12px}.bk-leg u{position:static}
 @media (max-width:560px){.bk-c{min-height:52px;padding:4px;border-radius:8px}.bk-c i{font-size:10.5px;padding:0 4px;line-height:16px}}
 .bk-u{font-size:11.5px;text-align:right}.hint.bad{color:var(--accent)}
+.wgoal{border-top:1px dashed var(--rule);padding-top:12px;display:grid;gap:6px}
+.wg-h{display:flex;justify-content:space-between;align-items:baseline}.wg-h b{font-size:14px}.wg-h span{font-size:12px;color:var(--ink-3)}
+.wg-n{display:flex;align-items:baseline;gap:4px}.wg-n b{font-size:26px;color:var(--wine)}.wg-n small{color:var(--ink-3)}.wg-n em{margin-left:auto;font-style:normal;font-weight:700;color:#a0672a}.wg-n em.ok{color:#4f7a52}
+.wg-bar{height:10px;border-radius:99px;background:var(--soft);overflow:hidden}.wg-bar i{display:block;height:100%;background:var(--bc);border-radius:99px}
+.wg-s{font-size:12.5px;color:var(--ink-3)}
+.g-row2{display:grid;grid-template-columns:minmax(0,220px)}
+.tk-t td,.tk-t th{font-size:13.5px;padding:6px 8px}.tk-t td.num{position:relative}.tk-b{position:absolute;left:0;bottom:2px;height:3px;background:var(--accent);opacity:.35;border-radius:2px}
 .hs-h{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:6px}.hs-h b{font-family:var(--f-display);font-size:17px;letter-spacing:.08em}.hs-h span{font-size:13px;color:var(--ink-3)}.hs-h em{font-style:normal;font-weight:700;color:var(--wine);font-size:17px}
 .hs-g{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .hs-c{border-radius:12px;background:var(--soft);padding:12px 14px;display:grid;gap:4px;border-left:4px solid var(--bc)}
@@ -1341,7 +1348,7 @@ function renderSecMonth(m){
   const s=sec(), name=S.branch==='all'?'兩館合計':B[S.branch].name;
   let h=statStrip(secStats(m),`${YEAR} 年 ${m} 月 ・ ${name} ・ ${s.name}`);
   if(S.sec==='qty') for(const b of branches()) h+=rankHTML(b,[m],`${YEAR} 年 ${m} 月`);
-  if(S.sec==='cust'){ for(const b of branches()) h+=voicesHTML(b); h+=guestListHTML(); for(const b of branches()) h+=guestStatsHTML(b,[m],`${YEAR} 年 ${m} 月`); }
+  if(S.sec==='cust'){ for(const b of branches()) h+=voicesHTML(b); h+=guestListHTML(); for(const b of branches()) h+=guestStatsHTML(b,[m],`${YEAR} 年 ${m} 月`); for(const b of branches()) h+=ticketHTML(b,[m],`${YEAR} 年 ${m} 月`); }
   const books=[];
   for(const k of s.kinds) for(const b of branches()) if(KIND[k].br.includes(b)) books.push(bookHTML(b,m,k,S.branch==='all'));
   if(!books.length) h+=`<div class="panel emptyb">${B[S.branch].name}沒有這類紀錄。${S.sec==='team'?'人事薪資都記在安平。':S.sec==='chan'?(S.branch==='qp'?'寄售在永樂。':'旅遊平台訂單在安平。'):''}</div>`;
@@ -1501,6 +1508,7 @@ function renderSecYear(){
     for(const b of bs) h+=voicesHTML(b);
     h+=guestListHTML();
     for(const b of bs) h+=guestStatsHTML(b,MONTHS,`${YEAR} 全年`);
+    for(const b of bs) h+=ticketHTML(b,MONTHS,`${YEAR} 全年`);
     for(const b of bs){
       const cats=[...new Set(MONTHS.flatMap(m=>listOf(b,m,'cust').map(e=>e.cat)))];
       if(!cats.length){ h+=`<div class="panel emptyb">${B[b].name} ${YEAR} 年沒有顧客來源紀錄。</div>`; continue; }
@@ -1792,7 +1800,8 @@ const GF=[
   ['reason','選擇我們的原因','area'],
   ['memorable','體驗中最印象深刻','area'],
   ['feedback','客人特別提到的反饋','area'],
-  ['note','備註','text']
+  ['note','備註','text'],
+  ['amt','消費金額','money']
 ];
 const G={editing:null,draft:{}};
 const gList=b=>((dDoc(b)||{}).guests)||[];
@@ -1811,11 +1820,12 @@ function gFormHTML(b){
     if(t==='chips1'||t==='chipsN'){ const opts=gOpts(f,b), cur=t==='chipsN'?(Array.isArray(v)?v:String(v).split(/[、,，]/).map(x=>x.trim()).filter(Boolean)):[String(v)];
       return `<div class="gf ${k}"><span class="fl">${lb}${t==='chipsN'?'<em>可複選</em>':''}</span><div class="chips">${opts.map(o=>`<button type="button" class="chip ${cur.includes(o)?'on':''}" data-gchip="${k}" data-v="${esc(o)}">${esc(o)}</button>`).join('')}</div>${k==='type'?'':`<input class="tin" data-g="${k}" value="${esc(Array.isArray(v)?v.join('、'):v)}" placeholder="${t==='chipsN'?'或自己輸入，用「、」分開':'或自己輸入'}">`}</div>`; }
     if(t==='area') return `<label class="gf wide"><span class="fl">${lb}</span><textarea class="tin" data-g="${k}" rows="2" maxlength="300">${esc(v)}</textarea></label>`;
+    if(t==='money') return `<label class="gf"><span class="fl">${lb}<em>這組客人付的總金額</em></span><span class="din"><input data-g="${k}" type="number" inputmode="numeric" min="0" value="${esc(v)}" placeholder="0"><small>元</small></span></label>`;
     if(t==='num') return `<label class="gf"><span class="fl">${lb}</span><span class="din"><input data-g="${k}" type="number" inputmode="numeric" min="1" value="${esc(v)}" placeholder="1"><small>人</small></span></label>`;
     return `<label class="gf"><span class="fl">${lb}</span><input class="tin" data-g="${k}" value="${esc(v)}" maxlength="60" placeholder="${k==='name'?'例：王小姐':''}"></label>`;};
   return `<div class="gform" id="gForm">
     <div class="g-h"><b>${G.editing==='new'?'新增顧客':'修改顧客'}</b><button class="ibtn" data-gcancel="1">取消</button></div>
-    <div class="g-row">${fld(GF[0])}${fld(GF[1])}${fld(GF[3])}</div>
+    <div class="g-row">${fld(GF[0])}${fld(GF[1])}${fld(GF[3])}</div><div class="g-row2">${fld(GF[12])}</div>
     ${fld(GF[2])}${fld(GF[4])}${fld(GF[5])}${fld(GF[6])}${fld(GF[7])}
     <div class="g-row3">${fld(GF[8])}${fld(GF[9])}${fld(GF[10])}</div>${fld(GF[11])}
     <p class="sp-err" id="gErr" role="alert"></p>
@@ -1827,7 +1837,7 @@ function gCardHTML(g,ro){
   const txt=(k,v)=>v?`<div class="gx"><i>${k}</i>${esc(v)}</div>`:'';
   return `<div class="gcard"><div class="gc-h"><span class="gc-type ${g.type==='預約'?'bk':'wk'}">${esc(g.type||'—')}</span><b>${esc(g.name||'（未填姓名）')}</b><span class="hint">${g.count?esc(g.count)+' 人':''}${g.by?' ・ '+esc(g.by)+' 記錄':''}</span>
     ${ro?'':`<span class="gc-act"><button class="ibtn" data-gedit="${g.id}">修改</button><button class="ibtn ${G.confirm===g.id?'danger':''}" data-gdel="${g.id}">${G.confirm===g.id?'確定刪除':'刪除'}</button></span>`}</div>
-    <div class="gc-tags">${tag('項目',g.items)}${tag('客源',g.origin)}${tag('同行',g.relation)}${tag('得知',g.source)}${tag('目的',g.purpose)}</div>
+    <div class="gc-tags">${g.amt!==''&&g.amt!=null?tag('金額',fmt(+g.amt)+' 元'):''}${tag('項目',g.items)}${tag('客源',g.origin)}${tag('同行',g.relation)}${tag('得知',g.source)}${tag('目的',g.purpose)}</div>
     ${txt('選擇原因',g.reason)}${txt('印象深刻',g.memorable)}${txt('反饋',g.feedback)}${txt('備註',g.note)}</div>`;
 }
 function guestsHTML(b,ro){
@@ -1851,7 +1861,7 @@ async function gWrite(b,mut,msg){
 async function gSave(b){
   const d={...G.draft}; d.items=(Array.isArray(d.items)?d.items:String(d.items||'').split(/[、,，]/)).map(x=>x.trim()).filter(Boolean);
   if(!d.type){ $('#gErr').textContent='請選擇預約或現場'; return; }
-  d.count=d.count===''||d.count==null?'':Math.max(1,Math.round(+d.count||1));
+  d.count=d.count===''||d.count==null?'':Math.max(1,Math.round(+d.count||1)); d.amt=d.amt===''||d.amt==null?'':Math.max(0,Math.round(+d.amt||0));
   const isNew=G.editing==='new'; const g={...d,id:isNew?'g'+uid():G.editing}; if(isNew){g.by=W.name||'';} else g.editedBy=W.name||'';
   const ok=await gWrite(b,l=>isNew?l.concat([g]):l.map(x=>x.id===g.id?{...x,...g}:x),isNew?'已新增顧客':'已儲存');
   if(ok){ G.editing=null; G.draft={}; gRedraw(); }
@@ -2646,6 +2656,42 @@ document.addEventListener('click',ev=>{ if(S.mode!=='home'&&S.mode!=='booking') 
   if(d.bkreload){ bkFetch(d.bkreload,d.bkreload==='home'?todayStr():`${BK.ym}-01`,d.bkreload==='home'?2:new Date(+BK.ym.slice(0,4),+BK.ym.slice(5),0).getDate(),true); bkRedraw(); return; }
   if(d.bkday) BK.day=d.bkday; else if(d.bkym){ BK.ym=ymShift(BK.ym,+d.bkym); BK.err=''; } else if(d.bkbr) BK.br=d.bkbr; else if(d.bktoday){ BK.ym=todayStr().slice(0,7); BK.day=todayStr(); }
   drawBooking(); });
+/* ---------- 每週體驗目標（旗跑） ---------- */
+const GOAL_DEF={qp:{weekly:20,photo:6}};
+const goalCfg=b=>({...(GOAL_DEF[b]||{}),...((((S.misc||{}).goals)||{})[b]||{})});
+const isPhotoGuest=g=>[].concat(g.items||[]).some(x=>/寫真/.test(x));
+const weekStart=d=>{ const x=new Date(d+'T00:00:00'); const w=(x.getDay()+6)%7; return addDays(d,-w); };
+function weekGoalData(b,day){
+  const cfg=goalCfg(b); if(!cfg.weekly) return null;
+  const ws=weekStart(day), we=addDays(ws,6), docs={...(S.allDaily||{}),...D.docs}; let exp=0, photo=0;
+  const perDay={};
+  Object.values(docs).forEach(d=>{ if(!d||d.branch!==b||!d.date||d.date<ws||d.date>we||!Array.isArray(d.guests)) return; d.guests.forEach(g=>{ const v=isPhotoGuest(g)?cfg.photo:1; if(isPhotoGuest(g)) photo++; else exp++; perDay[d.date]=(perDay[d.date]||0)+v; }); });
+  const done=exp+photo*cfg.photo; return {cfg,ws,we,exp,photo,done,left:Math.max(0,cfg.weekly-done),perDay};
+}
+function weekGoalHTML(b,day){
+  const w=weekGoalData(b,day); if(!w) return ''; const pct=Math.min(100,w.done/w.cfg.weekly*100);
+  const daysLeft=Math.max(0,Math.round((new Date(w.we+'T00:00:00')-new Date(day+'T00:00:00'))/864e5)+1);
+  return `<div class="wgoal" style="--bc:var(${B[b].color})"><div class="wg-h"><b>${b==='qp'?'旗跑':'旗時'}本週目標</b><span class="num">${md(w.ws)}–${md(w.we)}</span></div>
+    <div class="wg-n num"><b>${w.done}</b><small>／${w.cfg.weekly} 組</small><em class="${w.left?'':'ok'}">${w.left?`還差 ${w.left} 組`:'✓ 已達標'}</em></div>
+    <div class="wg-bar"><i style="width:${pct}%"></i></div>
+    <div class="wg-s num">體驗 ${w.exp} 組・寫真 ${w.photo} 組（×${w.cfg.photo}）${w.left&&daysLeft?`・剩 ${daysLeft} 天，平均每天 ${Math.ceil(w.left/daysLeft)} 組`:''}</div></div>`;
+}
+/* ---------- 客單價（依類型） ---------- */
+const TK_TYPES=[['寫真','寫真攝影',/寫真/],['租借・體驗','旗袍租借',/租|體驗|旗袍|馬褂/],['彩妝造型','彩妝造型',/妝|造型/]];
+function ticketHTML(b,ms,label){
+  const gs=Object.values({...(S.allDaily||{}),...D.docs}).filter(d=>d&&d.branch===b&&Array.isArray(d.guests)&&+String(d.date).slice(0,4)===YEAR&&ms.includes(+String(d.date).slice(5,7))).flatMap(d=>d.guests).filter(g=>g.amt!==''&&g.amt!=null&&+g.amt>0);
+  const grp={寫真:[],'租借・體驗':[]}; gs.forEach(g=>(isPhotoGuest(g)?grp.寫真:grp['租借・體驗']).push(g));
+  const rowsG=Object.entries(grp).filter(([,l])=>l.length).map(([k,l])=>{ const t=sum(l.map(g=>+g.amt)), p=sum(l.map(g=>+g.count||1)); return [k,l.length,t,Math.round(t/l.length),p?Math.round(t/p):0]; });
+  // 帳務資料：營收分類 ÷ 銷售數量
+  const qcat={寫真攝影:['寫真'],旗袍租借:['旗袍租借','旗袍租借（2小時）'],彩妝造型:['彩妝造型'],平台日租:['旅遊平台']};
+  const rowsA=[]; for(const [rc,qc] of Object.entries(qcat)){ let r=0,q=0; for(const m of ms){ r+=sum(listOfRaw(b,m,'rev').filter(e=>e.cat===rc).map(e=>+e.amt||0)); q+=sum(listOfRaw(b,m,'qty').filter(e=>qc.includes(e.cat)).map(e=>+e.amt||0)); } if(r&&q) rowsA.push([rc,q,r,Math.round(r/q)]); }
+  if(!rowsG.length&&!rowsA.length) return '';
+  const mx=Math.max(1,...rowsG.map(x=>x[3]),...rowsA.map(x=>x[3]));
+  return `<div class="panel tk"><div class="ph"><h2>${B[b].name} ・ 客單價（依類型）</h2><span class="hint">${label}</span></div><div class="two">
+    ${rowsG.length?`<div><div class="rk-t">每日結帳顧客紀錄（有填消費金額的組）</div><table class="plain tk-t"><tr><th>類型</th><th class="num">組數</th><th class="num">營收</th><th class="num">每組</th><th class="num">每人</th></tr>${rowsG.map(([k,n,t,a,pp])=>`<tr><td>${k}</td><td class="num">${n}</td><td class="num">${fmt(t)}</td><td class="num"><b>${fmt(a)}</b><i class="tk-b" style="width:${a/mx*100}%"></i></td><td class="num">${fmt(pp)}</td></tr>`).join('')}</table></div>`:`<div><div class="rk-t">每日結帳顧客紀錄</div><p class="hint">顧客紀錄填上「消費金額」後，這裡會分寫真、租借算出每組平均。</p></div>`}
+    ${rowsA.length?`<div><div class="rk-t">帳務資料（營收分類 ÷ 銷售件數）</div><table class="plain tk-t"><tr><th>類型</th><th class="num">件數</th><th class="num">營收</th><th class="num">每件</th></tr>${rowsA.map(([k,n,t,a])=>`<tr><td>${k}</td><td class="num">${n}</td><td class="num">${fmt(t)}</td><td class="num"><b>${fmt(a)}</b><i class="tk-b" style="width:${a/mx*100}%"></i></td></tr>`).join('')}</table></div>`:''}
+  </div></div>`;
+}
 function homeStatsHTML(today){
   const ym=today.slice(0,7), m=+ym.slice(5), docs={...(S.allDaily||{}),...D.docs};
   const one=b=>{ const ds=Object.values(docs).filter(d=>d&&d.branch===b&&String(d.date||'').startsWith(ym)&&dStatusOf(d)==='營業'), rev=sum(ds.map(d=>+d.revenue||0)), c=statusCount(b,ym,docs); if(c.未記錄&&!dStatusOf(docs[dId(b,today)])) c.未記錄--; const vis=sum(ds.map(d=>+d.visitors||0));
@@ -2655,7 +2701,7 @@ function homeStatsHTML(today){
     <div class="hs-g">${st.map(x=>`<div class="hs-c" style="--bc:var(${B[x.b].color})"><div class="hs-n"><i></i>${x.b==='qp'?'旗跑':'旗時'}<small>${esc(B[x.b].name.replace(/^.*・/,''))}</small></div>
       <div class="hs-rev num">${fmt(x.rev)}<small>元</small></div>
       <div class="hs-d num"><span>營業 <b>${x.c.營業}</b> 天</span><span>店休 <b>${x.c.店休}</b> 天</span>${x.c.颱風假?`<span>颱風假 <b>${x.c.颱風假}</b> 天</span>`:''}${x.c.未記錄?`<span class="na">未記錄 <b>${x.c.未記錄}</b> 天</span>`:''}</div>
-      <div class="hs-x num">日均 ${fmt(x.avg)} 元・來客 ${fmt(x.vis)} 人</div></div>`).join('')}</div></div>`;
+      <div class="hs-x num">日均 ${fmt(x.avg)} 元・來客 ${fmt(x.vis)} 人</div></div>`).join('')}</div>${weekGoalHTML('qp',today)}</div>`;
 }
 function renderHome(){
   subCash();
