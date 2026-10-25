@@ -3223,5 +3223,45 @@ render();
 </script>
 
 <script>if("serviceWorker" in navigator&&location.protocol==="https:") navigator.serviceWorker.register("sw.js").catch(()=>{});</script>
+<script>
+/* 自動更新：打開 App 或切回 App 時檢查新版本 */
+(function(){
+  var BUILD='1792908955', last=0, shown=false;
+  function busy(){
+    var a=document.activeElement;
+    if(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) return true;
+    if(document.querySelector('#main form.form, .bk-ov')) return true;
+    var pm=document.getElementById('pickModal'); if(pm&&!pm.hidden) return true;
+    return false;
+  }
+  async function go(){
+    try{ sessionStorage.setItem('justUpdated','1'); }catch(e){}
+    try{ var r=await (navigator.serviceWorker&&navigator.serviceWorker.getRegistration()); r&&await r.update(); }catch(e){}
+    location.reload();
+  }
+  function banner(){
+    if(shown) return; shown=true;
+    var b=document.createElement('button'); b.id='updBar'; b.type='button';
+    b.textContent='有新版本，點這裡更新';
+    b.style.cssText='position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom));z-index:9999;background:#6e2a2a;color:#fff;border:0;border-radius:999px;padding:10px 18px;font-size:14px;box-shadow:0 4px 14px rgba(0,0,0,.2)';
+    b.onclick=go; document.body.appendChild(b);
+  }
+  async function check(force){
+    if(location.protocol!=='https:') return;
+    var now=Date.now(); if(!force&&now-last<60000) return; last=now;
+    try{
+      var t=await (await fetch('index.html',{cache:'no-store'})).text();
+      var m=t.match(/var BUILD='(\d+)'/);
+      if(!m||m[1]===BUILD) return;
+      busy()?banner():go();
+    }catch(e){}
+  }
+  document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='visible') check(); });
+  window.addEventListener('pageshow',function(e){ if(e.persisted) check(true); });
+  setTimeout(function(){ check(true); },2500);
+  setInterval(function(){ if(document.visibilityState==='visible') check(); },15*60000);
+  try{ if(sessionStorage.getItem('justUpdated')){ sessionStorage.removeItem('justUpdated'); setTimeout(function(){ window.toast?toast('已更新到最新版本'):0; },800); } }catch(e){}
+})();
+</script>
 </body>
 </html>
