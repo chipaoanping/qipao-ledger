@@ -517,6 +517,25 @@ details.notes{background:var(--paper)}
 .chip{font:inherit;font-size:14px;border:1px solid var(--rule);background:var(--paper);color:var(--ink-2);border-radius:999px;padding:7px 14px;cursor:pointer;transition:all .12s}
 .chip:hover{border-color:var(--mustard);color:var(--ink)}
 .chip.on{background:var(--wine);border-color:var(--wine);color:#fffaf2;font-weight:500}
+.td-home .ph,.td-page .ph{gap:8px}.td-home .ph h2,.td-page .ph h2{margin-right:auto;display:flex;align-items:center;gap:8px}
+.td-cnt{background:var(--wine);color:#fffaf2;border-radius:999px;font-size:12px;padding:1px 8px;font-weight:600}
+.td-l{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.td-i{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:start;padding:10px 12px;border:1px solid var(--rule);border-radius:12px;background:var(--paper)}
+.td-ck{width:26px;height:26px;border-radius:50%;border:2px solid var(--wine);background:transparent;color:#fffaf2;font-size:15px;line-height:1;cursor:pointer;margin-top:1px;padding:0}
+.td-ck:disabled{opacity:.35;cursor:default}
+.td-i.done{opacity:.6}.td-i.done .td-ck{background:var(--wine)}.td-i.done .td-t span{text-decoration:line-through}
+.td-b{min-width:0;cursor:pointer}
+.td-t{font-size:15px;font-weight:600;color:var(--ink);display:flex;gap:6px;align-items:baseline;flex-wrap:wrap;word-break:break-word}
+.td-br{font-size:11.5px;font-weight:600;color:var(--bc);border:1px solid var(--bc);border-radius:6px;padding:0 5px;flex:none}
+.td-n{font-size:13px;color:var(--ink-2);margin-top:3px;white-space:pre-wrap;word-break:break-word}
+.td-m{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:12px;color:var(--ink-3);margin-top:5px}
+.td-due{font-weight:600;color:var(--ink-2)}.td-due.soon{color:var(--mustard)}.td-due.today{color:var(--accent)}.td-due.late{color:#fff;background:var(--accent);border-radius:6px;padding:0 6px}
+.td-ok{color:var(--jade)}
+.td-tabs{margin:2px 0 12px}.td-tabs .chip em{font-style:normal;font-size:11.5px;margin-left:6px;opacity:.85}
+.td-done{margin-top:14px}.td-done summary{cursor:pointer;color:var(--ink-2);font-size:13.5px;margin-bottom:8px}
+.td-empty{padding:6px 0}.td-tip{margin-top:14px;font-size:12px}
+.td-dlg{display:grid;gap:12px}.td-dlg textarea.tin{resize:vertical;min-height:70px}
+.td-act{display:flex;gap:8px;justify-content:flex-end}.td-act .btn.primary{min-width:120px}.td-del{margin-right:auto}.td-del.warn{color:#fff;background:var(--accent);border-color:var(--accent)}
 .sp-err{margin:0;min-height:1em;color:var(--accent);font-size:13px}
 .sp-err:empty{display:none}
 .sp-cats{display:grid;gap:8px}
@@ -986,7 +1005,7 @@ a.hcard,a.hcard *{text-decoration:none;color:inherit}a.hcard .hc-go{color:var(--
       <div class="eyebrow">南風俱樂部 ・ 經營管理</div>
       <h1>旗跑・旗時 收支總覽</h1>
     </div>
-    <div class="hright"><div class="seg mode" role="group" aria-label="頁面" id="modeSeg"><button data-mode="home">首頁</button><button data-mode="daily">每日結帳</button><button data-mode="spend">當日支出</button><button data-mode="ledger">營業分析</button><button data-mode="cash" class="boss-only">現金結算</button><button data-mode="booking">預約</button><button data-mode="crew" hidden>造型・攝影</button><button data-mode="payroll" hidden>薪資</button></div><span class="who" id="who" hidden></span><button class="reload-btn" id="reloadBtn" type="button" aria-label="重新整理" title="重新整理（載入最新版本）"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button><span class="status" id="status"><i></i><span>連線中…</span></span></div>
+    <div class="hright"><div class="seg mode" role="group" aria-label="頁面" id="modeSeg"><button data-mode="home">首頁</button><button data-mode="daily">每日結帳</button><button data-mode="spend">當日支出</button><button data-mode="ledger">營業分析</button><button data-mode="cash" class="boss-only">現金結算</button><button data-mode="booking">預約</button><button data-mode="todo">交辦</button><button data-mode="crew" hidden>造型・攝影</button><button data-mode="payroll" hidden>薪資</button></div><span class="who" id="who" hidden></span><button class="reload-btn" id="reloadBtn" type="button" aria-label="重新整理" title="重新整理（載入最新版本）"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button><span class="status" id="status"><i></i><span>連線中…</span></span></div>
   </header>
 
   <div class="controls">
@@ -2497,8 +2516,8 @@ function pushHTML(){
   if(isIOS&&!isStandalone()) st='iPhone 要先把這個網頁「加入主畫面」，再從主畫面的圖示打開，才能開啟通知。';
   else if(!pushOK()) st='這支手機或瀏覽器不支援通知（iPhone 需 iOS 16.4 以上）。';
   else if(Notification.permission==='denied') st='通知被封鎖了，請到手機「設定 → 通知」找到這個 App 打開。';
-  else if(pushOn()){ st='✓ 這支手機已開啟提醒：每天 19:00 還沒結帳、明天有預約時會通知。'; btn='<button class="btn" data-pushoff="1">關閉通知</button>'+(isDataAdmin()?'<button class="btn" data-pushtest="1">傳一則測試</button>':''); }
-  else { st='開啟後，每天 19:00 還沒完成每日結帳、或明天有預約時，手機會跳出提醒。'; btn='<button class="btn primary" data-pushon="1">🔔 開啟這支手機的通知</button>'; }
+  else if(pushOn()){ st='✓ 這支手機已開啟提醒：有人交辦事項給你、交辦到期、每天 19:00 還沒結帳、明天有預約時會通知。'; btn='<button class="btn" data-pushoff="1">關閉通知</button>'+(isDataAdmin()?'<button class="btn" data-pushtest="1">傳一則測試</button>':''); }
+  else { st='開啟後，有人交辦事項給你、交辦到期、每天 19:00 還沒完成每日結帳、或明天有預約時，手機會跳出提醒。'; btn='<button class="btn primary" data-pushon="1">🔔 開啟這支手機的通知</button>'; }
   return `<section class="panel"><div class="ph"><h2>手機通知</h2></div><div class="pushbox"><span class="hint">${st}</span>${btn}</div></section>`;
 }
 const pushDocId=t=>'t'+t.replace(/[^A-Za-z0-9_-]/g,'').slice(-60);
@@ -2703,6 +2722,119 @@ function homeStatsHTML(today){
       <div class="hs-d num"><span>營業 <b>${x.c.營業}</b> 天</span><span>店休 <b>${x.c.店休}</b> 天</span>${x.c.颱風假?`<span>颱風假 <b>${x.c.颱風假}</b> 天</span>`:''}${x.c.未記錄?`<span class="na">未記錄 <b>${x.c.未記錄}</b> 天</span>`:''}</div>
       <div class="hs-x num">日均 ${fmt(x.avg)} 元・來客 ${fmt(x.vis)} 人</div></div>`).join('')}</div>${weekGoalHTML('qp',today)}</div>`;
 }
+/* ===== 交辦事項 ===== */
+const TD={tab:'mine',form:null,showDone:false};
+const todos=()=>Object.entries(S.todos||{}).map(([id,d])=>({id,...d}));
+const tdMine=t=>[].concat(t.to||[]).includes(W.name);
+const tdCanEdit=t=>!!t&&(t.from===W.name||isBoss());
+const tdDays=d=>Math.round((new Date(d+'T00:00:00')-new Date(todayStr()+'T00:00:00'))/864e5);
+const tdSort=(a,b)=>((!!a.done)-(!!b.done))||((a.due||'9999')<(b.due||'9999')?-1:(a.due||'9999')>(b.due||'9999')?1:0)||((b.at||'')<(a.at||'')?-1:1);
+function tdDue(t){
+  if(!t.due) return '';
+  if(t.done) return `<span class="td-due">期限 ${md(t.due)}</span>`;
+  const n=tdDays(t.due), cls=n<0?'late':n===0?'today':n<=2?'soon':'';
+  const lab=n<0?`逾期 ${-n} 天`:n===0?'今天到期':n===1?'明天到期':`${md(t.due)}（${wk(t.due)}）前`;
+  return `<span class="td-due ${cls}">${lab}</span>`;
+}
+function tdItem(t){
+  const br=t.branch&&B[t.branch]?`<span class="td-br" style="--bc:var(${B[t.branch].color})">${t.branch==='qp'?'旗跑':'旗時'}</span>`:'';
+  const can=tdMine(t)||tdCanEdit(t);
+  return `<li class="td-i${t.done?' done':''}"><button class="td-ck" data-tdck="${t.id}" aria-label="${t.done?'改回未完成':'標記完成'}"${can?'':' disabled'}>${t.done?'✓':''}</button>
+    <div class="td-b" data-tdopen="${t.id}"><div class="td-t">${br}<span>${esc(t.title||'')}</span></div>${t.note?`<div class="td-n">${esc(t.note)}</div>`:''}
+    <div class="td-m">${tdDue(t)}<span>${esc(t.from||'')} → ${[].concat(t.to||[]).map(esc).join('、')}</span>${t.done?`<span class="td-ok">✓ ${esc(t.doneBy||'')}${t.doneAt?' '+md(t.doneAt.slice(0,10)):''}</span>`:''}</div></div></li>`;
+}
+function todoHomeHTML(){
+  if(!W.name) return '';
+  const l=todos().filter(t=>!t.done&&tdMine(t)).sort(tdSort);
+  const sent=todos().filter(t=>!t.done&&t.from===W.name&&!tdMine(t)).length;
+  return `<div class="panel td-home" id="tdPanel"><div class="ph"><h2>我的待辦${l.length?`<span class="td-cnt">${l.length}</span>`:''}</h2><button class="btn" data-tdnew="1">＋ 交辦</button><button class="btn" data-home="todo">全部 →</button></div>
+    ${l.length?`<ul class="td-l">${l.slice(0,6).map(tdItem).join('')}</ul>${l.length>6?`<p class="hint">還有 ${l.length-6} 項，按「全部」查看</p>`:''}`:`<p class="hint td-empty">目前沒有交給你的事項 👍</p>`}
+    ${sent?`<p class="hint td-sent">你交辦出去、還沒完成的有 ${sent} 項</p>`:''}</div>`;
+}
+function drawTodo(){
+  if(!W.name){ renderLogin(); return; }
+  const all=todos(), tabs=[['mine','交給我'],['sent','我交辦的'],['all','全部']];
+  const inTab=(t,k)=>k==='mine'?tdMine(t):k==='sent'?t.from===W.name:true;
+  const l=all.filter(t=>inTab(t,TD.tab)), open=l.filter(t=>!t.done).sort(tdSort), done=l.filter(t=>t.done).sort((a,b)=>(b.doneAt||'')<(a.doneAt||'')?-1:1);
+  $('#main').innerHTML=`<section class="panel td-page"><div class="ph"><h2>交辦事項</h2><button class="btn primary" data-tdnew="1">＋ 新增交辦</button></div>
+    <div class="chips td-tabs">${tabs.map(([k,v])=>{const n=all.filter(t=>!t.done&&inTab(t,k)).length;return `<button class="chip${TD.tab===k?' on':''}" data-tdtab="${k}">${v}${n?`<em>${n}</em>`:''}</button>`;}).join('')}</div>
+    ${open.length?`<ul class="td-l">${open.map(tdItem).join('')}</ul>`:`<p class="hint td-empty">沒有未完成的事項</p>`}
+    ${done.length?`<details class="td-done"${TD.showDone?' open':''}><summary>已完成 ${done.length} 項</summary><ul class="td-l">${done.slice(0,60).map(tdItem).join('')}</ul></details>`:''}
+    <p class="hint td-tip">交辦送出後，對方手機會收到通知；有期限的事項，到期當天早上 9 點會再提醒一次。完成後交辦人也會收到通知。</p>
+  </section>`;
+}
+function tdRedraw(){
+  if(document.querySelector('.td-ov')) return;
+  if(S.mode==='todo') drawTodo();
+  else if(S.mode==='home'){ const el=$('#tdPanel'); if(el) el.outerHTML=todoHomeHTML(); }
+}
+function tdClose(){ document.querySelectorAll('.td-ov').forEach(x=>x.remove()); TD.form=null; tdRedraw(); }
+function tdForm(id){
+  const t=id?(S.todos||{})[id]:null;
+  if(id&&!t) return;
+  const names=staffList();
+  const d=TD.form={id:id||null,to:[...(t?.to||[])],branch:t?.branch||''};
+  const v=document.createElement('div'); v.className='bk-ov td-ov';
+  v.innerHTML=`<div class="bk-dlg td-dlg" role="dialog" aria-modal="true">
+    <div class="bk-dh"><b>${id?'編輯交辦':'新增交辦'}</b><button class="ibtn" data-tdclose="1" aria-label="關閉">✕</button></div>
+    <label class="gf"><span class="fl">要做的事</span><input class="tin" id="tdTitle" maxlength="80" value="${esc(t?.title||'')}" placeholder="例：補貨髮夾、回覆客人改時間"></label>
+    <div class="gf"><span class="fl">交給誰<em>可複選</em></span><div class="chips" id="tdTo">${names.map(n=>`<button type="button" class="chip${d.to.includes(n)?' on':''}" data-tdto="${esc(n)}">${esc(n)}${n===W.name?'（我）':''}</button>`).join('')}</div></div>
+    <div class="gf"><span class="fl">哪一館</span><div class="chips" id="tdBr">${[['','不分館'],['qp','旗跑'],['yl','旗時']].map(([k,l])=>`<button type="button" class="chip${d.branch===k?' on':''}" data-tdbr="${k}">${l}</button>`).join('')}</div></div>
+    <label class="gf"><span class="fl">期限<em>可不填</em></span><input class="tin" type="date" id="tdDue" value="${t?.due||''}"></label>
+    <label class="gf"><span class="fl">補充說明<em>可不填</em></span><textarea class="tin" id="tdNote" rows="3">${esc(t?.note||'')}</textarea></label>
+    <p class="sp-err" id="tdErr"></p>
+    <div class="td-act">${id&&tdCanEdit(t)?`<button type="button" class="btn td-del" data-tddel="${id}">刪除</button>`:''}<button type="button" class="btn primary" data-tdsave="1">${id?'儲存':'送出交辦'}</button></div>
+  </div>`;
+  document.body.appendChild(v);
+  if(!id) setTimeout(()=>{ const i=$('#tdTitle'); i&&i.focus(); },60);
+}
+async function tdSave(){
+  const d=TD.form; if(!d||!S.db) return;
+  const title=$('#tdTitle').value.trim(), note=$('#tdNote').value.trim(), due=$('#tdDue').value, err=$('#tdErr');
+  if(!title){ err.textContent='請填寫要做的事'; return; }
+  if(!d.to.length){ err.textContent='請選擇要交給誰'; return; }
+  const now=new Date().toISOString();
+  try{
+    if(d.id){
+      const old=S.todos[d.id]||{}, added=d.to.filter(n=>!(old.to||[]).includes(n));
+      const o={title,note,due,to:d.to,branch:d.branch,editAt:now,editBy:W.name};
+      if(added.length&&!old.done){ o.notified=false; o.notifyTo=added; }
+      if((old.due||'')!==due) o.dueSent='';
+      await S.db.doc('todos/'+d.id).set(o,{merge:true});
+      S.todos[d.id]={...old,...o};
+    } else {
+      const id='t'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+      const o={title,note,due,to:d.to,branch:d.branch,from:W.name,at:now,done:false,doneBy:'',doneAt:'',notified:false,notifyTo:d.to,dueSent:''};
+      await S.db.doc('todos/'+id).set(o);
+      S.todos={...(S.todos||{}),[id]:o};
+    }
+    const others=d.to.filter(n=>n!==W.name);
+    tdClose(); toast(d.id?'已儲存':others.length?`已交辦給 ${others.join('、')}`:'已加入你的待辦');
+  }catch(e){ err.textContent='儲存失敗：'+(e.code||e.message||e); }
+}
+async function tdToggle(id){
+  const t=(S.todos||{})[id]; if(!t||!S.db) return;
+  const o=t.done?{done:false,doneBy:'',doneAt:''}:{done:true,doneBy:W.name,doneAt:new Date().toISOString(),doneNotified:false};
+  S.todos[id]={...t,...o}; tdRedraw();
+  try{ await S.db.doc('todos/'+id).set(o,{merge:true}); if(o.done) toast('完成 ✓'); }catch(e){ S.todos[id]=t; tdRedraw(); toast('更新失敗'); }
+}
+document.addEventListener('click',async ev=>{
+  const t=ev.target.closest('[data-tdnew],[data-tdopen],[data-tdck],[data-tdtab],[data-tdclose],[data-tdto],[data-tdbr],[data-tdsave],[data-tddel]');
+  if(!t){ if(ev.target.classList&&ev.target.classList.contains('td-ov')) tdClose(); return; }
+  ev.stopPropagation();
+  const ds=t.dataset;
+  if(ds.tdnew) tdForm(null);
+  else if(ds.tdopen){ const x=(S.todos||{})[ds.tdopen]; if(tdCanEdit(x)) tdForm(ds.tdopen); else toast('只有交辦人可以修改內容'); }
+  else if(ds.tdck) tdToggle(ds.tdck);
+  else if(ds.tdtab){ TD.tab=ds.tdtab; drawTodo(); }
+  else if(ds.tdclose) tdClose();
+  else if(ds.tdto!=null){ const d=TD.form, n=ds.tdto; d.to=d.to.includes(n)?d.to.filter(x=>x!==n):d.to.concat([n]); t.classList.toggle('on',d.to.includes(n)); $('#tdErr').textContent=''; }
+  else if(ds.tdbr!=null){ TD.form.branch=ds.tdbr; document.querySelectorAll('#tdBr .chip').forEach(c=>c.classList.toggle('on',c.dataset.tdbr===ds.tdbr)); }
+  else if(ds.tdsave) tdSave();
+  else if(ds.tddel){ if(!t.dataset.armed){ t.dataset.armed='1'; t.textContent='確定刪除？'; t.classList.add('warn'); return; }
+    try{ await S.db.doc('todos/'+ds.tddel).delete(); delete S.todos[ds.tddel]; tdClose(); toast('已刪除'); }catch(e){ toast('刪除失敗'); } }
+},true);
+document.addEventListener('toggle',ev=>{ if(ev.target.classList&&ev.target.classList.contains('td-done')) TD.showDone=ev.target.open; },true);
 function renderHome(){
   subCash();
   if(!W.name){ renderLogin(); return; }
@@ -2716,6 +2848,7 @@ function renderHome(){
   const card=(k,t,sub,rows,go)=>`<button class="hcard" data-home="${k}"><span class="hc-ic">${ICON[k]}</span><span class="hc-t">${t}</span><span class="hc-s">${sub}</span><ul class="hc-l">${rows}</ul><span class="hc-go">${go} →</span></button>`;
   $('#main').innerHTML=`<section class="home">
     <div class="home-h"><div class="home-date">${+today.slice(5,7)} 月 ${+today.slice(8)} 日・星期${wk(today)}</div><h2>今天要做什麼？</h2></div>
+    ${todoHomeHTML()}
     ${homeStatsHTML(today)}
     ${bookingsHTML()}
     <div class="hcards">
@@ -2897,7 +3030,7 @@ function bindSpend(){
   main.addEventListener('submit',ev=>{ if(S.mode==='spend'){ev.preventDefault();ev.stopImmediatePropagation();} },true);
   main.addEventListener('click',ev=>{
     const t=ev.target.closest('button'); if(!t) return;
-    if(S.mode==='home'&&t.dataset.home){ const k=t.dataset.home; if(k==='ledger'||k==='cash'||k==='crew'||k==='payroll'||k==='booking'){S.mode=k;saveUI();render();scrollTo({top:0});} else openPick(k); return; }
+    if(S.mode==='home'&&t.dataset.home){ const k=t.dataset.home; if(k==='ledger'||k==='cash'||k==='crew'||k==='payroll'||k==='booking'||k==='todo'){S.mode=k;saveUI();render();scrollTo({top:0});} else openPick(k); return; }
     if(S.mode!=='spend') return;
     if(t.dataset.sback) openPick('spend');
     else if(t.dataset.sshift) setSpendDay(addDays(SP.day,+t.dataset.sshift));
@@ -3053,6 +3186,7 @@ function render(){
   if(S.mode==='crew'){ drawCrew(); return; }
   if(S.mode==='payroll'){ drawPay(); return; }
   if(S.mode==='booking'){ drawBooking(); return; }
+  if(S.mode==='todo'){ drawTodo(); return; }
   if(S.mode==='cash'){ if(!S.loaded){ $('#main').innerHTML=`<div class="panel emptyb">正在讀取…</div>`; return; } drawCash(); return; }
   if(S.mode==='spend'){ if(!SP.branch){ S.mode='home'; return render(); } if(!S.loaded){ $('#main').innerHTML=`<div class="panel emptyb">正在讀取…</div>`; return; } drawSpend(); return; }
   if(daily&&!D.branch){ S.mode='home'; return render(); }
@@ -3172,7 +3306,7 @@ document.addEventListener('click',ev=>{
 function showLoadErr(){ let el=$('#loadErr'); if(!el){ el=document.createElement('div'); el.id='loadErr'; el.className='load-err'; document.querySelector('.wrap')?.insertBefore(el,$('#main')); }
   el.innerHTML=S.loadErr?`⚠️ 讀取資料失敗（${esc(S.loadErr)}）。${S.loadErr==='permission-denied'?'這個帳號目前沒有讀取權限，請找妃妃確認人員名單，或登出後重新登入。':'請檢查網路後重新整理頁面。'} <button class="btn" onclick="location.reload()">重新整理</button>`:''; el.hidden=!S.loadErr; }
 function stopData(){ FB.unsubs.forEach(u=>{try{u()}catch(e){}}); FB.unsubs=[]; if(D.unsub){try{D.unsub()}catch(e){}} D.unsub=null; D.subMonth=null; if(C.unsub){try{C.unsub()}catch(e){}} C.unsub=null; C.subB=null;
-  S.db=null; S.docs={}; S.allDaily={}; S.loadErr=null; showLoadErr(); S.misc={}; S.settle={}; S.crewlog={}; S.crewpay={}; S.payroll={}; D.docs={}; C.daily={}; S.loaded=false; FB.dataOn=false; }
+  S.db=null; S.docs={}; S.allDaily={}; S.loadErr=null; showLoadErr(); S.misc={}; S.settle={}; S.crewlog={}; S.crewpay={}; S.payroll={}; S.todos={}; D.docs={}; C.daily={}; S.loaded=false; FB.dataOn=false; }
 function startData(){
   if(FB.dataOn) return; FB.dataOn=true; const db=FB.fs; S.db=db; S.canWrite=true;
   setTimeout(()=>{ if(FB.dataOn&&!S.loaded){ S.loadErr='讀取超過 15 秒'; showLoadErr(); } },15000);
@@ -3186,6 +3320,7 @@ function startData(){
   FB.unsubs.push(db.collection('daily').onSnapshot(snap=>{ const o={}; snap.docs.forEach(d=>{o[d.id]=d.data();}); S.allDaily=o; if(S.mode==='ledger'&&S.sec==='cust'&&!S.editing&&!S.adding) render(); else if(S.mode==='home') renderHome(); },()=>{}));
   FB.unsubs.push(db.collection('settle').onSnapshot(snap=>{ const o={}; snap.docs.forEach(d=>{o[d.id]=d.data();}); S.settle=o; if(S.mode==='cash') drawCash(); else if(S.mode==='spend') drawSpend(); else if(S.mode==='home') renderHome(); },()=>{}));
   FB.unsubs.push(db.collection('crewlog').onSnapshot(snap=>{ const o={}; snap.docs.forEach(d=>{o[d.id]=d.data();}); S.crewlog=o; if((S.mode==='crew'||S.mode==='daily')&&!CR.editing) crewRedraw(); else if(S.mode==='home') renderHome(); },()=>{}));
+  FB.unsubs.push(db.collection('todos').onSnapshot(snap=>{ const o={}; snap.docs.forEach(d=>{o[d.id]=d.data();}); S.todos=o; tdRedraw(); },()=>{}));
   FB.unsubs.push(db.collection('crewpay').onSnapshot(snap=>{ const o={}; snap.docs.forEach(d=>{o[d.id]=d.data();}); S.crewpay=o; if(S.mode==='crew'&&!CR.editing) drawCrew(); },()=>{}));
   FB.unsubs.push(db.collection('payroll').onSnapshot(snap=>{ const o={}; snap.docs.forEach(d=>{o[d.id]=d.data();}); S.payroll=o; if(S.mode==='payroll'&&!PR.dirty){ PR.draft=null; drawPay(); } else if(S.mode==='home') renderHome(); },()=>{}));
   FB.unsubs.push(db.collection('misc').onSnapshot(snap=>{ const m={}; snap.docs.forEach(d=>{m[d.id]=fsDec(d.data());}); S.misc=m; S.miscLoaded=true; if(S.mode==='home') renderHome(); setTimeout(()=>{ if(typeof pushMaybeAsk==='function') pushMaybeAsk(); },1200); if(S.loaded&&!S.editing&&!S.adding&&S.mode==='ledger'&&S.month===0&&S.sec==='chan') render(); },()=>{}));
@@ -3208,7 +3343,7 @@ function applyAuth(){
   renderWho(); startData();
   { const pp=personOf(n); if(pp&&P.pwset&&P.pwset[n]!==(pp.v||1)) FB.fs.doc('public/pwset').set({[n]:pp.v||1},{merge:true}).catch(()=>{}); }
   if(!was) setTimeout(()=>{ if(typeof mailMaybeAsk==='function') mailMaybeAsk(); },1500);
-  if(!was){ S.mode='home'; const go=new URLSearchParams(location.search).get('go'); if(go==='booking') S.mode='booking'; if(go) history.replaceState(null,'',location.pathname); saveUI(); render(); if(go==='daily') setTimeout(()=>openPick('daily'),300); toast(`${n}，歡迎回來`); } else if(S.mode==='home') renderHome(); else if(S.mode==='cash') drawCash();
+  if(!was){ S.mode='home'; const go=new URLSearchParams(location.search).get('go'); if(go==='booking'||go==='todo') S.mode=go; if(go) history.replaceState(null,'',location.pathname); saveUI(); render(); if(go==='daily') setTimeout(()=>openPick('daily'),300); toast(`${n}，歡迎回來`); } else if(S.mode==='home') renderHome(); else if(S.mode==='cash') drawCash();
 }
 render();
 (function(){
@@ -3226,7 +3361,7 @@ render();
 <script>
 /* 自動更新：打開 App 或切回 App 時檢查新版本 */
 (function(){
-  var BUILD='1792908955', last=0, shown=false;
+  var BUILD='1792909895', last=0, shown=false;
   function busy(){
     var a=document.activeElement;
     if(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) return true;
