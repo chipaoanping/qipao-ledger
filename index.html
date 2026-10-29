@@ -2712,10 +2712,10 @@ function weekGoalHTML(b,day){
   const daysLeft=Math.max(0,Math.round((new Date(w.we+'T00:00:00')-new Date(day+'T00:00:00'))/864e5)+(w.todayOpen?1:0));
   const after=Math.max(0,w.left-w.booked);
   return `<div class="wgoal" id="wgPanel" style="--bc:var(${B[b].color})"><div class="wg-h"><b>${b==='qp'?'旗跑':'旗時'}本週目標</b><span class="num">${md(w.ws)}–${md(w.we)}</span></div>
-    <div class="wg-n num"><b>${w.done}</b><small>／${w.cfg.weekly} 組</small><em class="${w.left?'':'ok'}">${w.left?`還差 ${w.left} 組`:'✓ 已達標'}</em></div>
+    <div class="wg-n num"><b>${w.done}</b><small>／${w.cfg.weekly} 人</small><em class="${w.left?'':'ok'}">${w.left?`還差 ${w.left} 人`:'✓ 已達標'}</em></div>
     <div class="wg-bar"><i style="width:${pct}%"></i><i class="wg-bk" style="width:${pct2}%"></i></div>
-    <div class="wg-s num">來客 ${w.ppl} 人${w.photo?`・其中寫真 ${w.photo} 組（每組算 ${w.cfg.photo}）`:''}${w.todayOpen?'・今天結帳後會加上今天的來客':''}</div>
-    ${w.left?`<div class="wg-s num">${w.upcoming?`接下來已預約 ${w.upcoming} 組，`:''}${after&&daysLeft?`剩 ${daysLeft} 天，平均每天還要 ${Math.ceil(after/daysLeft)} 組`:after?'':'預約都到的話就會達標 🎉'}</div>`:''}</div>`;
+    <div class="wg-s num">來客 ${w.ppl} 人${w.photo?`・其中寫真 ${w.photo} 組（每組算 ${w.cfg.photo} 人）`:''}${w.todayOpen?'・今天結帳後會加上今天的來客':''}</div>
+    ${w.left?`<div class="wg-s num">${w.upcoming?`接下來已預約 ${w.upcoming} 組，`:''}${after&&daysLeft?`剩 ${daysLeft} 天，平均每天還要 ${Math.ceil(after/daysLeft)} 人`:after?'':'預約都到的話就會達標 🎉'}</div>`:''}</div>`;
 }
 /* ---------- 客單價（依類型） ---------- */
 const TK_TYPES=[['寫真','寫真攝影',/寫真/],['租借・體驗','旗袍租借',/租|體驗|旗袍|馬褂/],['彩妝造型','彩妝造型',/妝|造型/]];
@@ -3383,7 +3383,7 @@ render();
 <script>
 /* 自動更新：打開 App 或切回 App 時檢查新版本 */
 (function(){
-  var BUILD='1793267940', last=0, shown=false;
+  var BUILD='1793268012', last=0, shown=false;
   function busy(){
     var a=document.activeElement;
     if(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) return true;
