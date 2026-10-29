@@ -2692,27 +2692,30 @@ function weekGoalData(b,day){
   const ws=weekStart(day), we=addDays(ws,6), docs={...(S.allDaily||{}),...D.docs};
   const key='wk-'+ws; bkFetch(key,ws,7,false);
   const evs=(((BK.cache[key]||{}).data||{}).events||[]).filter(e=>e.branch===b&&bkIsGroup(e));
-  let exp=0, photo=0, fromCal=0, upcoming=0, upPhoto=0;
+  let ppl=0, photo=0, photoPpl=0, upcoming=0, upPhoto=0, todayOpen=false;
   for(let i=0;i<7;i++){ const d=addDays(ws,i);
     const doc=Object.values(docs).find(x=>x&&x.branch===b&&x.date===d);
-    const gs=doc&&Array.isArray(doc.guests)?doc.guests:[];
     const cal=evs.filter(e=>bkS(e)===d);
-    if(gs.length){ gs.forEach(g=>{ if(isPhotoGuest(g)) photo++; else exp++; }); }
-    else if(d<=day){ cal.forEach(e=>{ if(bkIsPhoto(e)) photo++; else exp++; fromCal++; }); }
-    else cal.forEach(e=>{ upcoming++; if(bkIsPhoto(e)) upPhoto++; });
+    if(d>day){ cal.forEach(e=>{ upcoming++; if(bkIsPhoto(e)) upPhoto++; }); continue; }
+    if(!doc||!dStatusOf(doc)){ if(d===day) todayOpen=true; continue; }
+    if(dStatusOf(doc)!=='營業') continue;
+    ppl+=+doc.visitors||0;
+    const gs=Array.isArray(doc.guests)?doc.guests:[];
+    if(gs.length) gs.filter(isPhotoGuest).forEach(g=>{ photo++; photoPpl+=Math.max(1,+g.count||1); });
+    else cal.filter(bkIsPhoto).forEach(e=>{ photo++; photoPpl+=Math.max(1,+e.people||1); });
   }
-  const done=exp+photo*cfg.photo, booked=(upcoming-upPhoto)+upPhoto*cfg.photo;
-  return {cfg,ws,we,exp,photo,done,left:Math.max(0,cfg.weekly-done),fromCal,upcoming,booked};
+  const exp=Math.max(0,ppl-photoPpl), done=exp+photo*cfg.photo, booked=(upcoming-upPhoto)+upPhoto*cfg.photo;
+  return {cfg,ws,we,ppl,exp,photo,done,left:Math.max(0,cfg.weekly-done),upcoming,booked,todayOpen};
 }
 function weekGoalHTML(b,day){
   const w=weekGoalData(b,day); if(!w) return ''; const pct=Math.min(100,w.done/w.cfg.weekly*100), pct2=Math.min(100-pct,w.booked/w.cfg.weekly*100);
-  const daysLeft=Math.max(0,Math.round((new Date(w.we+'T00:00:00')-new Date(day+'T00:00:00'))/864e5)+1);
+  const daysLeft=Math.max(0,Math.round((new Date(w.we+'T00:00:00')-new Date(day+'T00:00:00'))/864e5)+(w.todayOpen?1:0));
   const after=Math.max(0,w.left-w.booked);
   return `<div class="wgoal" id="wgPanel" style="--bc:var(${B[b].color})"><div class="wg-h"><b>${b==='qp'?'旗跑':'旗時'}本週目標</b><span class="num">${md(w.ws)}–${md(w.we)}</span></div>
     <div class="wg-n num"><b>${w.done}</b><small>／${w.cfg.weekly} 組</small><em class="${w.left?'':'ok'}">${w.left?`還差 ${w.left} 組`:'✓ 已達標'}</em></div>
     <div class="wg-bar"><i style="width:${pct}%"></i><i class="wg-bk" style="width:${pct2}%"></i></div>
-    <div class="wg-s num">體驗 ${w.exp} 組・寫真 ${w.photo} 組（×${w.cfg.photo}）${w.fromCal?`<span class="wg-cal">，其中 ${w.fromCal} 組取自預約日曆（那天還沒填顧客紀錄）</span>`:''}</div>
-    ${w.left?`<div class="wg-s num">${w.upcoming?`接下來已預約 ${w.upcoming} 組（算 ${w.booked} 組），${after?`再找 ${after} 組就達標`:'都到的話就會達標 🎉'}`:''}${w.upcoming&&after&&daysLeft?'・':''}${after&&daysLeft?`剩 ${daysLeft} 天，平均每天還要 ${Math.ceil(after/daysLeft)} 組`:''}</div>`:''}</div>`;
+    <div class="wg-s num">來客 ${w.ppl} 人${w.photo?`・其中寫真 ${w.photo} 組（每組算 ${w.cfg.photo}）`:''}${w.todayOpen?'・今天結帳後會加上今天的來客':''}</div>
+    ${w.left?`<div class="wg-s num">${w.upcoming?`接下來已預約 ${w.upcoming} 組，`:''}${after&&daysLeft?`剩 ${daysLeft} 天，平均每天還要 ${Math.ceil(after/daysLeft)} 組`:after?'':'預約都到的話就會達標 🎉'}</div>`:''}</div>`;
 }
 /* ---------- 客單價（依類型） ---------- */
 const TK_TYPES=[['寫真','寫真攝影',/寫真/],['租借・體驗','旗袍租借',/租|體驗|旗袍|馬褂/],['彩妝造型','彩妝造型',/妝|造型/]];
@@ -3380,7 +3383,7 @@ render();
 <script>
 /* 自動更新：打開 App 或切回 App 時檢查新版本 */
 (function(){
-  var BUILD='1793267845', last=0, shown=false;
+  var BUILD='1793267940', last=0, shown=false;
   function busy(){
     var a=document.activeElement;
     if(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) return true;
