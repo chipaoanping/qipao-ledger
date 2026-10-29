@@ -919,7 +919,7 @@ a.hcard,a.hcard *{text-decoration:none;color:inherit}a.hcard .hc-go{color:var(--
 .wg-h{display:flex;justify-content:space-between;align-items:baseline}.wg-h b{font-size:14px}.wg-h span{font-size:12px;color:var(--ink-3)}
 .wg-n{display:flex;align-items:baseline;gap:4px}.wg-n b{font-size:26px;color:var(--wine)}.wg-n small{color:var(--ink-3)}.wg-n em{margin-left:auto;font-style:normal;font-weight:700;color:#a0672a}.wg-n em.ok{color:#4f7a52}
 .wg-bar{height:10px;border-radius:99px;background:var(--soft);overflow:hidden}.wg-bar i{display:block;height:100%;background:var(--bc);border-radius:99px}
-.wg-s{font-size:12.5px;color:var(--ink-3)}
+.wg-s{font-size:12.5px;color:var(--ink-3)}.wg-cal{color:var(--ink-3)}.wg-bar{display:flex}.wg-bar .wg-bk{background:repeating-linear-gradient(45deg,var(--bc) 0 4px,transparent 4px 8px);opacity:.45}
 .g-row2{display:grid;grid-template-columns:minmax(0,220px)}
 .tk-t td,.tk-t th{font-size:13.5px;padding:6px 8px}.tk-t td.num{position:relative}.tk-b{position:absolute;left:0;bottom:2px;height:3px;background:var(--accent);opacity:.35;border-radius:2px}
 .hs-h{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:6px}.hs-h b{font-family:var(--f-display);font-size:17px;letter-spacing:.08em}.hs-h span{font-size:13px;color:var(--ink-3)}.hs-h em{font-style:normal;font-weight:700;color:var(--wine);font-size:17px}
@@ -2617,7 +2617,7 @@ function bkFetch(key,from,days,force){
   fetch(url+(url.includes('?')?'&':'?')+`from=${from}&days=${days}`,{cache:'no-store'}).then(r=>r.json()).then(j=>{ if(j.error) throw new Error(j.error==='unauthorized'?'通關密碼不對':j.error); BK.cache[key]={data:j,at:Date.now()}; })
     .catch(e=>{ BK.err=(e&&e.message)||'讀取失敗'; BK.cache[key]=BK.cache[key]||{data:null,at:Date.now()}; BK.cache[key].at=Date.now(); }).finally(()=>{ BK.loading[key]=false; bkRedraw(); });
 }
-function bkRedraw(){ if(S.mode==='home'){ const el=$('#bkPanel'); if(el) el.outerHTML=bookingsHTML(); } else if(S.mode==='booking') drawBooking(); }
+function bkRedraw(){ if(S.mode==='home'){ const el=$('#bkPanel'); if(el) el.outerHTML=bookingsHTML(); const wg=$('#wgPanel'); if(wg) wg.outerHTML=weekGoalHTML('qp',todayStr()); } else if(S.mode==='booking') drawBooking(); }
 const bkDay=iso=>new Date(iso).toLocaleDateString('sv',{timeZone:'Asia/Taipei'});
 const bkTime=iso=>new Date(iso).toLocaleTimeString('en-GB',{timeZone:'Asia/Taipei',hour:'2-digit',minute:'2-digit',hour12:false});
 const bkS=e=>bkDay(e.start), bkE=e=>e.allDay?addDays(bkDay(e.end),-1):bkDay(e.start);
@@ -2684,20 +2684,35 @@ const GOAL_DEF={qp:{weekly:20,photo:6}};
 const goalCfg=b=>({...(GOAL_DEF[b]||{}),...((((S.misc||{}).goals)||{})[b]||{})});
 const isPhotoGuest=g=>[].concat(g.items||[]).some(x=>/寫真/.test(x));
 const weekStart=d=>{ const x=new Date(d+'T00:00:00'); const w=(x.getDay()+6)%7; return addDays(d,-w); };
+/* 日曆上的預約算不算一組：系統預約、或標題寫了體驗／租／寫真／平台／幾女幾馬 */
+const bkIsGroup=e=>{ const t=(e.title||'')+' '+(e.item||''); if(/取衣|還衣|歸還|店休|公休|休館|圖鑑|拍攝作品|進貨/.test(t)) return false; return e.kind==='booking'||/體驗|租|寫真|klook|kkday|\d\s*[女馬男]/i.test(t); };
+const bkIsPhoto=e=>/寫真/.test((e.title||'')+' '+(e.item||''));
 function weekGoalData(b,day){
   const cfg=goalCfg(b); if(!cfg.weekly) return null;
-  const ws=weekStart(day), we=addDays(ws,6), docs={...(S.allDaily||{}),...D.docs}; let exp=0, photo=0;
-  const perDay={};
-  Object.values(docs).forEach(d=>{ if(!d||d.branch!==b||!d.date||d.date<ws||d.date>we||!Array.isArray(d.guests)) return; d.guests.forEach(g=>{ const v=isPhotoGuest(g)?cfg.photo:1; if(isPhotoGuest(g)) photo++; else exp++; perDay[d.date]=(perDay[d.date]||0)+v; }); });
-  const done=exp+photo*cfg.photo; return {cfg,ws,we,exp,photo,done,left:Math.max(0,cfg.weekly-done),perDay};
+  const ws=weekStart(day), we=addDays(ws,6), docs={...(S.allDaily||{}),...D.docs};
+  const key='wk-'+ws; bkFetch(key,ws,7,false);
+  const evs=(((BK.cache[key]||{}).data||{}).events||[]).filter(e=>e.branch===b&&bkIsGroup(e));
+  let exp=0, photo=0, fromCal=0, upcoming=0, upPhoto=0;
+  for(let i=0;i<7;i++){ const d=addDays(ws,i);
+    const doc=Object.values(docs).find(x=>x&&x.branch===b&&x.date===d);
+    const gs=doc&&Array.isArray(doc.guests)?doc.guests:[];
+    const cal=evs.filter(e=>bkS(e)===d);
+    if(gs.length){ gs.forEach(g=>{ if(isPhotoGuest(g)) photo++; else exp++; }); }
+    else if(d<=day){ cal.forEach(e=>{ if(bkIsPhoto(e)) photo++; else exp++; fromCal++; }); }
+    else cal.forEach(e=>{ upcoming++; if(bkIsPhoto(e)) upPhoto++; });
+  }
+  const done=exp+photo*cfg.photo, booked=(upcoming-upPhoto)+upPhoto*cfg.photo;
+  return {cfg,ws,we,exp,photo,done,left:Math.max(0,cfg.weekly-done),fromCal,upcoming,booked};
 }
 function weekGoalHTML(b,day){
-  const w=weekGoalData(b,day); if(!w) return ''; const pct=Math.min(100,w.done/w.cfg.weekly*100);
+  const w=weekGoalData(b,day); if(!w) return ''; const pct=Math.min(100,w.done/w.cfg.weekly*100), pct2=Math.min(100-pct,w.booked/w.cfg.weekly*100);
   const daysLeft=Math.max(0,Math.round((new Date(w.we+'T00:00:00')-new Date(day+'T00:00:00'))/864e5)+1);
-  return `<div class="wgoal" style="--bc:var(${B[b].color})"><div class="wg-h"><b>${b==='qp'?'旗跑':'旗時'}本週目標</b><span class="num">${md(w.ws)}–${md(w.we)}</span></div>
+  const after=Math.max(0,w.left-w.booked);
+  return `<div class="wgoal" id="wgPanel" style="--bc:var(${B[b].color})"><div class="wg-h"><b>${b==='qp'?'旗跑':'旗時'}本週目標</b><span class="num">${md(w.ws)}–${md(w.we)}</span></div>
     <div class="wg-n num"><b>${w.done}</b><small>／${w.cfg.weekly} 組</small><em class="${w.left?'':'ok'}">${w.left?`還差 ${w.left} 組`:'✓ 已達標'}</em></div>
-    <div class="wg-bar"><i style="width:${pct}%"></i></div>
-    <div class="wg-s num">體驗 ${w.exp} 組・寫真 ${w.photo} 組（×${w.cfg.photo}）${w.left&&daysLeft?`・剩 ${daysLeft} 天，平均每天 ${Math.ceil(w.left/daysLeft)} 組`:''}</div></div>`;
+    <div class="wg-bar"><i style="width:${pct}%"></i><i class="wg-bk" style="width:${pct2}%"></i></div>
+    <div class="wg-s num">體驗 ${w.exp} 組・寫真 ${w.photo} 組（×${w.cfg.photo}）${w.fromCal?`<span class="wg-cal">，其中 ${w.fromCal} 組取自預約日曆（那天還沒填顧客紀錄）</span>`:''}</div>
+    ${w.left?`<div class="wg-s num">${w.upcoming?`接下來已預約 ${w.upcoming} 組（算 ${w.booked} 組），${after?`再找 ${after} 組就達標`:'都到的話就會達標 🎉'}`:''}${w.upcoming&&after&&daysLeft?'・':''}${after&&daysLeft?`剩 ${daysLeft} 天，平均每天還要 ${Math.ceil(after/daysLeft)} 組`:''}</div>`:''}</div>`;
 }
 /* ---------- 客單價（依類型） ---------- */
 const TK_TYPES=[['寫真','寫真攝影',/寫真/],['租借・體驗','旗袍租借',/租|體驗|旗袍|馬褂/],['彩妝造型','彩妝造型',/妝|造型/]];
@@ -3365,7 +3380,7 @@ render();
 <script>
 /* 自動更新：打開 App 或切回 App 時檢查新版本 */
 (function(){
-  var BUILD='1793006869', last=0, shown=false;
+  var BUILD='1793267845', last=0, shown=false;
   function busy(){
     var a=document.activeElement;
     if(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) return true;
