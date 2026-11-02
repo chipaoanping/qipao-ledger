@@ -929,7 +929,9 @@ a.hcard,a.hcard *{text-decoration:none;color:inherit}a.hcard .hc-go{color:var(--
 .hs-rev{font-size:28px;font-weight:700;color:var(--wine);line-height:1.1}.hs-rev small{font-size:13px;font-weight:400;color:var(--ink-3);margin-left:3px}
 .hs-d{display:flex;flex-wrap:wrap;gap:2px 12px;font-size:13px}.hs-d b{font-size:15px}.hs-d .na{color:var(--ink-3)}
 .hs-x{font-size:12px;color:var(--ink-3)}
-.hs-duty{all:unset;box-sizing:border-box;cursor:pointer;margin-top:6px;padding:7px 10px;border-radius:10px;background:var(--paper);border:1px solid var(--rule);display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;font-size:13px;color:var(--ink-2)}
+.du-g{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.du-c{border-radius:12px;background:var(--soft);padding:10px 12px;display:grid;gap:6px;border-left:4px solid var(--bc)}.du-c .hs-n i{background:var(--bc)}
+@media (max-width:560px){.du-g{grid-template-columns:1fr}}
+.hs-duty{all:unset;box-sizing:border-box;cursor:pointer;padding:7px 10px;border-radius:10px;background:var(--paper);border:1px solid var(--rule);display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;font-size:13px;color:var(--ink-2)}
 .hs-dt{font-size:11.5px;color:var(--ink-3)}.hs-on{color:var(--jade);font-weight:700}.hs-off{color:#fff;background:var(--accent);border-radius:6px;padding:0 7px;font-weight:700}.hs-who em{font-style:normal;color:var(--ink-3)}.hs-edit{margin-left:auto;color:var(--ink-3)}.hs-duty.off{background:var(--soft)}
 .chip:disabled{opacity:.5;cursor:default}
 @media (max-width:560px){.hs-g{gap:8px}.hs-c{padding:10px 11px}.hs-rev{font-size:22px}.hstats{padding:14px}}
@@ -2752,6 +2754,11 @@ function dutyLineHTML(b,d){
   const t=todayState(b,d);
   return `<button type="button" class="hs-duty${t.off?' off':''}" data-duty="${b}"><span class="hs-dt">今天</span>${t.off?`<b class="hs-off">${t.off}</b>`:`<b class="hs-on">營業</b><span class="hs-who">${t.names.length?`值班 ${t.names.map(esc).join('、')}`:'<em>還沒設定值班</em>'}</span>`}<span class="hs-edit">✎</span></button>`;
 }
+function dutyPanelHTML(){
+  if(!W.name) return ''; const d=todayStr();
+  return `<div class="panel du-panel" id="duPanel"><div class="ph"><h2>今日值班</h2><span class="hint num">${+d.slice(5,7)}/${+d.slice(8)}（${wk(d)}）・點一下可修改</span></div>
+    <div class="du-g">${['qp','yl'].map(b=>`<div class="du-c" style="--bc:var(${B[b].color})"><div class="hs-n"><i></i>${b==='qp'?'旗跑':'旗時'}<small>${esc(B[b].name.replace(/^.*・/,''))}</small></div>${dutyLineHTML(b,d)}</div>`).join('')}</div></div>`;
+}
 function dutyForm(b){
   const d=todayStr(), t=todayState(b,d), names=staffList();
   const DU=dutyForm.st={b,d,names:[...t.names],off:!!t.off&&t.src!=='每日結帳'?true:!!t.off};
@@ -2789,7 +2796,7 @@ function homeStatsHTML(today){
     <div class="hs-g">${st.map(x=>`<div class="hs-c" style="--bc:var(${B[x.b].color})"><div class="hs-n"><i></i>${x.b==='qp'?'旗跑':'旗時'}<small>${esc(B[x.b].name.replace(/^.*・/,''))}</small></div>
       <div class="hs-rev num">${fmt(x.rev)}<small>元</small></div>
       <div class="hs-d num"><span>營業 <b>${x.c.營業}</b> 天</span><span>店休 <b>${x.c.店休}</b> 天</span>${x.c.颱風假?`<span>颱風假 <b>${x.c.颱風假}</b> 天</span>`:''}${x.c.未記錄?`<span class="na">未記錄 <b>${x.c.未記錄}</b> 天</span>`:''}</div>
-      <div class="hs-x num">日均 ${fmt(x.avg)} 元・來客 ${fmt(x.vis)} 人</div>${dutyLineHTML(x.b,today)}</div>`).join('')}</div>${weekGoalHTML('qp',today)}</div>`;
+      <div class="hs-x num">日均 ${fmt(x.avg)} 元・來客 ${fmt(x.vis)} 人</div></div>`).join('')}</div>${weekGoalHTML('qp',today)}</div>`;
 }
 /* ===== 交辦事項 ===== */
 const TD={tab:'mine',form:null,showDone:false};
@@ -2919,6 +2926,7 @@ function renderHome(){
     <div class="home-h"><div class="home-date">${+today.slice(5,7)} 月 ${+today.slice(8)} 日・星期${wk(today)}</div><h2>今天要做什麼？</h2></div>
     ${todoHomeHTML()}
     ${homeStatsHTML(today)}
+    ${dutyPanelHTML()}
     ${bookingsHTML()}
     <div class="hcards">
       ${card('daily','每日結帳','營收、來客、收款方式',dRow('qp')+dRow('yl'),'選擇分店結帳')}
@@ -3431,7 +3439,7 @@ render();
 <script>
 /* 自動更新：打開 App 或切回 App 時檢查新版本 */
 (function(){
-  var BUILD='1793607175', last=0, shown=false;
+  var BUILD='1793607418', last=0, shown=false;
   function busy(){
     var a=document.activeElement;
     if(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) return true;
