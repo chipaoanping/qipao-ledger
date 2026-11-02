@@ -929,6 +929,9 @@ a.hcard,a.hcard *{text-decoration:none;color:inherit}a.hcard .hc-go{color:var(--
 .hs-rev{font-size:28px;font-weight:700;color:var(--wine);line-height:1.1}.hs-rev small{font-size:13px;font-weight:400;color:var(--ink-3);margin-left:3px}
 .hs-d{display:flex;flex-wrap:wrap;gap:2px 12px;font-size:13px}.hs-d b{font-size:15px}.hs-d .na{color:var(--ink-3)}
 .hs-x{font-size:12px;color:var(--ink-3)}
+.hs-duty{all:unset;box-sizing:border-box;cursor:pointer;margin-top:6px;padding:7px 10px;border-radius:10px;background:var(--paper);border:1px solid var(--rule);display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;font-size:13px;color:var(--ink-2)}
+.hs-dt{font-size:11.5px;color:var(--ink-3)}.hs-on{color:var(--jade);font-weight:700}.hs-off{color:#fff;background:var(--accent);border-radius:6px;padding:0 7px;font-weight:700}.hs-who em{font-style:normal;color:var(--ink-3)}.hs-edit{margin-left:auto;color:var(--ink-3)}.hs-duty.off{background:var(--soft)}
+.chip:disabled{opacity:.5;cursor:default}
 @media (max-width:560px){.hs-g{gap:8px}.hs-c{padding:10px 11px}.hs-rev{font-size:22px}.hstats{padding:14px}}
 .pr-xh{display:flex;justify-content:space-between;align-items:baseline;font-size:13px}.pr-xh b{font-weight:600;color:var(--ink-2)}.pr-xh span{color:var(--ink-3);font-size:12.5px}
 .pr-prev{font-size:12px;color:var(--ink-3)}.pr-ref summary{cursor:pointer;font-weight:700}.pr-ref .rk-t{margin-top:12px}.pr-reft{overflow-x:auto}.pr-reft table{table-layout:fixed;min-width:680px;width:100%}.pr-reft th:nth-child(7),.pr-reft td:nth-child(7){width:30%;white-space:normal}.pr-reft td,.pr-reft th{font-size:13px;padding:6px 8px;white-space:nowrap}.pr-reft .num{text-align:right}
@@ -2617,7 +2620,7 @@ function bkFetch(key,from,days,force){
   fetch(url+(url.includes('?')?'&':'?')+`from=${from}&days=${days}`,{cache:'no-store'}).then(r=>r.json()).then(j=>{ if(j.error) throw new Error(j.error==='unauthorized'?'通關密碼不對':j.error); BK.cache[key]={data:j,at:Date.now()}; })
     .catch(e=>{ BK.err=(e&&e.message)||'讀取失敗'; BK.cache[key]=BK.cache[key]||{data:null,at:Date.now()}; BK.cache[key].at=Date.now(); }).finally(()=>{ BK.loading[key]=false; bkRedraw(); });
 }
-function bkRedraw(){ if(S.mode==='home'){ const el=$('#bkPanel'); if(el) el.outerHTML=bookingsHTML(); const wg=$('#wgPanel'); if(wg) wg.outerHTML=weekGoalHTML('qp',todayStr()); } else if(S.mode==='booking') drawBooking(); }
+function bkRedraw(){ if(S.mode==='home'){ const el=$('#bkPanel'); if(el) el.outerHTML=bookingsHTML(); const wg=$('#wgPanel'); if(wg) wg.outerHTML=weekGoalHTML('qp',todayStr()); document.querySelectorAll('[data-duty]').forEach(el=>el.outerHTML=dutyLineHTML(el.dataset.duty,todayStr())); } else if(S.mode==='booking') drawBooking(); }
 const bkDay=iso=>new Date(iso).toLocaleDateString('sv',{timeZone:'Asia/Taipei'});
 const bkTime=iso=>new Date(iso).toLocaleTimeString('en-GB',{timeZone:'Asia/Taipei',hour:'2-digit',minute:'2-digit',hour12:false});
 const bkS=e=>bkDay(e.start), bkE=e=>e.allDay?addDays(bkDay(e.end),-1):bkDay(e.start);
@@ -2733,6 +2736,50 @@ function ticketHTML(b,ms,label){
     ${rowsA.length?`<div><div class="rk-t">帳務資料（營收分類 ÷ 銷售件數）</div><table class="plain tk-t"><tr><th>類型</th><th class="num">件數</th><th class="num">營收</th><th class="num">每件</th></tr>${rowsA.map(([k,n,t,a])=>`<tr><td>${k}</td><td class="num">${n}</td><td class="num">${fmt(t)}</td><td class="num"><b>${fmt(a)}</b><i class="tk-b" style="width:${a/mx*100}%"></i></td></tr>`).join('')}</table></div>`:''}
   </div></div>`;
 }
+/* ===== 今日值班・店休 ===== */
+const dutyOf=(b,d)=>((S.duty||{})[`${b}-${d}`])||{};
+function todayState(b,d){
+  const du=dutyOf(b,d), doc=({...(S.allDaily||{}),...D.docs})[dId(b,d)], st=dStatusOf(doc);
+  const c=BK.cache.home, evs=(c&&c.data&&c.data.events)||[];
+  const calOff=evs.some(e=>e.branch===b&&bkOn(e,d)&&/店休|公休|休館/.test(e.title||''));
+  let off='', src='';
+  if(st==='店休'||st==='颱風假'){ off=st; src='每日結帳'; }
+  else if(du.closed===true){ off='店休'; src='手動'; }
+  else if(du.closed!==false&&calOff){ off='店休'; src='日曆'; }
+  return {off,src,names:[].concat(du.names||[]),calOff};
+}
+function dutyLineHTML(b,d){
+  const t=todayState(b,d);
+  return `<button type="button" class="hs-duty${t.off?' off':''}" data-duty="${b}"><span class="hs-dt">今天</span>${t.off?`<b class="hs-off">${t.off}</b>`:`<b class="hs-on">營業</b><span class="hs-who">${t.names.length?`值班 ${t.names.map(esc).join('、')}`:'<em>還沒設定值班</em>'}</span>`}<span class="hs-edit">✎</span></button>`;
+}
+function dutyForm(b){
+  const d=todayStr(), t=todayState(b,d), names=staffList();
+  const DU=dutyForm.st={b,d,names:[...t.names],off:!!t.off&&t.src!=='每日結帳'?true:!!t.off};
+  const v=document.createElement('div'); v.className='bk-ov td-ov du-ov';
+  v.innerHTML=`<div class="bk-dlg td-dlg" role="dialog" aria-modal="true" style="--bc:var(${B[b].color})">
+    <div class="bk-dh"><span class="bk-b">${b==='qp'?'旗跑':'旗時'}</span><b>${+d.slice(5,7)}/${+d.slice(8)}（${wk(d)}）今天</b><button class="ibtn" data-duclose="1" aria-label="關閉">✕</button></div>
+    <div class="gf"><span class="fl">今天有沒有營業</span><div class="chips">${[['0','營業'],['1','店休']].map(([k,l])=>`<button type="button" class="chip${(DU.off?'1':'0')===k?' on':''}" data-duoff="${k}"${t.src==='每日結帳'?' disabled':''}>${l}</button>`).join('')}</div>${t.src==='每日結帳'?`<span class="hint">每日結帳已記錄為${t.off}，要改請到每日結帳</span>`:t.calOff?'<span class="hint">預約日曆上今天標示店休</span>':''}</div>
+    <div class="gf" id="duWho"${DU.off?' hidden':''}><span class="fl">值班人員<em>可複選</em></span><div class="chips">${names.map(n=>`<button type="button" class="chip${DU.names.includes(n)?' on':''}" data-duname="${esc(n)}">${esc(n)}</button>`).join('')}</div></div>
+    <p class="sp-err" id="duErr"></p>
+    <div class="td-act"><button type="button" class="btn primary" data-dusave="1">儲存</button></div></div>`;
+  document.body.appendChild(v);
+}
+async function dutySave(){
+  const DU=dutyForm.st; if(!DU||!S.db) return;
+  const o={branch:DU.b,date:DU.d,names:DU.off?[]:DU.names,closed:DU.off,by:W.name||'',at:new Date().toISOString()};
+  try{ await S.db.doc(`duty/${DU.b}-${DU.d}`).set(o); S.duty={...(S.duty||{}),[`${DU.b}-${DU.d}`]:o}; document.querySelectorAll('.du-ov').forEach(x=>x.remove()); toast('已更新'); if(S.mode==='home') renderHome(); }
+  catch(e){ $('#duErr').textContent='儲存失敗：'+(e.code||e.message||e); }
+}
+document.addEventListener('click',ev=>{
+  const t=ev.target.closest('[data-duty],[data-duclose],[data-duoff],[data-duname],[data-dusave]');
+  if(!t){ if(ev.target.classList&&ev.target.classList.contains('du-ov')) ev.target.remove(); return; }
+  ev.stopPropagation(); const ds=t.dataset, DU=dutyForm.st;
+  if(ds.duty) dutyForm(ds.duty);
+  else if(ds.duclose) document.querySelectorAll('.du-ov').forEach(x=>x.remove());
+  else if(ds.duoff!=null){ DU.off=ds.duoff==='1'; document.querySelectorAll('[data-duoff]').forEach(c=>c.classList.toggle('on',c.dataset.duoff===ds.duoff)); $('#duWho').hidden=DU.off; }
+  else if(ds.duname!=null){ const n=ds.duname; DU.names=DU.names.includes(n)?DU.names.filter(x=>x!==n):DU.names.concat([n]); t.classList.toggle('on',DU.names.includes(n)); }
+  else if(ds.dusave) dutySave();
+},true);
 function homeStatsHTML(today){
   const ym=today.slice(0,7), m=+ym.slice(5), docs={...(S.allDaily||{}),...D.docs};
   const one=b=>{ const ds=Object.values(docs).filter(d=>d&&d.branch===b&&String(d.date||'').startsWith(ym)&&dStatusOf(d)==='營業'), rev=sum(ds.map(d=>+d.revenue||0)), c=statusCount(b,ym,docs); if(c.未記錄&&!dStatusOf(docs[dId(b,today)])) c.未記錄--; const vis=sum(ds.map(d=>+d.visitors||0));
@@ -2742,7 +2789,7 @@ function homeStatsHTML(today){
     <div class="hs-g">${st.map(x=>`<div class="hs-c" style="--bc:var(${B[x.b].color})"><div class="hs-n"><i></i>${x.b==='qp'?'旗跑':'旗時'}<small>${esc(B[x.b].name.replace(/^.*・/,''))}</small></div>
       <div class="hs-rev num">${fmt(x.rev)}<small>元</small></div>
       <div class="hs-d num"><span>營業 <b>${x.c.營業}</b> 天</span><span>店休 <b>${x.c.店休}</b> 天</span>${x.c.颱風假?`<span>颱風假 <b>${x.c.颱風假}</b> 天</span>`:''}${x.c.未記錄?`<span class="na">未記錄 <b>${x.c.未記錄}</b> 天</span>`:''}</div>
-      <div class="hs-x num">日均 ${fmt(x.avg)} 元・來客 ${fmt(x.vis)} 人</div></div>`).join('')}</div>${weekGoalHTML('qp',today)}</div>`;
+      <div class="hs-x num">日均 ${fmt(x.avg)} 元・來客 ${fmt(x.vis)} 人</div>${dutyLineHTML(x.b,today)}</div>`).join('')}</div>${weekGoalHTML('qp',today)}</div>`;
 }
 /* ===== 交辦事項 ===== */
 const TD={tab:'mine',form:null,showDone:false};
@@ -3328,7 +3375,7 @@ document.addEventListener('click',ev=>{
 function showLoadErr(){ let el=$('#loadErr'); if(!el){ el=document.createElement('div'); el.id='loadErr'; el.className='load-err'; document.querySelector('.wrap')?.insertBefore(el,$('#main')); }
   el.innerHTML=S.loadErr?`⚠️ 讀取資料失敗（${esc(S.loadErr)}）。${S.loadErr==='permission-denied'?'這個帳號目前沒有讀取權限，請找妃妃確認人員名單，或登出後重新登入。':'請檢查網路後重新整理頁面。'} <button class="btn" onclick="location.reload()">重新整理</button>`:''; el.hidden=!S.loadErr; }
 function stopData(){ FB.unsubs.forEach(u=>{try{u()}catch(e){}}); FB.unsubs=[]; if(D.unsub){try{D.unsub()}catch(e){}} D.unsub=null; D.subMonth=null; if(C.unsub){try{C.unsub()}catch(e){}} C.unsub=null; C.subB=null;
-  S.db=null; S.docs={}; S.allDaily={}; S.loadErr=null; showLoadErr(); S.misc={}; S.settle={}; S.crewlog={}; S.crewpay={}; S.payroll={}; S.todos={}; D.docs={}; C.daily={}; S.loaded=false; FB.dataOn=false; }
+  S.db=null; S.docs={}; S.allDaily={}; S.loadErr=null; showLoadErr(); S.misc={}; S.settle={}; S.crewlog={}; S.crewpay={}; S.payroll={}; S.todos={}; S.duty={}; D.docs={}; C.daily={}; S.loaded=false; FB.dataOn=false; }
 function startData(){
   if(FB.dataOn) return; FB.dataOn=true; const db=FB.fs; S.db=db; S.canWrite=true;
   setTimeout(()=>{ if(FB.dataOn&&!S.loaded){ S.loadErr='讀取超過 15 秒'; showLoadErr(); } },15000);
@@ -3343,6 +3390,7 @@ function startData(){
   FB.unsubs.push(db.collection('settle').onSnapshot(snap=>{ const o={}; snap.docs.forEach(d=>{o[d.id]=d.data();}); S.settle=o; if(S.mode==='cash') drawCash(); else if(S.mode==='spend') drawSpend(); else if(S.mode==='home') renderHome(); },()=>{}));
   FB.unsubs.push(db.collection('crewlog').onSnapshot(snap=>{ const o={}; snap.docs.forEach(d=>{o[d.id]=d.data();}); S.crewlog=o; if((S.mode==='crew'||S.mode==='daily')&&!CR.editing) crewRedraw(); else if(S.mode==='home') renderHome(); },()=>{}));
   FB.unsubs.push(db.collection('todos').onSnapshot(snap=>{ const o={}; snap.docs.forEach(d=>{o[d.id]=d.data();}); S.todos=o; tdRedraw(); },()=>{}));
+  FB.unsubs.push(db.collection('duty').where('date','in',[todayStr(),addDays(todayStr(),1)]).onSnapshot(snap=>{ const o={}; snap.docs.forEach(d=>{o[d.id]=d.data();}); S.duty=o; if(S.mode==='home'&&!document.querySelector('.du-ov')) document.querySelectorAll('[data-duty]').forEach(el=>el.outerHTML=dutyLineHTML(el.dataset.duty,todayStr())); },()=>{}));
   FB.unsubs.push(db.collection('crewpay').onSnapshot(snap=>{ const o={}; snap.docs.forEach(d=>{o[d.id]=d.data();}); S.crewpay=o; if(S.mode==='crew'&&!CR.editing) drawCrew(); },()=>{}));
   FB.unsubs.push(db.collection('payroll').onSnapshot(snap=>{ const o={}; snap.docs.forEach(d=>{o[d.id]=d.data();}); S.payroll=o; if(S.mode==='payroll'&&!PR.dirty){ PR.draft=null; drawPay(); } else if(S.mode==='home') renderHome(); },()=>{}));
   FB.unsubs.push(db.collection('misc').onSnapshot(snap=>{ const m={}; snap.docs.forEach(d=>{m[d.id]=fsDec(d.data());}); S.misc=m; S.miscLoaded=true; if(S.mode==='home') renderHome(); setTimeout(()=>{ if(typeof pushMaybeAsk==='function') pushMaybeAsk(); },1200); if(S.loaded&&!S.editing&&!S.adding&&S.mode==='ledger'&&S.month===0&&S.sec==='chan') render(); },()=>{}));
@@ -3383,7 +3431,7 @@ render();
 <script>
 /* 自動更新：打開 App 或切回 App 時檢查新版本 */
 (function(){
-  var BUILD='1793268012', last=0, shown=false;
+  var BUILD='1793607175', last=0, shown=false;
   function busy(){
     var a=document.activeElement;
     if(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) return true;
