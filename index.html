@@ -2647,6 +2647,8 @@ function mailMaybeAsk(){
 const SP={branch:null, day:todayStr(), cat:'', pay:'零用金', draft:{}, confirmDel:null};
 const PAYS=['零用金','營收現金','轉帳','刷卡','其他'];
 const PETTY={qp:3000,yl:1000};
+const PETTY_START={qp:'2026-10-01'};
+const pettyBase=b=>PETTY_START[b]||monthStart();
 const pettyUsed=(b,day)=>sum(pettyPending(b).map(e=>+e.amt||0));
 const pettyLeft=(b,day)=>PETTY[b]-pettyUsed(b,day);
 const spYM=day=>[+day.slice(0,4),+day.slice(5,7)];
@@ -3197,7 +3199,7 @@ const covered=(b,type)=>{const s=new Set();settles(b,type).forEach(x=>(x.covered
 const monthStart=()=>todayStr().slice(0,8)+'01';
 function allExp(b){const out=[];for(const d of Object.values(S.docs)){if(d.branch!==b||!Array.isArray(d.exp))continue;for(const e of d.exp) if(e.date) out.push(e);}return out;}
 const csUntil=(type,b)=>{const u=((C.draft[type]||{})[b]||{}).until; return u&&u<=todayStr()?u:todayStr();};
-function pettyPending(b){const l=lastSettle(b,'petty'), base=l?l.date:monthStart(), cv=covered(b,'petty'), t=csUntil('petty',b);
+function pettyPending(b){const l=lastSettle(b,'petty'), base=l?l.date:pettyBase(b), cv=covered(b,'petty'), t=csUntil('petty',b);
   return allExp(b).filter(e=>/零用金/.test(e.note||'')&&e.date>=base&&e.date<=t&&!cv.has(e.id)).sort((a,c)=>a.date<c.date?-1:1);}
 function cashExpPending(b){const l=lastSettle(b,'cash'), base=l?l.date:'0000-00-00', cv=covered(b,'cash'), t=csUntil('cash',b);
   return allExp(b).filter(e=>/營收現金/.test(e.note||'')&&e.date>=base&&e.date<=t&&!cv.has(e.id)).sort((a,c)=>a.date<c.date?-1:1);}
@@ -3235,9 +3237,9 @@ function pettyCard(b){
   const dr=C.draft.petty[b]||{}, counted=dr.counted===undefined||dr.counted===''?null:+dr.counted;
   const diff=counted==null?null:counted-should, refill=counted==null?PETTY[b]-should:PETTY[b]-counted;
   return `<section class="cs-card">
-    <div class="cs-h"><span class="cs-ic g">${ICON.spend}</span><div><h3>零用金結帳</h3><p class="hint">額度 ${fmt(PETTY[b])} 元・${l?`上次結算到 ${md(l.date)}（${esc(l.by||'')}）並補滿`:`尚未結帳過，從 ${md(monthStart())} 起算`}</p></div></div>
+    <div class="cs-h"><span class="cs-ic g">${ICON.spend}</span><div><h3>零用金結帳</h3><p class="hint">額度 ${fmt(PETTY[b])} 元・${l?`上次結算到 ${md(l.date)}（${esc(l.by||'')}）並補滿`:`尚未結帳過，從 ${md(pettyBase(b))} 起算`}</p></div></div>
     ${csUntilHTML('petty',b)}
-    <div class="cs-list"><div class="cs-li"><span>${l?`上次結算補滿`:'零用金額度'}<small>${l?md(l.date):'本月起算'}</small></span><b class="num">${fmt(PETTY[b])}</b></div>${list.length?list.map(e=>`<div class="cs-li dep"><span>${md(e.date)} ${esc(e.item)}<small>${esc(e.cat)}${e.by?'・'+esc(e.by):''}</small></span>${e.receipt?`<a class="cs-r" href="${rcptURL(e.receipt)}" target="_blank" rel="noopener">收據</a>`:'<em class="cs-nr">無收據</em>'}<b class="num">−${fmt(+e.amt||0)}</b></div>`).join(''):'<div class="cs-li empty"><span>上次結帳後沒有零用金支出</span></div>'}
+    <div class="cs-list"><div class="cs-li"><span>${l?`上次結算補滿`:'零用金額度'}<small>${l?md(l.date):md(pettyBase(b))+' 起算'}</small></span><b class="num">${fmt(PETTY[b])}</b></div>${list.length?list.map(e=>`<div class="cs-li dep"><span>${md(e.date)} ${esc(e.item)}<small>${esc(e.cat)}${e.by?'・'+esc(e.by):''}</small></span>${e.receipt?`<a class="cs-r" href="${rcptURL(e.receipt)}" target="_blank" rel="noopener">收據</a>`:'<em class="cs-nr">無收據</em>'}<b class="num">−${fmt(+e.amt||0)}</b></div>`).join(''):'<div class="cs-li empty"><span>上次結帳後沒有零用金支出</span></div>'}
       <div class="cs-li tot"><span>應有零用金<small>已用 ${fmt(used)} 元</small></span><b class="num">${fmt(should)}</b></div></div>
     <div class="cs-form"${isBoss()?'':' hidden'}>
       <label class="dfield"><span class="fl">實點零用金</span><span class="din"><input data-cs="petty" data-b="${b}" data-k="counted" id="cs-${b}-petty-counted" type="number" inputmode="numeric" value="${esc(dr.counted??'')}" placeholder="${should}">${PM}<small>元</small></span></label>
@@ -3487,7 +3489,7 @@ render();
 <script>
 /* 自動更新：打開 App 或切回 App 時檢查新版本 */
 (function(){
-  var BUILD='1793696942', last=0, shown=false;
+  var BUILD='1793697106', last=0, shown=false;
   function busy(){
     var a=document.activeElement;
     if(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) return true;
