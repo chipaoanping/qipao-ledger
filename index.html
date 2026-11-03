@@ -1164,6 +1164,12 @@ function autoQty(b,y,m,raw){
   const ds=dailyOf(b,y,m).filter(d=>dStatusOf(d)==='營業'); if(!ds.length) return [];
   const have=new Set(raw.map(e=>e.item)), out=[];
   for(const [item,k] of [['來客數','visitors'],['外國客','foreign'],['回流客','returning']]){ const v=sum(ds.map(d=>+d[k]||0)); if(v&&!have.has(item)) out.push({id:`auto-qty-${b}-${y}${pad(m)}-${k}`,cat:'來客',item,amt:v,note:'每日結帳',auto:true}); }
+  if(!raw.some(e=>e.cat!=='來客')){ const g={};
+    for(const d of dailyOf(b,y,m)) for(const x of (Array.isArray(d.guests)?d.guests:[])){ const n=Math.max(1,+x.count||1);
+      for(const it of [].concat(x.items||[])){ const t=String(it).trim(); if(!t) continue;
+        const cat=/寫真|沙龍/.test(t)?'寫真':/證件照/.test(t)?'證件照':/妝|造型/.test(t)?'彩妝造型':b==='yl'?'旗袍短租':'旗袍租借';
+        const k=cat+'|'+t; g[k]=(g[k]||0)+(cat==='寫真'?1:n); } }
+    Object.entries(g).forEach(([k,v],i)=>{ const [cat,item]=k.split('|'); out.push({id:`auto-qty-${b}-${y}${pad(m)}-g${i}`,cat,item,amt:v,note:'每日結帳顧客紀錄',auto:true}); }); }
   return out;
 }
 const listOf=(b,m,k,y=YEAR)=>{ const raw=listOfRaw(b,m,k,y);
@@ -1358,7 +1364,7 @@ function formHTML(b,kind,e){
 
 /* ---------- month view: other sections ---------- */
 function secStats(m,y=YEAR){
-  const bs=branches(), L=(k)=>bs.flatMap(b=>k==='shoot'&&m?listOf(b,m,k,y):((S.docs[didY(b,y,m)]||{})[k])||[]);
+  const bs=branches(), L=(k)=>bs.flatMap(b=>m?listOf(b,m,k,y):((S.docs[didY(b,y,m)]||{})[k])||[]);
   const sumIt=(arr,f)=>sum(arr.filter(f).map(e=>+e.amt||0));
   switch(S.sec){
     case 'qty': { const q=L('qty'); return [['來客數',sumIt(q,e=>e.item==='來客數'),'人'],['旗袍租借',sumIt(q,e=>/^旗袍租借|旗袍短租/.test(e.cat)),'件'],['寫真・沙龍',sumIt(q,e=>/寫真/.test(e.cat)),'組'],['證件照',sumIt(q,e=>e.cat==='證件照'),'件']]; }
@@ -3482,7 +3488,7 @@ render();
 <script>
 /* 自動更新：打開 App 或切回 App 時檢查新版本 */
 (function(){
-  var BUILD='1793695376', last=0, shown=false;
+  var BUILD='1793696627', last=0, shown=false;
   function busy(){
     var a=document.activeElement;
     if(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) return true;
