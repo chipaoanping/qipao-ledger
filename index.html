@@ -2528,6 +2528,9 @@ async function importData(file){
   try{
     const j=JSON.parse(await file.text()); const cols=isBoss()?['months','daily','misc','settle','crewlog','crewpay','payroll']:['months','daily','misc','crewlog','crewpay','payroll'];
     const ops=[]; for(const c of cols) for(const [id,d] of Object.entries(j[c]||{})) ops.push([c,id,d]);
+    const mm=Object.entries(j.monthsMerge||{});
+    if(mm.length){ for(const [id,d] of mm){ if(!/^(qp|yl)-\d{4}-\d{2}$/.test(id)) continue; const ref=FB.fs.doc('months/'+id), cur=await ref.get(), cd=cur.exists?cur.data():null, nd={...d,updatedAt:new Date().toISOString()}; if(cd&&typeof cd.__json==='string') await ref.set(fsEnc({...fsDec(cd),...nd})); else await ref.set(fsEnc(nd),{merge:true}); }
+      set(`已更新 ${mm.map(([id,d])=>`${id.startsWith('qp')?'旗跑':'旗時'} ${+id.slice(-2)} 月（${Object.keys(d).filter(k=>Array.isArray(d[k])).map(k=>({rev:'營收',qty:'銷售數量',exp:'支出',cust:'顧客'}[k]||k)).join('、')}）`).join('；')}，其他資料沒有變動`); toast('匯入完成'); if(!ops.length) return; }
     const sm=Object.entries(j.status||{}); let sn=0;
     for(const [id,v] of sm){ const m=id.match(/^(qp|yl)-(\d{4}-\d{2}-\d{2})$/); if(!m) continue; const ref=FB.fs.doc('daily/'+id), cur=await ref.get();
       if(!cur.exists){ await ref.set({branch:m[1],date:m[2],month:m[2].slice(0,7),status:v.status,note:v.note||'',source:'每日營業明細表'}); sn++; } set(`營業狀態匯入中…${sn} 天`); }
@@ -3489,7 +3492,7 @@ render();
 <script>
 /* 自動更新：打開 App 或切回 App 時檢查新版本 */
 (function(){
-  var BUILD='1793697106', last=0, shown=false;
+  var BUILD='1793698169', last=0, shown=false;
   function busy(){
     var a=document.activeElement;
     if(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) return true;
