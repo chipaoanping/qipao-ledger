@@ -2990,7 +2990,9 @@ async function fxRecord(b,day,ids){
   await spendWrite(b,`${ym}-01`,l=>l.concat(add),add.length>1?`已記入 ${add.length} 項固定支出`:`已記入 ${add[0].item} ${fmt(add[0].amt)} 元`);
 }
 function spMonthHTML(b,day){
-  const [y,m]=spYM(day), all=spMonth(b,day).slice().sort((a,c)=>(a.date||'')<(c.date||'')?1:(a.date||'')>(c.date||'')?-1:0);
+  const [y,m]=spYM(day), ym=`${y}-${pad(m)}`, rawX=spMonth(b,day);
+  const crewX=rawX.some(e=>e.cat==='外包造型・攝影')?[]:Object.entries(S.crewlog||{}).filter(([,d])=>d.branch===b&&d.month===ym&&crewSettle(d)).map(([id,d])=>({id:'crewd-'+id,cat:'外包造型・攝影',item:`${crewName(d.person)||'—'}（${d.role==='造型'?'造型師':'攝影師'}）`,amt:crewSettle(d),date:d.date,note:`結案單自動帶入・${(d.rows||[]).filter(r=>r.customer||r.item||+r.amt).length} 件${crewSettle(d)>(+d.subtotal||0)?'・保底':''}`,auto:true}));
+  const all=rawX.concat(crewX).slice().sort((a,c)=>(a.date||'')<(c.date||'')?1:(a.date||'')>(c.date||'')?-1:0);
   const payOf=e=>PAYS.find(p=>p!=='其他'&&(e.note||'').split('・').includes(p))||'其他';
   const cats=[...new Set(all.map(e=>e.cat))], pays=[...new Set(all.map(payOf))];
   if(SP.mcat&&!cats.includes(SP.mcat)) SP.mcat=''; if(SP.mpay&&!pays.includes(SP.mpay)) SP.mpay='';
@@ -3003,7 +3005,7 @@ function spMonthHTML(b,day){
     ${all.length?`<div class="spm-f"><span class="fl">類別</span><span class="chips">${chip('smcat','', '全部',!SP.mcat)}${Object.entries(byCat).sort((a,c)=>c[1]-a[1]).map(([c,v])=>chip('smcat',c,`${esc(c)} <small class="num">${fmt(v)}</small>`,SP.mcat===c)).join('')}</span></div>
       <div class="spm-f"><span class="fl">付款</span><span class="chips">${chip('smpay','','全部',!SP.mpay)}${Object.entries(byPay).sort((a,c)=>c[1]-a[1]).map(([p,v])=>chip('smpay',p,`${esc(p)} <small class="num">${fmt(v)}</small>`,SP.mpay===p)).join('')}</span></div>
       ${Object.keys(days).length?Object.entries(days).map(([d,l])=>`<div class="spm-d"><button type="button" class="spm-dh" data-sday="${esc(d)}"><b>${/^\d{4}-/.test(d)?`${+d.slice(5,7)}/${+d.slice(8)}（${wk(d)}）`:esc(d)}</b><span class="num">${l.length} 筆・${fmt(sum(l.map(e=>+e.amt||0)))} 元</span></button>
-        <ul class="sp-list">${l.map(e=>`<li><span class="spl-c">${esc(e.cat)}</span><span class="spl-i">${esc(e.item)}<small>${esc([e.note,e.by?e.by+' 記錄':''].filter(Boolean).join('・'))}</small></span>${e.receipt?`<a class="spl-r" href="${rcptURL(e.receipt)}" target="_blank" rel="noopener" aria-label="看收據"><img src="${rcptURL(e.receipt)}" alt="收據" loading="lazy"></a>`:'<span></span>'}<b class="num">${fmt(+e.amt||0)}</b>${S.canWrite!==false&&S.db?`<span class="spl-btns"><button class="ibtn" data-sedit="${e.id}" data-sedate="${esc(e.date||'')}">修改</button></span>`:'<span></span>'}</li>`).join('')}</ul></div>`).join(''):'<p class="hint">沒有符合篩選的支出。</p>'}`
+        <ul class="sp-list">${l.map(e=>`<li><span class="spl-c">${esc(e.cat)}</span><span class="spl-i">${esc(e.item)}<small>${esc([e.note,e.by?e.by+' 記錄':''].filter(Boolean).join('・'))}</small></span>${e.receipt?`<a class="spl-r" href="${rcptURL(e.receipt)}" target="_blank" rel="noopener" aria-label="看收據"><img src="${rcptURL(e.receipt)}" alt="收據" loading="lazy"></a>`:'<span></span>'}<b class="num">${fmt(+e.amt||0)}</b>${e.auto?(crewOK()?`<span class="spl-btns"><button class="ibtn" data-sgocrew="${esc((e.date||'').slice(0,7))}">結案單</button></span>`:'<span></span>'):S.canWrite!==false&&S.db?`<span class="spl-btns"><button class="ibtn" data-sedit="${e.id}" data-sedate="${esc(e.date||'')}">修改</button></span>`:'<span></span>'}</li>`).join('')}</ul></div>`).join(''):'<p class="hint">沒有符合篩選的支出。</p>'}`
     :'<p class="hint">這個月還沒有支出。</p>'}</div>`;
 }
 function renderSpend(b){
@@ -3107,6 +3109,7 @@ function bindSpend(){
   main.addEventListener('submit',ev=>{ if(S.mode==='spend'){ev.preventDefault();ev.stopImmediatePropagation();} },true);
   main.addEventListener('click',ev=>{
     const t=ev.target.closest('button'); if(!t) return;
+    if(t.dataset.sgocrew){ S.mode='crew'; if(t.dataset.sgocrew) CR.ym=t.dataset.sgocrew; CR.branch=SP.branch||CR.branch; saveUI(); render(); scrollTo({top:0}); return; }
     if(S.mode==='home'&&t.dataset.home){ const k=t.dataset.home; if(k==='ledger'||k==='cash'||k==='crew'||k==='payroll'||k==='booking'||k==='todo'){S.mode=k;saveUI();render();scrollTo({top:0});} else openPick(k); return; }
     if(S.mode!=='spend') return;
     if(t.dataset.sback) openPick('spend');
@@ -3439,7 +3442,7 @@ render();
 <script>
 /* 自動更新：打開 App 或切回 App 時檢查新版本 */
 (function(){
-  var BUILD='1793607418', last=0, shown=false;
+  var BUILD='1793675386', last=0, shown=false;
   function busy(){
     var a=document.activeElement;
     if(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) return true;
