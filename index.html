@@ -1317,7 +1317,6 @@ function bookHTML(b,m,kind,ro){
   const title=(S.branch==='all'&&!K.money)?`${B[b].short} ・ ${K.label}`:K.label;
   const head=K.nosum?`<span class="hint">依類別統計</span>`:`<span class="sum num">${fmt(total)}<small class="u"> ${K.unit}</small></span>`;
   let h=`<section class="book" data-kind="${kind}"><div class="book-h"><div class="t"><h2>${title}</h2><span class="hint">${list.length} 筆${list.some(e=>e.crewAuto)?(list.every(e=>e.auto)?'・由結案單／薪資表／庫存結算自動計算':'・含自動帶入項目'):list.length&&list.every(e=>e.auto)?'・由每日結帳自動計算':list.some(e=>e.auto)?'・含每日結帳來客':''}</span></div>${head}</div>`;
-  if(kind==='rev'&&editable&&!ro&&typeof canImport==='function'&&canImport()) h+=`<label class="btn pos-imp">📄 匯入收銀「分類總覽」Excel<input type="file" accept=".xlsx,.xls,.csv" data-posimp="${b}|${m}" hidden></label>`;
   if(!list.length) h+=`<div class="emptyb">${m} 月沒有${K.label}紀錄${editable?'，用下方按鈕新增第一筆':''}。</div>`;
   if(kind==='plat'&&list.length){ h+=platSummary(list)+`<details class="orders"${S.editing&&S.editing.kind==='plat'||S.confirmDel&&list.some(e=>e.id===S.confirmDel)?' open':''}><summary>訂單明細（${list.length} 筆）</summary>`; }
   for(const [c,items,ct] of groupBy(list,cats)){
@@ -3488,7 +3487,7 @@ render();
 <script>
 /* 自動更新：打開 App 或切回 App 時檢查新版本 */
 (function(){
-  var BUILD='1793696627', last=0, shown=false;
+  var BUILD='1793696705', last=0, shown=false;
   function busy(){
     var a=document.activeElement;
     if(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) return true;
