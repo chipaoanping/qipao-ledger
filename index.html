@@ -3237,8 +3237,8 @@ function pettyCard(b){
   return `<section class="cs-card">
     <div class="cs-h"><span class="cs-ic g">${ICON.spend}</span><div><h3>零用金結帳</h3><p class="hint">額度 ${fmt(PETTY[b])} 元・${l?`上次結算到 ${md(l.date)}（${esc(l.by||'')}）並補滿`:`尚未結帳過，從 ${md(monthStart())} 起算`}</p></div></div>
     ${csUntilHTML('petty',b)}
-    <div class="cs-list">${list.length?list.map(e=>`<div class="cs-li"><span>${md(e.date)} ${esc(e.item)}<small>${esc(e.cat)}${e.by?'・'+esc(e.by):''}</small></span>${e.receipt?`<a class="cs-r" href="${rcptURL(e.receipt)}" target="_blank" rel="noopener">收據</a>`:'<em class="cs-nr">無收據</em>'}<b class="num">${fmt(+e.amt||0)}</b></div>`).join(''):'<div class="cs-li empty"><span>上次結帳後沒有零用金支出</span></div>'}
-      <div class="cs-li tot"><span>已用 ${fmt(used)}・應剩</span><b class="num">${fmt(should)}</b></div></div>
+    <div class="cs-list"><div class="cs-li"><span>${l?`上次結算補滿`:'零用金額度'}<small>${l?md(l.date):'本月起算'}</small></span><b class="num">${fmt(PETTY[b])}</b></div>${list.length?list.map(e=>`<div class="cs-li dep"><span>${md(e.date)} ${esc(e.item)}<small>${esc(e.cat)}${e.by?'・'+esc(e.by):''}</small></span>${e.receipt?`<a class="cs-r" href="${rcptURL(e.receipt)}" target="_blank" rel="noopener">收據</a>`:'<em class="cs-nr">無收據</em>'}<b class="num">−${fmt(+e.amt||0)}</b></div>`).join(''):'<div class="cs-li empty"><span>上次結帳後沒有零用金支出</span></div>'}
+      <div class="cs-li tot"><span>應有零用金<small>已用 ${fmt(used)} 元</small></span><b class="num">${fmt(should)}</b></div></div>
     <div class="cs-form"${isBoss()?'':' hidden'}>
       <label class="dfield"><span class="fl">實點零用金</span><span class="din"><input data-cs="petty" data-b="${b}" data-k="counted" id="cs-${b}-petty-counted" type="number" inputmode="numeric" value="${esc(dr.counted??'')}" placeholder="${should}">${PM}<small>元</small></span></label>
       <label class="dfield"><span class="fl">補回金額</span><span class="din ro"><input id="cs-${b}-petty-refill" readonly tabindex="-1" value="${refill}"><small>元</small></span></label>
@@ -3487,7 +3487,7 @@ render();
 <script>
 /* 自動更新：打開 App 或切回 App 時檢查新版本 */
 (function(){
-  var BUILD='1793696705', last=0, shown=false;
+  var BUILD='1793696942', last=0, shown=false;
   function busy(){
     var a=document.activeElement;
     if(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) return true;
