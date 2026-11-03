@@ -1164,12 +1164,6 @@ function autoQty(b,y,m,raw){
   const ds=dailyOf(b,y,m).filter(d=>dStatusOf(d)==='營業'); if(!ds.length) return [];
   const have=new Set(raw.map(e=>e.item)), out=[];
   for(const [item,k] of [['來客數','visitors'],['外國客','foreign'],['回流客','returning']]){ const v=sum(ds.map(d=>+d[k]||0)); if(v&&!have.has(item)) out.push({id:`auto-qty-${b}-${y}${pad(m)}-${k}`,cat:'來客',item,amt:v,note:'每日結帳',auto:true}); }
-  if(!raw.some(e=>e.cat!=='來客')){ const g={};
-    for(const d of dailyOf(b,y,m)) for(const x of (Array.isArray(d.guests)?d.guests:[])){ const n=Math.max(1,+x.count||1);
-      for(const it of [].concat(x.items||[])){ const t=String(it).trim(); if(!t) continue;
-        const cat=/寫真|沙龍/.test(t)?'寫真':/證件照/.test(t)?'證件照':/妝|造型/.test(t)?'彩妝造型':b==='yl'?'旗袍短租':'旗袍租借';
-        const k=cat+'|'+t; g[k]=(g[k]||0)+(cat==='寫真'?1:n); } }
-    Object.entries(g).forEach(([k,v],i)=>{ const [cat,item]=k.split('|'); out.push({id:`auto-qty-${b}-${y}${pad(m)}-g${i}`,cat,item,amt:v,note:'每日結帳顧客紀錄',auto:true}); }); }
   return out;
 }
 const listOf=(b,m,k,y=YEAR)=>{ const raw=listOfRaw(b,m,k,y);
@@ -3492,7 +3486,7 @@ render();
 <script>
 /* 自動更新：打開 App 或切回 App 時檢查新版本 */
 (function(){
-  var BUILD='1793698169', last=0, shown=false;
+  var BUILD='1793699155', last=0, shown=false;
   function busy(){
     var a=document.activeElement;
     if(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) return true;
