@@ -929,6 +929,7 @@ a.hcard,a.hcard *{text-decoration:none;color:inherit}a.hcard .hc-go{color:var(--
 .hs-rev{font-size:28px;font-weight:700;color:var(--wine);line-height:1.1}.hs-rev small{font-size:13px;font-weight:400;color:var(--ink-3);margin-left:3px}
 .hs-d{display:flex;flex-wrap:wrap;gap:2px 12px;font-size:13px}.hs-d b{font-size:15px}.hs-d .na{color:var(--ink-3)}
 .hs-x{font-size:12px;color:var(--ink-3)}
+.pos-imp{margin:4px 14px 10px;display:inline-flex;font-size:13px}.pos-ov table{width:100%}.pos-ov .bad{color:var(--accent)}
 .du-g{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.du-c{border-radius:12px;background:var(--soft);padding:10px 12px;display:grid;gap:6px;border-left:4px solid var(--bc)}.du-c .hs-n i{background:var(--bc)}
 @media (max-width:560px){.du-g{grid-template-columns:1fr}}
 .hs-duty{all:unset;box-sizing:border-box;cursor:pointer;padding:7px 10px;border-radius:10px;background:var(--paper);border:1px solid var(--rule);display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;font-size:13px;color:var(--ink-2)}
@@ -1264,6 +1265,44 @@ function platSummary(list){
     ${row('來客人數','位',l=>cnt(l,'qipao')+cnt(l,'magua'),'tt')}${row('訂單','筆',l=>l.length)}${row('金額','元',l=>sum(l.map(e=>+e.amt||0)),'tt')}
   </tbody></table></div>`;
 }
+/* ---------- 匯入收銀系統「分類總覽」Excel → 該月營收明細 ---------- */
+const posCat=n=>/寫真/.test(n)?'寫真攝影':/彩妝|造型|妝髮/.test(n)?'彩妝造型':/平台|klook|kkday/i.test(n)?'平台日租':/旗袍|租|馬褂|配件|鞋|體驗/.test(n)?'旗袍租借':'其他';
+async function posImport(file,b,m0){
+  try{
+    if(!window.XLSX) await new Promise((r,j)=>{const sc=document.createElement('script'); sc.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'; sc.onload=r; sc.onerror=()=>j(new Error('讀取 Excel 工具失敗，請確認網路')); document.head.appendChild(sc);});
+    const wb=XLSX.read(await file.arrayBuffer(),{type:'array'}), rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,defval:''});
+    const hi=rows.findIndex(r=>r.some(c=>/名稱|品項|類別/.test(String(c)))&&r.some(c=>/營業額|金額|銷售額/.test(String(c))));
+    if(hi<0) throw new Error('找不到「名稱」和「營業額」欄位');
+    const H=rows[hi].map(String), ni=H.findIndex(c=>/名稱|品項|類別/.test(c)), ai=H.findIndex(c=>/營業額$|^營業額|金額|銷售額/.test(c)&&!/占比|%/.test(c));
+    const items=rows.slice(hi+1).map(r=>({name:String(r[ni]||'').trim(),amt:Math.round(+String(r[ai]).replace(/[^\d.-]/g,'')||0)})).filter(x=>x.name&&!/合計|總計/.test(x.name)&&x.amt);
+    if(!items.length) throw new Error('檔案裡沒有營業額資料');
+    const fm=file.name.match(/(\d{4})-(\d{2})-\d{2}/); let y=YEAR, m=m0;
+    if(fm){ y=+fm[1]; m=+fm[2]; }
+    posConfirm(b,y,m,items,file.name);
+  }catch(e){ toast('匯入失敗：'+(e.message||e)); }
+}
+function posConfirm(b,y,m,items,fname){
+  const cur=listOfRaw(b,m,'rev',y), tot=sum(items.map(x=>x.amt));
+  const dsum=sum(dailyOf(b,y,m).filter(d=>dStatusOf(d)==='營業').map(d=>+d.revenue||0));
+  const v=document.createElement('div'); v.className='bk-ov td-ov pos-ov';
+  v.innerHTML=`<div class="bk-dlg td-dlg" role="dialog" aria-modal="true" style="--bc:var(${B[b].color})">
+    <div class="bk-dh"><span class="bk-b">${b==='qp'?'旗跑':'旗時'}</span><b>${y} 年 ${m} 月營收明細</b><button class="ibtn" data-posx="1" aria-label="關閉">✕</button></div>
+    <table class="plain"><tr><th>收銀分類</th><th>記到</th><th class="num">營業額</th></tr>${items.map(x=>`<tr><td>${esc(x.name)}</td><td>${posCat(x.name)}</td><td class="num">${fmt(x.amt)}</td></tr>`).join('')}<tr><td colspan="2"><b>合計</b></td><td class="num"><b>${fmt(tot)}</b></td></tr></table>
+    ${dsum?`<p class="hint">每日結帳 ${m} 月營收合計 ${fmt(dsum)} 元${dsum!==tot?`，和收銀相差 <b>${fmt(tot-dsum)}</b> 元`:'，金額一致 ✓'}</p>`:''}
+    ${cur.length?`<p class="hint bad">這個月原本有 ${cur.length} 筆營收明細（${fmt(sum(cur.map(e=>+e.amt||0)))} 元），匯入後會被取代。</p>`:''}
+    <div class="td-act"><button type="button" class="btn" data-posx="1">取消</button><button type="button" class="btn primary" data-posok="1">確定匯入</button></div></div>`;
+  document.body.appendChild(v);
+  posConfirm.st={b,y,m,items,fname};
+}
+document.addEventListener('change',ev=>{ const t=ev.target; if(!t.dataset||!t.dataset.posimp||!t.files[0]) return; const [b,m]=t.dataset.posimp.split('|'); posImport(t.files[0],b,+m); t.value=''; });
+document.addEventListener('click',async ev=>{ const t=ev.target.closest('[data-posx],[data-posok]'); if(!t) return; ev.stopPropagation();
+  if(t.dataset.posx){ document.querySelectorAll('.pos-ov').forEach(x=>x.remove()); return; }
+  const st=posConfirm.st; if(!st||!S.db) return; t.disabled=true;
+  const id=didY(st.b,st.y,st.m), d=S.docs[id]||{}, o={...d,branch:st.b,year:st.y,month:st.m,updatedAt:new Date().toISOString()};
+  o.rev=st.items.map((x,i)=>({id:'pos'+uid()+i,cat:posCat(x.name),item:x.name,amt:x.amt,note:'收銀分類總覽',date:''}));
+  try{ await S.db.doc('months/'+id).set(o); S.docs[id]=o; document.querySelectorAll('.pos-ov').forEach(x=>x.remove()); toast(`已匯入 ${st.m} 月營收明細`); render(); }
+  catch(e){ t.disabled=false; toast('匯入失敗：'+(e.code||e.message||e)); }
+},true);
 function bookHTML(b,m,kind,ro){
   const K=KIND[kind], list=listOf(b,m,kind), cats=catsOf(b,kind);
   const total=sum(list.map(e=>+e.amt||0));
@@ -1272,6 +1311,7 @@ function bookHTML(b,m,kind,ro){
   const title=(S.branch==='all'&&!K.money)?`${B[b].short} ・ ${K.label}`:K.label;
   const head=K.nosum?`<span class="hint">依類別統計</span>`:`<span class="sum num">${fmt(total)}<small class="u"> ${K.unit}</small></span>`;
   let h=`<section class="book" data-kind="${kind}"><div class="book-h"><div class="t"><h2>${title}</h2><span class="hint">${list.length} 筆${list.some(e=>e.crewAuto)?(list.every(e=>e.auto)?'・由結案單／薪資表／庫存結算自動計算':'・含自動帶入項目'):list.length&&list.every(e=>e.auto)?'・由每日結帳自動計算':list.some(e=>e.auto)?'・含每日結帳來客':''}</span></div>${head}</div>`;
+  if(kind==='rev'&&editable&&!ro&&typeof canImport==='function'&&canImport()) h+=`<label class="btn pos-imp">📄 匯入收銀「分類總覽」Excel<input type="file" accept=".xlsx,.xls,.csv" data-posimp="${b}|${m}" hidden></label>`;
   if(!list.length) h+=`<div class="emptyb">${m} 月沒有${K.label}紀錄${editable?'，用下方按鈕新增第一筆':''}。</div>`;
   if(kind==='plat'&&list.length){ h+=platSummary(list)+`<details class="orders"${S.editing&&S.editing.kind==='plat'||S.confirmDel&&list.some(e=>e.id===S.confirmDel)?' open':''}><summary>訂單明細（${list.length} 筆）</summary>`; }
   for(const [c,items,ct] of groupBy(list,cats)){
@@ -3442,7 +3482,7 @@ render();
 <script>
 /* 自動更新：打開 App 或切回 App 時檢查新版本 */
 (function(){
-  var BUILD='1793675386', last=0, shown=false;
+  var BUILD='1793695376', last=0, shown=false;
   function busy(){
     var a=document.activeElement;
     if(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) return true;
