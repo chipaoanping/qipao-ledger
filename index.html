@@ -1135,7 +1135,18 @@ const shootName=x=>{ let t=String(x||'').trim().replace(/臺/g,'台').replace(/[
   if(/證件照/.test(t)&&/^(個人)?台式證件照$/.test(t)) return '台式證件照';
   if(/沙龍$/.test(t)) t+='寫真';
   return t; };
-const consignOf=ym=>{ try{ const c=(S.misc||{}).consign; const j=c&&(c.json?JSON.parse(c.json):c); return ((j&&j.months)||{})[ym]||[]; }catch(e){ return []; } };
+/* 永樂庫存 App 的每月各品牌結算金額：用代碼讀永樂 Firebase 的 ledgerFeed/{代碼}（只能讀那一份） */
+const YL_FB={apiKey:"AIzaSyDOsCh1jSjmT3hblwB__7d48BHft-fJ3i4",authDomain:"yongle-708a9.firebaseapp.com",projectId:"yongle-708a9",storageBucket:"yongle-708a9.firebasestorage.app",messagingSenderId:"324198441163",appId:"1:324198441163:web:5103ffcbec47a244c5bb4e"};
+const YL={token:'',unsub:null,feed:null,err:''};
+function subYongle(token){
+  token=token||''; if(YL.token===token) return;
+  if(YL.unsub){ try{ YL.unsub(); }catch(e){} } YL.unsub=null; YL.token=token; YL.feed=null; YL.err='';
+  if(!token||!window.firebase) return;
+  try{ const app=firebase.apps.find(a=>a.name==='yongle')||firebase.initializeApp(YL_FB,'yongle');
+    YL.unsub=firebase.firestore(app).doc('ledgerFeed/'+token).onSnapshot(d=>{ YL.feed=d.exists?d.data():null; YL.err=d.exists?'':'找不到這個代碼'; if(S.mode==='home') renderHome(); else if(S.mode==='ledger'&&!S.editing&&!S.adding) render(); },e=>{ YL.err=(e&&e.code)==='permission-denied'?'永樂 Firebase 規則還沒開放 ledgerFeed':'讀取失敗'; if(S.mode==='home') renderHome(); });
+  }catch(e){ YL.err='讀取失敗'; }
+}
+const consignOf=ym=>{ const f=YL.feed&&YL.feed.months; if(f&&f[ym]) return f[ym]; try{ const c=(S.misc||{}).consign; const j=c&&(c.json?JSON.parse(c.json):c); return ((j&&j.months)||{})[ym]||[]; }catch(e){ return []; } };
 function autoShoot(b,y,m){
   const ym=`${y}-${pad(m)}`, out=[];
   const sheets=Object.entries(S.crewlog||{}).filter(([,d])=>d.branch===b&&d.month===ym&&d.role!=='造型').sort((a,c)=>a[1].date<c[1].date?-1:1);
@@ -2504,7 +2515,7 @@ const DATA_ADMIN='郁雯';  /* 只有這位看得到資料管理與測試通知 
 const isDataAdmin=()=>!!W.name&&W.name===DATA_ADMIN;
 function adminHTML(){
   if(!isDataAdmin()&&!isBoss()) return '';
-  const bkRow=`<div class="adm-bk"><span class="fl">預約日曆連結</span><input class="tin" id="bkUrlIn" value="${esc(((S.misc||{}).booking||{}).url||'')}" placeholder="貼上 Apps Script 網址（含 ?k=…）"><button class="btn" data-bksave="1">儲存</button></div><div class="adm-bk"><span class="fl">推播金鑰（VAPID）</span><input class="tin" id="vapidIn" value="${esc(((S.misc||{}).push||{}).vapid||'')}" placeholder="Firebase 雲端通訊的網路推播憑證金鑰"><button class="btn" data-vapidsave="1">儲存</button></div>`;
+  const bkRow=`<div class="adm-bk"><span class="fl">預約日曆連結</span><input class="tin" id="bkUrlIn" value="${esc(((S.misc||{}).booking||{}).url||'')}" placeholder="貼上 Apps Script 網址（含 ?k=…）"><button class="btn" data-bksave="1">儲存</button></div><div class="adm-bk"><span class="fl">永樂庫存代碼</span><input class="tin" id="ylTokIn" value="${esc(((S.misc||{}).yongle||{}).token||'')}" placeholder="在永樂庫存「更多 → 連到收支總覽」複製"><button class="btn" data-ylsave="1">儲存</button></div>${YL.token?`<p class="hint" style="margin:4px 0 0">${YL.err?'⚠️ '+esc(YL.err):YL.feed?`永樂結算已連上，最後更新 ${esc(new Date(YL.feed.updatedAt||0).toLocaleString('zh-TW',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}))}`:'連線中…'}</p>`:''}<div class="adm-bk"><span class="fl">推播金鑰（VAPID）</span><input class="tin" id="vapidIn" value="${esc(((S.misc||{}).push||{}).vapid||'')}" placeholder="Firebase 雲端通訊的網路推播憑證金鑰"><button class="btn" data-vapidsave="1">儲存</button></div>`;
   const dataRow=`<div class="adm-data"><label class="btn">匯入備份資料<input type="file" accept="application/json,.json" id="impFile" hidden></label><button class="btn" data-export="1">下載備份</button><span class="hint" id="impMsg">${esc(IMP.msg||"從舊網頁搬資料、或定期備份用")}</span></div>`;
   if(!isBoss()) return `<section class="panel adm"><div class="ph"><h2>資料管理</h2><span class="hint">匯入與備份</span></div>${dataRow}${bkRow}</section>`;
   return `<section class="panel adm"><div class="ph"><h2>人員管理</h2><span class="hint">只有${esc(BOSS)}看得到</span></div>
@@ -2554,6 +2565,10 @@ document.addEventListener('click',ev=>{ const t=ev.target.closest('[data-export]
 document.addEventListener('click',async ev=>{ const t=ev.target.closest('[data-bksave]'); if(!t) return; const v=($('#bkUrlIn')||{}).value||'';
   const url=v.trim(); if(url&&!/^https:\/\/script\.google(usercontent)?\.com\//.test(url)){ toast('連結看起來不對，請貼 script.google.com 開頭的網址'); return; }
   try{ await FB.fs.doc('misc/booking').set({url,by:W.name||'',at:new Date().toISOString()}); S.misc={...(S.misc||{}),booking:{url}}; BK.data=null; BK.err=''; BK.at=0; toast(url?'已連結預約日曆':'已移除預約日曆連結'); renderHome(); }catch(e){ toast('儲存失敗'); } });
+
+document.addEventListener('click',async ev=>{ const t=ev.target.closest('[data-ylsave]'); if(!t) return; const token=((($('#ylTokIn')||{}).value)||'').trim();
+  if(token&&!/^[0-9a-f]{32}$/.test(token)){ toast('代碼看起來不對，請從永樂庫存重新複製'); return; }
+  try{ await FB.fs.doc('misc/yongle').set({token,by:W.name||'',at:new Date().toISOString()}); S.misc={...(S.misc||{}),yongle:{token}}; subYongle(token); toast(token?'已連到永樂庫存結算':'已取消連結'); renderHome(); }catch(e){ toast('儲存失敗'); } });
 
 /* ---------- 手機通知（推播） ---------- */
 const pushVapid=()=>((S.misc||{}).push||{}).vapid||'';
@@ -3429,7 +3444,7 @@ document.addEventListener('click',ev=>{
 /* ---------- start ---------- */
 function showLoadErr(){ let el=$('#loadErr'); if(!el){ el=document.createElement('div'); el.id='loadErr'; el.className='load-err'; document.querySelector('.wrap')?.insertBefore(el,$('#main')); }
   el.innerHTML=S.loadErr?`⚠️ 讀取資料失敗（${esc(S.loadErr)}）。${S.loadErr==='permission-denied'?'這個帳號目前沒有讀取權限，請找妃妃確認人員名單，或登出後重新登入。':'請檢查網路後重新整理頁面。'} <button class="btn" onclick="location.reload()">重新整理</button>`:''; el.hidden=!S.loadErr; }
-function stopData(){ FB.unsubs.forEach(u=>{try{u()}catch(e){}}); FB.unsubs=[]; if(D.unsub){try{D.unsub()}catch(e){}} D.unsub=null; D.subMonth=null; if(C.unsub){try{C.unsub()}catch(e){}} C.unsub=null; C.subB=null;
+function stopData(){ subYongle(''); FB.unsubs.forEach(u=>{try{u()}catch(e){}}); FB.unsubs=[]; if(D.unsub){try{D.unsub()}catch(e){}} D.unsub=null; D.subMonth=null; if(C.unsub){try{C.unsub()}catch(e){}} C.unsub=null; C.subB=null;
   S.db=null; S.docs={}; S.allDaily={}; S.loadErr=null; showLoadErr(); S.misc={}; S.settle={}; S.crewlog={}; S.crewpay={}; S.payroll={}; S.todos={}; S.duty={}; D.docs={}; C.daily={}; S.loaded=false; FB.dataOn=false; }
 function startData(){
   if(FB.dataOn) return; FB.dataOn=true; const db=FB.fs; S.db=db; S.canWrite=true;
@@ -3448,7 +3463,7 @@ function startData(){
   FB.unsubs.push(db.collection('duty').where('date','in',[todayStr(),addDays(todayStr(),1)]).onSnapshot(snap=>{ const o={}; snap.docs.forEach(d=>{o[d.id]=d.data();}); S.duty=o; if(S.mode==='home'&&!document.querySelector('.du-ov')) document.querySelectorAll('[data-duty]').forEach(el=>el.outerHTML=dutyLineHTML(el.dataset.duty,todayStr())); },()=>{}));
   FB.unsubs.push(db.collection('crewpay').onSnapshot(snap=>{ const o={}; snap.docs.forEach(d=>{o[d.id]=d.data();}); S.crewpay=o; if(S.mode==='crew'&&!CR.editing) drawCrew(); },()=>{}));
   FB.unsubs.push(db.collection('payroll').onSnapshot(snap=>{ const o={}; snap.docs.forEach(d=>{o[d.id]=d.data();}); S.payroll=o; if(S.mode==='payroll'&&!PR.dirty){ PR.draft=null; drawPay(); } else if(S.mode==='home') renderHome(); },()=>{}));
-  FB.unsubs.push(db.collection('misc').onSnapshot(snap=>{ const m={}; snap.docs.forEach(d=>{m[d.id]=fsDec(d.data());}); S.misc=m; S.miscLoaded=true; if(S.mode==='home') renderHome(); setTimeout(()=>{ if(typeof pushMaybeAsk==='function') pushMaybeAsk(); },1200); if(S.loaded&&!S.editing&&!S.adding&&S.mode==='ledger'&&S.month===0&&S.sec==='chan') render(); },()=>{}));
+  FB.unsubs.push(db.collection('misc').onSnapshot(snap=>{ const m={}; snap.docs.forEach(d=>{m[d.id]=fsDec(d.data());}); S.misc=m; S.miscLoaded=true; subYongle((m.yongle||{}).token); if(S.mode==='home') renderHome(); setTimeout(()=>{ if(typeof pushMaybeAsk==='function') pushMaybeAsk(); },1200); if(S.loaded&&!S.editing&&!S.adding&&S.mode==='ledger'&&S.month===0&&S.sec==='chan') render(); },()=>{}));
 }
 const MM={};
 function applyAuth(){
