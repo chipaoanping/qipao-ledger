@@ -128,6 +128,11 @@ button{cursor:pointer}
 .set .fl{font-weight:500}
 .seg{display:flex;flex-wrap:wrap;gap:6px}
 .catbar{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 16px}
+.menu-side{display:grid;grid-template-columns:150px minmax(0,1fr);gap:18px;align-items:start}
+.menu-side .catbar{flex-direction:column;flex-wrap:nowrap;margin:0;position:sticky;top:12px}
+.menu-side .chip{text-align:left;border-radius:10px;padding:11px 14px}
+.menu-body>.cat:first-child{margin-top:0}
+@media (max-width:640px){ .menu-side{display:block} .menu-side .catbar{flex-direction:row;flex-wrap:nowrap;overflow-x:auto;margin:0 0 16px;position:static;scrollbar-width:none} .menu-side .chip{border-radius:999px;padding:8px 16px} }
 .catbar::-webkit-scrollbar{display:none}
 .chip{flex:none;border:1px solid var(--rule);background:var(--paper);color:var(--ink-2);border-radius:999px;padding:8px 16px;font:inherit;font-size:15px;cursor:pointer}
 .chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--paper);font-weight:700}
@@ -277,8 +282,9 @@ function menuHTML(){
   if(T.cat&&!names.includes(T.cat)) T.cat=null;
   const chips=names.length>1?`<nav class="catbar" aria-label="分類">${['',...names].map(n=>`<button class="chip" data-cat="${esc(n)}" aria-pressed="${(T.cat||'')===n}">${n?esc(n):'全部'}</button>`).join('')}</nav>`:'';
   const shown=T.cat?ms.filter(c=>c.cat===T.cat):ms.filter(c=>c.items.length);
-  if(!shown.some(c=>c.items.length)) return chips+`<p class="empty">「${esc(T.cat)}」還沒有品項${canEdit()?'，到「設定 → 品項管理」新增':''}</p>`;
-  return chips+shown.filter(c=>c.items.length).map(c=>`<div class="cat">${esc(c.cat)}</div><div class="items">${c.items.map(i=>`<button class="item" data-add="${i.id}"><span class="tile">${esc(i.mark)}</span><span class="nm">${esc(i.name)}</span><span class="pr num">$${fmt(i.price)}</span>${qtyOf(i.id)?`<span class="ct">${qtyOf(i.id)}</span>`:''}</button>`).join('')}</div>`).join('');
+  const wrap=h=>chips?`<div class="menu-side">${chips}<div class="menu-body">${h}</div></div>`:h;
+  if(!shown.some(c=>c.items.length)) return wrap(`<p class="empty">「${esc(T.cat)}」還沒有品項${canEdit()?'，到「設定 → 品項管理」新增':''}</p>`);
+  return wrap(shown.filter(c=>c.items.length).map(c=>`<div class="cat">${esc(c.cat)}</div><div class="items">${c.items.map(i=>`<button class="item" data-add="${i.id}"><span class="tile">${esc(i.mark)}</span><span class="nm">${esc(i.name)}</span><span class="pr num">$${fmt(i.price)}</span>${qtyOf(i.id)?`<span class="ct">${qtyOf(i.id)}</span>`:''}</button>`).join('')}</div>`).join(''));
 }
 function cartHTML(){
   const ls=cartLines(), tot=cartTotal(), cash=!C.split&&C.pay==='cash';
