@@ -69,6 +69,8 @@ button{cursor:pointer}
 .item{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
 .item.lifted{z-index:5;box-shadow:0 14px 34px rgba(0,0,0,.22);border-color:var(--mustard);transition:none;cursor:grabbing}
 body.dragging{-webkit-user-select:none;user-select:none}
+body.dragging .chip[data-cat]:not([data-cat=""]){border-style:dashed}
+.chip.drop{background:var(--mustard)!important;border-color:var(--mustard)!important;border-style:solid!important;color:var(--ink)!important;transform:scale(1.04)}
 .drag-hint{margin:0 0 10px;font-size:13px}
 .item .tile{width:72px;height:72px;border-radius:10px;border:5px solid var(--tile);background:var(--tile-bg);color:var(--tile-ink);display:grid;place-items:center;font-family:var(--f-display);font-weight:900;font-size:34px}
 .item .nm{font-weight:600;font-size:19px}
@@ -370,7 +372,7 @@ function menuHTML(){
   if(T.cat&&!names.includes(T.cat)) T.cat=null;
   const chips=names.length>1?`<nav class="catbar" aria-label="分類">${['',...names].map(n=>`<button class="chip" data-cat="${esc(n)}" aria-pressed="${(T.cat||'')===n}">${n?esc(n):'全部'}</button>`).join('')}</nav>`:'';
   const shown=T.cat?ms.filter(c=>c.cat===T.cat):ms.filter(c=>c.items.length);
-  const hint=canEdit()?'<p class="hint drag-hint">長按品項可以拖曳調整順序</p>':'';
+  const hint=canEdit()?'<p class="hint drag-hint">長按品項可以拖曳調整順序，拖到左邊分類放開就會移過去</p>':'';
   const wrap=h=>chips?`<div class="menu-side">${chips}<div class="menu-body">${hint}${h}</div></div>`:hint+h;
   if(!shown.some(c=>c.items.length)) return wrap(`<p class="empty">「${esc(T.cat)}」還沒有品項${canEdit()?'，到「設定 → 品項管理」新增':''}</p>`);
   return wrap(shown.filter(c=>c.items.length).map(c=>`<div class="cat">${esc(c.cat)}</div><div class="items" data-cat-items="${esc(c.cat)}">${c.items.map(i=>`<button class="item" data-add="${i.id}"><span class="tile l${Math.min([...(i.mark||'')].length,3)}${TONES[i.tone]?' t-'+i.tone:''}">${esc(i.mark)}</span><span class="nm">${esc(i.name)}</span><span class="pr num">$${fmt(i.price)}</span>${qtyOf(i.id)?`<span class="ct">${qtyOf(i.id)}</span>`:''}</button>`).join('')}</div>`).join(''));
@@ -567,7 +569,7 @@ async function voidOrder(id){
 
 /* ---------- 事件 ---------- */
 /* ---------- 長按品項拖曳排序（妃妃、郁雯） ---------- */
-const DRAG={on:false,timer:null,el:null,box:null,sx:0,sy:0,ox:0,oy:0,until:0,dirty:false};
+const DRAG={on:false,timer:null,el:null,box:null,drop:null,sx:0,sy:0,ox:0,oy:0,until:0,dirty:false};
 function dragCancelTimer(){ clearTimeout(DRAG.timer); DRAG.timer=null; }
 document.addEventListener('pointerdown',ev=>{
   const el=ev.target.closest('.item[data-add]'); if(!el||!canEdit()||ev.button>0) return;
@@ -580,6 +582,8 @@ document.addEventListener('pointermove',ev=>{
   const el=DRAG.el; el.style.pointerEvents='none';
   const over=document.elementFromPoint(ev.clientX,ev.clientY), tgt=over&&over.closest('.item[data-add]');
   el.style.pointerEvents='';
+  const chip=over&&over.closest('.chip[data-cat]'), drop=chip&&chip.dataset.cat&&chip.dataset.cat!==DRAG.box.dataset.catItems?chip:null;
+  if(drop!==DRAG.drop){ if(DRAG.drop) DRAG.drop.classList.remove('drop'); if(drop) drop.classList.add('drop'); DRAG.drop=drop; }
   if(tgt&&tgt!==el&&tgt.parentElement===DRAG.box){ const kids=[...DRAG.box.children]; DRAG.box.insertBefore(el,kids.indexOf(tgt)>kids.indexOf(el)?tgt.nextSibling:tgt); }
   el.style.transform=''; const r=el.getBoundingClientRect();
   el.style.transform=`translate(${ev.clientX-DRAG.ox-r.left}px,${ev.clientY-DRAG.oy-r.top}px) scale(1.05)`;
@@ -590,6 +594,14 @@ function dragEnd(){
   dragCancelTimer(); if(!DRAG.on) return;
   const el=DRAG.el, box=DRAG.box; el.classList.remove('lifted'); el.style.transform=''; document.body.classList.remove('dragging');
   DRAG.on=false; DRAG.until=Date.now()+400;
+  if(DRAG.drop){  /* 拖到分類按鈕：移到那個分類的最後面 */
+    const to=DRAG.drop.dataset.cat, from=box.dataset.catItems, id=el.dataset.add; DRAG.drop.classList.remove('drop'); DRAG.drop=null;
+    const cats=JSON.parse(JSON.stringify(menuOf())), fc=cats.find(c=>c.cat===from), it=fc&&fc.items.find(i=>i.id===id);
+    if(it){ fc.items=fc.items.filter(i=>i.id!==id); let tc=cats.find(c=>c.cat===to); if(!tc){ tc={cat:to,items:[]}; cats.push(tc); } tc.items.push(it);
+      MENUS[BR]=cats; buildItems(); ME.draft=null;
+      FB.fs.doc('misc/posmenu').set({[BR]:cats,updatedAt:new Date().toISOString(),by:W.name||''},{merge:true}).then(()=>toast(`「${it.name}」已移到${to}`)).catch(()=>toast('沒存成功，請再試一次',3500)); }
+    render(); return;
+  }
   const order=[...box.querySelectorAll('.item[data-add]')].map(b=>b.dataset.add), cat=box.dataset.catItems;
   const cats=JSON.parse(JSON.stringify(menuOf())), c=cats.find(c=>c.cat===cat);
   if(c&&order.join()!==c.items.map(i=>i.id).join()){
