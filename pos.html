@@ -80,6 +80,7 @@ body.dragging{-webkit-user-select:none;user-select:none}
 .item .tile.t-klook{--tile:#ef6b2f;--tile-bg:#ef6b2f;--tile-ink:#fff;background-image:radial-gradient(circle at 80% 0,#5ccad3 0 28%,transparent 29%),radial-gradient(circle at 20% 115%,#f7c74a 0 38%,transparent 39%)}
 .item .tile.t-creamred{--tile:#f3e7da;--tile-bg:#f3e7da;--tile-ink:#8a3426}
 .item .tile.t-creamgreen{--tile:#f3e7da;--tile-bg:#f3e7da;--tile-ink:#1f4a25}
+.item .tile.t-creambrown{--tile:#f3e7da;--tile-bg:#f3e7da;--tile-ink:#3a2016}
 .item .tile.t-kkday{--tile:#5bbcc9;--tile-bg:#5bbcc9;--tile-ink:#fff}
 .item .tile.t-klook,.item .tile.t-kkday{font-family:inherit;font-weight:800;font-size:17px!important;word-break:normal;white-space:nowrap;letter-spacing:-.5px}
 .item .tile.t-klook.l2,.item .tile.t-kkday.l2{font-size:26px!important}
@@ -266,18 +267,27 @@ const MENU_DEF={
     {id:'prop-hat', name:'帽子', mark:'帽子', price:0, tone:'creamgreen'},
     {id:'prop-glass', name:'眼鏡', mark:'眼鏡', price:0, tone:'creamgreen'},
     {id:'prop-jewel', name:'阿媽的珠寶盒', mark:'珠寶盒', price:200, tone:'red'},
-    {id:'prop-umb', name:'傘', mark:'傘', price:0, tone:'white'} ]} ],
+    {id:'prop-umb', name:'傘', mark:'傘', price:0, tone:'white'} ]},
+    {cat:'彩妝和寫真', items:[
+    {id:'ph-mu-quick', name:'快速彩妝', mark:'快速彩妝', price:1380, tone:'creamred'},
+    {id:'ph-mu-full', name:'完整彩妝', mark:'完整彩妝', price:2380, tone:'creamred'},
+    {id:'ph-solo2', name:'個人雙套寫真', mark:'個人雙套', price:18800, tone:'creamgreen'},
+    {id:'ph-couple2', name:'情侶雙套寫真', mark:'情侶雙套', price:25200, tone:'creamgreen'},
+    {id:'ph-bff2', name:'閨蜜雙套寫真', mark:'閨蜜雙套', price:26600, tone:'creamgreen'},
+    {id:'ph-fam2', name:'雙人單套親子寫真', mark:'雙人親子', price:12000, tone:'creambrown'},
+    {id:'ph-fam3', name:'三人單套親子寫真', mark:'三人親子', price:15000, tone:'creambrown'} ]} ],
   yl:[]
 };
 const CATS_DEF={qp:['日租旗袍','平台費用','道具配件','彩妝和寫真','快閃寫真','商品販售','盧經堂合作體驗'],yl:[]};  /* 預設分類，只有旗跑 */
-const TONES={'':'預設',green:'綠框',copper:'銅框',red:'紅底',white:'白底',klook:'Klook',kkday:'KKday',creamred:'米底紅字',creamgreen:'米底綠字'};
-const MENU_SEED=6;  /* 預設品項版本：舊的已存品項會補上新預設品項一次 */
+const TONES={'':'預設',green:'綠框',copper:'銅框',red:'紅底',white:'白底',klook:'Klook',kkday:'KKday',creamred:'米底紅字',creamgreen:'米底綠字',creambrown:'米底咖啡字'};
+const MENU_SEED=7;  /* 預設品項版本：舊的已存品項會補上新預設品項一次 */
 let MENUS=JSON.parse(JSON.stringify(MENU_DEF));
 function seedMenu(v){
   if((v.seed||0)>=MENU_SEED||!canEdit()) return;
   const qp=JSON.parse(JSON.stringify(MENUS.qp)), has=new Set(qp.flatMap(c=>c.items.map(i=>i.id)));
   const add=['rent-mg','rent-wd','kid','tryon','deposit','acc-west','shoes','studio'];  /* 第 2 版新增的品項 */
   if((v.seed||0)<2) MENU_DEF.qp.forEach(dc=>dc.items.forEach(it=>{ if(!add.includes(it.id)||has.has(it.id)) return; let c=qp.find(c=>c.cat===dc.cat); if(!c){ c={cat:dc.cat,items:[]}; qp.push(c); } c.items.push({...it}); }));
+  if((v.seed||0)<7) MENU_DEF.qp.forEach(dc=>dc.items.forEach(it=>{ if(!it.id.startsWith('ph-')||qp.some(c=>c.items.some(i=>i.id===it.id))) return; let c=qp.find(c=>c.cat===dc.cat); if(!c){ c={cat:dc.cat,items:[]}; qp.push(c); } c.items.push({...it}); }));  /* 第 7 版：彩妝和寫真 */
   if((v.seed||0)<6) MENU_DEF.qp.forEach(dc=>dc.items.forEach(it=>{ if(!it.id.startsWith('prop-')||qp.some(c=>c.items.some(i=>i.id===it.id))) return; let c=qp.find(c=>c.cat===dc.cat); if(!c){ c={cat:dc.cat,items:[]}; qp.push(c); } c.items.push({...it}); }));  /* 第 6 版：道具配件（押金） */
   if((v.seed||0)<5) MENU_DEF.qp.forEach(dc=>dc.items.forEach(it=>{ if(!['klook-mg','klook-qp','klook-qpmu','kkday-qp','kkday-mg','kkday-qpmu','kkday-qp2h','kkday-mg2h','klook-mg2h','klook-qp2h','topup'].includes(it.id)||qp.some(c=>c.items.some(i=>i.id===it.id))) return; let c=qp.find(c=>c.cat===dc.cat); if(!c){ c={cat:dc.cat,items:[]}; qp.push(c); } c.items.push({...it}); }));  /* 第 5 版：平台費用 */
   if((v.seed||0)<4) MENU_DEF.qp.forEach(dc=>dc.items.forEach(it=>{ if(!['collab999','updo','selfmu','late','mg-2h','cu-2h','ag-2h','au-2h','tour'].includes(it.id)||qp.some(c=>c.items.some(i=>i.id===it.id))) return; let c=qp.find(c=>c.cat===dc.cat); if(!c){ c={cat:dc.cat,items:[]}; qp.unshift(c); } c.items.push({...it}); }));  /* 第 4 版新增的四個品項 */
