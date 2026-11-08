@@ -286,18 +286,39 @@ const MENU_DEF={
     {id:'ph2-pet1', name:'寵物個人寫真', mark:'寵物個人', price:15800, tone:'pet'},
     {id:'ph2-petbff', name:'寵物閨蜜寫真', mark:'寵物閨蜜', price:21000, tone:'pet'},
     {id:'ph2-mu-men', name:'男士彩妝', mark:'男士彩妝', price:900, tone:'white'},
-    {id:'ph2-custom', name:'全家福寫真/客製化寫真方案', mark:'客製寫真', price:1} ]} ],
+    {id:'ph2-custom', name:'全家福寫真/客製化寫真方案', mark:'客製寫真', price:1} ]},
+  {cat:'寫真加價項目', items:[
+    {id:'ad-venue', name:'加價場地', mark:'場地', price:1},
+    {id:'ad-assign', name:'指定費用', mark:'指定', price:1000},
+    {id:'ad-ship', name:'海外運費', mark:'運費', price:500},
+    {id:'ad-wave', name:'指推波造型', mark:'指推造型', price:1000},
+    {id:'ad-s-f', name:'單套女生加拍/人', mark:'單套女生', price:5200},
+    {id:'ad-s-mk', name:'單套男生小童加拍/人', mark:'單套男童', price:3800},
+    {id:'ad-s-kh', name:'單套小童身高加拍/人', mark:'小童身高', price:800},
+    {id:'ad-d-f', name:'雙套女生加拍/人', mark:'雙套女生', price:6000},
+    {id:'ad-d-m', name:'雙套男生加拍/人', mark:'雙套男生', price:4700},
+    {id:'ad-d-k', name:'雙套寫真小童加拍/人', mark:'雙套小童', price:4000},
+    {id:'ad-d-all', name:'雙套全包方案', mark:'雙套全包', price:3800},
+    {id:'ad-book6', name:'幀布典藏本6x6', mark:'6x6', price:1190},
+    {id:'ad-book8', name:'幀布典藏本8x8', mark:'8x8', price:1800},
+    {id:'ad-fam6', name:'加拍/全家福6人以上', mark:'全家加拍', price:3000},
+    {id:'ad-retouch', name:'精修加挑', mark:'精修', price:250},
+    {id:'ad-mu-up', name:'彩妝升級', mark:'彩妝升級', price:1000},
+    {id:'ad-fam6set', name:'六人單套親子寫真', mark:'六人親子', price:27800},
+    {id:'ad-fam-more', name:'親子寫真單套加拍', mark:'親子加拍', price:1} ]} ],
   yl:[]
 };
-const CATS_DEF={qp:['日租旗袍','平台費用','道具配件','彩妝和寫真','快閃寫真','商品販售','盧經堂合作體驗'],yl:[]};  /* 預設分類，只有旗跑 */
+const CATS_DEF={qp:['日租旗袍','平台費用','道具配件','彩妝和寫真','寫真加價項目','快閃寫真','商品販售','盧經堂合作體驗'],yl:[]};  /* 預設分類，只有旗跑 */
 const TONES={'':'預設',green:'綠框',copper:'銅框',red:'紅底',white:'白底',klook:'Klook',kkday:'KKday',creamred:'米底紅字',creamgreen:'米底綠字',creambrown:'米底咖啡字',bday:'生日',pet:'寵物'};
-const MENU_SEED=8;  /* 預設品項版本：舊的已存品項會補上新預設品項一次 */
+const MENU_SEED=9;  /* 預設品項版本：舊的已存品項會補上新預設品項一次 */
 let MENUS=JSON.parse(JSON.stringify(MENU_DEF));
 function seedMenu(v){
   if((v.seed||0)>=MENU_SEED||!canEdit()) return;
   const qp=JSON.parse(JSON.stringify(MENUS.qp)), has=new Set(qp.flatMap(c=>c.items.map(i=>i.id)));
   const add=['rent-mg','rent-wd','kid','tryon','deposit','acc-west','shoes','studio'];  /* 第 2 版新增的品項 */
   if((v.seed||0)<2) MENU_DEF.qp.forEach(dc=>dc.items.forEach(it=>{ if(!add.includes(it.id)||has.has(it.id)) return; let c=qp.find(c=>c.cat===dc.cat); if(!c){ c={cat:dc.cat,items:[]}; qp.push(c); } c.items.push({...it}); }));
+  if((v.seed||0)<9&&!qp.some(c=>c.cat==='寫真加價項目')){ const k=qp.findIndex(c=>c.cat==='彩妝和寫真'); qp.splice(k<0?qp.length:k+1,0,{cat:'寫真加價項目',items:[]}); }
+  if((v.seed||0)<9) MENU_DEF.qp.forEach(dc=>dc.items.forEach(it=>{ if(!it.id.startsWith('ad-')||qp.some(c=>c.items.some(i=>i.id===it.id))) return; let c=qp.find(c=>c.cat===dc.cat); if(!c){ c={cat:dc.cat,items:[]}; qp.push(c); } c.items.push({...it}); }));  /* 第 9 版：新分類，放在彩妝和寫真後面 */
   if((v.seed||0)<8) MENU_DEF.qp.forEach(dc=>dc.items.forEach(it=>{ if(!it.id.startsWith('ph2-')||qp.some(c=>c.items.some(i=>i.id===it.id))) return; let c=qp.find(c=>c.cat===dc.cat); if(!c){ c={cat:dc.cat,items:[]}; qp.push(c); } c.items.push({...it}); }));  /* 第 8 版：彩妝和寫真第二批 */
   if((v.seed||0)<7) MENU_DEF.qp.forEach(dc=>dc.items.forEach(it=>{ if(!it.id.startsWith('ph-')||qp.some(c=>c.items.some(i=>i.id===it.id))) return; let c=qp.find(c=>c.cat===dc.cat); if(!c){ c={cat:dc.cat,items:[]}; qp.push(c); } c.items.push({...it}); }));  /* 第 7 版：彩妝和寫真 */
   if((v.seed||0)<6) MENU_DEF.qp.forEach(dc=>dc.items.forEach(it=>{ if(!it.id.startsWith('prop-')||qp.some(c=>c.items.some(i=>i.id===it.id))) return; let c=qp.find(c=>c.cat===dc.cat); if(!c){ c={cat:dc.cat,items:[]}; qp.push(c); } c.items.push({...it}); }));  /* 第 6 版：道具配件（押金） */
