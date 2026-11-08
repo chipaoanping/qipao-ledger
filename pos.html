@@ -78,6 +78,8 @@ body.dragging{-webkit-user-select:none;user-select:none}
 .item .tile.t-red{--tile:#a8392f;--tile-bg:#a8392f;--tile-ink:#fbeedd;outline:1px dashed rgba(251,238,221,.7);outline-offset:-5px;background-image:repeating-linear-gradient(45deg,rgba(255,255,255,.07) 0 3px,transparent 3px 7px),repeating-linear-gradient(-45deg,rgba(255,255,255,.07) 0 3px,transparent 3px 7px)}
 .item .tile.t-white{--tile:#fff;--tile-bg:#fff;--tile-ink:#8a3b1f;box-shadow:0 0 0 1px var(--rule)}
 .item .tile.t-klook{--tile:#ef6b2f;--tile-bg:#ef6b2f;--tile-ink:#fff;background-image:radial-gradient(circle at 80% 0,#5ccad3 0 28%,transparent 29%),radial-gradient(circle at 20% 115%,#f7c74a 0 38%,transparent 39%)}
+.item .tile.t-creamred{--tile:#f3e7da;--tile-bg:#f3e7da;--tile-ink:#8a3426}
+.item .tile.t-creamgreen{--tile:#f3e7da;--tile-bg:#f3e7da;--tile-ink:#1f4a25}
 .item .tile.t-kkday{--tile:#5bbcc9;--tile-bg:#5bbcc9;--tile-ink:#fff}
 .item .tile.t-klook,.item .tile.t-kkday{font-family:inherit;font-weight:800;font-size:17px!important;word-break:normal;white-space:nowrap;letter-spacing:-.5px}
 .item .tile.t-klook.l2,.item .tile.t-kkday.l2{font-size:26px!important}
@@ -254,18 +256,29 @@ const MENU_DEF={
     {id:'kkday-mg2h', name:'KKDAY 馬褂 2h', mark:'2H', price:476, tone:'kkday'},
     {id:'klook-mg2h', name:'Klook馬褂/2H', mark:'2H', price:510, tone:'klook'},
     {id:'klook-qp2h', name:'klook旗袍/2H', mark:'2H', price:880, tone:'klook'},
-    {id:'topup', name:'補差價', mark:'補差價', price:200, tone:'white'} ]} ],
+    {id:'topup', name:'補差價', mark:'補差價', price:200, tone:'white'} ]},
+    {cat:'道具配件', items:[  /* 押金／借用登記 */
+    {id:'prop-bag', name:'提包', mark:'包包', price:0, tone:'creamred'},
+    {id:'prop-sfan', name:'小扇', mark:'小扇', price:0, tone:'creamred'},
+    {id:'prop-hair', name:'髮飾', mark:'髮飾', price:0, tone:'creamred'},
+    {id:'prop-ear', name:'耳環', mark:'耳環', price:100, tone:'creamred'},
+    {id:'prop-bfan', name:'大扇', mark:'大扇', price:0, tone:'creamgreen'},
+    {id:'prop-hat', name:'帽子', mark:'帽子', price:0, tone:'creamgreen'},
+    {id:'prop-glass', name:'眼鏡', mark:'眼鏡', price:0, tone:'creamgreen'},
+    {id:'prop-jewel', name:'阿媽的珠寶盒', mark:'珠寶盒', price:200, tone:'red'},
+    {id:'prop-umb', name:'傘', mark:'傘', price:0, tone:'white'} ]} ],
   yl:[]
 };
 const CATS_DEF={qp:['日租旗袍','平台費用','道具配件','彩妝和寫真','快閃寫真','商品販售','盧經堂合作體驗'],yl:[]};  /* 預設分類，只有旗跑 */
-const TONES={'':'預設',green:'綠框',copper:'銅框',red:'紅底',white:'白底',klook:'Klook',kkday:'KKday'};
-const MENU_SEED=5;  /* 預設品項版本：舊的已存品項會補上新預設品項一次 */
+const TONES={'':'預設',green:'綠框',copper:'銅框',red:'紅底',white:'白底',klook:'Klook',kkday:'KKday',creamred:'米底紅字',creamgreen:'米底綠字'};
+const MENU_SEED=6;  /* 預設品項版本：舊的已存品項會補上新預設品項一次 */
 let MENUS=JSON.parse(JSON.stringify(MENU_DEF));
 function seedMenu(v){
   if((v.seed||0)>=MENU_SEED||!canEdit()) return;
   const qp=JSON.parse(JSON.stringify(MENUS.qp)), has=new Set(qp.flatMap(c=>c.items.map(i=>i.id)));
   const add=['rent-mg','rent-wd','kid','tryon','deposit','acc-west','shoes','studio'];  /* 第 2 版新增的品項 */
   if((v.seed||0)<2) MENU_DEF.qp.forEach(dc=>dc.items.forEach(it=>{ if(!add.includes(it.id)||has.has(it.id)) return; let c=qp.find(c=>c.cat===dc.cat); if(!c){ c={cat:dc.cat,items:[]}; qp.push(c); } c.items.push({...it}); }));
+  if((v.seed||0)<6) MENU_DEF.qp.forEach(dc=>dc.items.forEach(it=>{ if(!it.id.startsWith('prop-')||qp.some(c=>c.items.some(i=>i.id===it.id))) return; let c=qp.find(c=>c.cat===dc.cat); if(!c){ c={cat:dc.cat,items:[]}; qp.push(c); } c.items.push({...it}); }));  /* 第 6 版：道具配件（押金） */
   if((v.seed||0)<5) MENU_DEF.qp.forEach(dc=>dc.items.forEach(it=>{ if(!['klook-mg','klook-qp','klook-qpmu','kkday-qp','kkday-mg','kkday-qpmu','kkday-qp2h','kkday-mg2h','klook-mg2h','klook-qp2h','topup'].includes(it.id)||qp.some(c=>c.items.some(i=>i.id===it.id))) return; let c=qp.find(c=>c.cat===dc.cat); if(!c){ c={cat:dc.cat,items:[]}; qp.push(c); } c.items.push({...it}); }));  /* 第 5 版：平台費用 */
   if((v.seed||0)<4) MENU_DEF.qp.forEach(dc=>dc.items.forEach(it=>{ if(!['collab999','updo','selfmu','late','mg-2h','cu-2h','ag-2h','au-2h','tour'].includes(it.id)||qp.some(c=>c.items.some(i=>i.id===it.id))) return; let c=qp.find(c=>c.cat===dc.cat); if(!c){ c={cat:dc.cat,items:[]}; qp.unshift(c); } c.items.push({...it}); }));  /* 第 4 版新增的四個品項 */
   if((v.seed||0)<3){ const tone=Object.fromEntries(MENU_DEF.qp.flatMap(c=>c.items).filter(i=>i.tone).map(i=>[i.id,i.tone])); qp.forEach(c=>c.items.forEach(i=>{ if(!i.tone&&tone[i.id]) i.tone=tone[i.id]; })); }  /* 第 3 版：照 iCHEF 的圖示顏色 */
