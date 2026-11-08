@@ -324,17 +324,33 @@ const MENU_DEF={
     {id:'lu-kid', name:'盧經堂｜小童體驗$350', mark:'小童', price:0, tone:'olive'},
     {id:'lu-mg', name:'盧經堂｜馬褂體驗$800', mark:'馬褂', price:0, tone:'olive'},
     {id:'lu-month', name:'盧經堂（月結）', mark:'月結', price:0} ]} ],
-  yl:[]
+  yl:[
+  {cat:'日租體驗', items:[
+    {id:'yr-qp780', name:'旗袍體驗$780/2H', mark:'780', price:780, tone:'copper'},
+    {id:'yr-qp900', name:'旗袍體驗$900/2H', mark:'900', price:900, tone:'copper'},
+    {id:'yr-mg', name:'馬褂體驗/2H', mark:'馬褂', price:480, tone:'copper'},
+    {id:'yr-mu-full', name:'完整彩妝', mark:'完整彩妝', price:2380, tone:'white'},
+    {id:'yr-mu-quick', name:'快速彩妝', mark:'快速彩妝', price:1380, tone:'white'},
+    {id:'yr-updo', name:'盤髮造型', mark:'盤髮造型', price:400, tone:'white'},
+    {id:'yr-extra', name:'其它加價', mark:'其它加價', price:1, tone:'white'},
+    {id:'yr-tryon', name:'試穿費', mark:'試穿', price:200, tone:'white'},
+    {id:'yr-deposit', name:'預付訂金', mark:'預付訂金', price:1, tone:'white'},
+    {id:'yr-razor', name:'刮鬍刀', mark:'刮鬍', price:20, tone:'white'},
+    {id:'yr-mu-men', name:'男士彩妝', mark:'男士彩妝', price:900, tone:'white'},
+    {id:'yr-wave', name:'指推波', mark:'指推', price:300, tone:'white'},
+    {id:'yr-venue', name:'場地租借', mark:'場地', price:1} ]} ]
 };
 const CATS_DEF={qp:['日租旗袍','平台費用','道具配件','彩妝和寫真','寫真加價項目','快閃寫真','商品販售','盧經堂合作體驗'],yl:['日租體驗','台式證件照','台式沙龍照','世界漂亮在台協會','選物販售','配件','二手旗袍','木子花花','D.ZACK','日日野餐','特殊活動','禮物派對']};  /* 預設分類 */
 const TONES={'':'預設',green:'綠框',copper:'銅框',red:'紅底',white:'白底',klook:'Klook',kkday:'KKday',creamred:'米底紅字',creamgreen:'米底綠字',creambrown:'米底咖啡字',bday:'生日',pet:'寵物',olive:'橄欖綠底白字'};
-const MENU_SEED=11;  /* 預設品項版本：舊的已存品項會補上新預設品項一次 */
+const MENU_SEED=12;  /* 預設品項版本：舊的已存品項會補上新預設品項一次 */
 let MENUS=JSON.parse(JSON.stringify(MENU_DEF));
 function seedMenu(v){
   if((v.seed||0)>=MENU_SEED||!canEdit()) return;
   const qp=JSON.parse(JSON.stringify(MENUS.qp)), has=new Set(qp.flatMap(c=>c.items.map(i=>i.id)));
   const add=['rent-mg','rent-wd','kid','tryon','deposit','acc-west','shoes','studio'];  /* 第 2 版新增的品項 */
   if((v.seed||0)<2) MENU_DEF.qp.forEach(dc=>dc.items.forEach(it=>{ if(!add.includes(it.id)||has.has(it.id)) return; let c=qp.find(c=>c.cat===dc.cat); if(!c){ c={cat:dc.cat,items:[]}; qp.push(c); } c.items.push({...it}); }));
+  const yl=JSON.parse(JSON.stringify(MENUS.yl||[]));
+  if((v.seed||0)<12) MENU_DEF.yl.forEach(dc=>dc.items.forEach(it=>{ if(!it.id.startsWith('yr-')||yl.some(c=>c.items.some(i=>i.id===it.id))) return; let c=yl.find(c=>c.cat===dc.cat); if(!c){ c={cat:dc.cat,items:[]}; yl.unshift(c); } c.items.push({...it}); }));  /* 第 12 版：旗時日租體驗 */
   if((v.seed||0)<11) MENU_DEF.qp.forEach(dc=>dc.items.forEach(it=>{ if(!it.id.startsWith('lu-')||qp.some(c=>c.items.some(i=>i.id===it.id))) return; let c=qp.find(c=>c.cat===dc.cat); if(!c){ c={cat:dc.cat,items:[]}; qp.push(c); } c.items.push({...it}); }));  /* 第 11 版：盧經堂月結，$0 */
   if((v.seed||0)<10) MENU_DEF.qp.forEach(dc=>dc.items.forEach(it=>{ if(!it.id.startsWith('sh-')||qp.some(c=>c.items.some(i=>i.id===it.id))) return; let c=qp.find(c=>c.cat===dc.cat); if(!c){ c={cat:dc.cat,items:[]}; qp.push(c); } c.items.push({...it}); }));  /* 第 10 版：商品販售 */
   if((v.seed||0)<9&&!qp.some(c=>c.cat==='寫真加價項目')){ const k=qp.findIndex(c=>c.cat==='彩妝和寫真'); qp.splice(k<0?qp.length:k+1,0,{cat:'寫真加價項目',items:[]}); }
@@ -345,7 +361,7 @@ function seedMenu(v){
   if((v.seed||0)<5) MENU_DEF.qp.forEach(dc=>dc.items.forEach(it=>{ if(!['klook-mg','klook-qp','klook-qpmu','kkday-qp','kkday-mg','kkday-qpmu','kkday-qp2h','kkday-mg2h','klook-mg2h','klook-qp2h','topup'].includes(it.id)||qp.some(c=>c.items.some(i=>i.id===it.id))) return; let c=qp.find(c=>c.cat===dc.cat); if(!c){ c={cat:dc.cat,items:[]}; qp.push(c); } c.items.push({...it}); }));  /* 第 5 版：平台費用 */
   if((v.seed||0)<4) MENU_DEF.qp.forEach(dc=>dc.items.forEach(it=>{ if(!['collab999','updo','selfmu','late','mg-2h','cu-2h','ag-2h','au-2h','tour'].includes(it.id)||qp.some(c=>c.items.some(i=>i.id===it.id))) return; let c=qp.find(c=>c.cat===dc.cat); if(!c){ c={cat:dc.cat,items:[]}; qp.unshift(c); } c.items.push({...it}); }));  /* 第 4 版新增的四個品項 */
   if((v.seed||0)<3){ const tone=Object.fromEntries(MENU_DEF.qp.flatMap(c=>c.items).filter(i=>i.tone).map(i=>[i.id,i.tone])); qp.forEach(c=>c.items.forEach(i=>{ if(!i.tone&&tone[i.id]) i.tone=tone[i.id]; })); }  /* 第 3 版：照 iCHEF 的圖示顏色 */
-  MENUS.qp=qp; FB.fs.doc('misc/posmenu').set({qp,seed:MENU_SEED,updatedAt:new Date().toISOString(),by:W.name||''},{merge:true}).catch(()=>{});
+  MENUS.qp=qp; MENUS.yl=yl; FB.fs.doc('misc/posmenu').set({qp,yl,seed:MENU_SEED,updatedAt:new Date().toISOString(),by:W.name||''},{merge:true}).catch(()=>{});
 }
 const menuOf=(b=BR)=>MENUS[b]||[];
 let ITEMS={};
