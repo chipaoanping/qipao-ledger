@@ -386,11 +386,21 @@ const MENU_DEF={
     {id:'yg-qiang', name:'#強哥寄售商品', mark:'強哥', price:1, img:'img/yl/qiang.jpg'},
     {id:'yg-bag', name:'茄芷袋', mark:'茄芷袋', price:130, img:'img/yl/bag.jpg'},
     {id:'yg-bag-add', name:'茄芷袋加購', mark:'加購', price:90, img:'img/yl/bag-add.jpg'},
-    {id:'yg-bag-gift', name:'選品消費滿2000/ 贈茄芷袋', mark:'贈袋', price:0, img:'img/yl/bag-gift.jpg'} ]} ]
+    {id:'yg-bag-gift', name:'選品消費滿2000/ 贈茄芷袋', mark:'贈袋', price:0, img:'img/yl/bag-gift.jpg'} ]},
+  {cat:'配件', items:[
+    {id:'ya-fan', name:'扇子', mark:'扇子', price:0, tone:'white'},
+    {id:'ya-bag', name:'包包', mark:'包包', price:0, tone:'white'},
+    {id:'ya-hair', name:'髮飾', mark:'髮飾', price:0, tone:'white'},
+    {id:'ya-shawl', name:'披肩', mark:'披肩', price:0, tone:'white'},
+    {id:'ya-ear', name:'耳環', mark:'耳環', price:100, tone:'white'},
+    {id:'ya-bigfan', name:'大扇', mark:'大扇', price:0, tone:'white'},
+    {id:'ya-hat', name:'帽子', mark:'帽子', price:0, tone:'white'},
+    {id:'ya-glass', name:'眼鏡', mark:'眼鏡', price:0, tone:'white'},
+    {id:'ya-umb', name:'傘', mark:'傘', price:0, tone:'white'} ]} ]
 };
 const CATS_DEF={qp:['日租旗袍','平台費用','道具配件','彩妝和寫真','寫真加價項目','快閃寫真','商品販售','盧經堂合作體驗'],yl:['日租體驗','台式證件照','台式沙龍照','世界漂亮在台協會','選物販售','配件','二手旗袍','木子花花','D.ZACK','日日野餐','特殊活動','禮物派對']};  /* 預設分類 */
 const TONES={'':'預設',green:'綠框',copper:'銅框',red:'紅底',white:'白底',klook:'Klook',kkday:'KKday',creamred:'米底紅字',creamgreen:'米底綠字',creambrown:'米底咖啡字',bday:'生日',pet:'寵物',olive:'橄欖綠底白字',idred:'紅框米底',idteal:'綠框米底',idpink:'粉紅底白字',salon:'咖啡框米底',darkgreen:'墨綠底白字'};
-const MENU_SEED=15;  /* 預設品項版本：舊的已存品項會補上新預設品項一次 */
+const MENU_SEED=16;  /* 預設品項版本：舊的已存品項會補上新預設品項一次 */
 let MENUS=JSON.parse(JSON.stringify(MENU_DEF));
 function seedMenu(v){
   if((v.seed||0)>=MENU_SEED||!canEdit()) return;
@@ -398,6 +408,7 @@ function seedMenu(v){
   const add=['rent-mg','rent-wd','kid','tryon','deposit','acc-west','shoes','studio'];  /* 第 2 版新增的品項 */
   if((v.seed||0)<2) MENU_DEF.qp.forEach(dc=>dc.items.forEach(it=>{ if(!add.includes(it.id)||has.has(it.id)) return; let c=qp.find(c=>c.cat===dc.cat); if(!c){ c={cat:dc.cat,items:[]}; qp.push(c); } c.items.push({...it}); }));
   const yl=JSON.parse(JSON.stringify(MENUS.yl||[]));
+  if((v.seed||0)<16) MENU_DEF.yl.forEach(dc=>dc.items.forEach(it=>{ if(!it.id.startsWith('ya-')||yl.some(c=>c.items.some(i=>i.id===it.id))) return; let c=yl.find(c=>c.cat===dc.cat); if(!c){ c={cat:dc.cat,items:[]}; const od=n=>{ const k=CATS_DEF.yl.indexOf(n); return k<0?99:k; }, k=yl.findIndex(x=>od(x.cat)>od(dc.cat)); yl.splice(k<0?yl.length:k,0,c); } c.items.push({...it}); }));  /* 第 16 版：旗時配件 */
   if((v.seed||0)<15) MENU_DEF.yl.forEach(dc=>dc.items.forEach(it=>{ if(!/^yg-(axu-note|fei|qiang|bag)/.test(it.id)||yl.some(c=>c.items.some(i=>i.id===it.id))) return; let c=yl.find(c=>c.cat===dc.cat); if(!c){ c={cat:dc.cat,items:[]}; yl.push(c); } c.items.push({...it}); }));  /* 第 15 版：選物販售第二批 */
   if((v.seed||0)<14) MENU_DEF.yl.forEach(dc=>dc.items.forEach(it=>{ if(!it.id.startsWith('yg-')||yl.some(c=>c.items.some(i=>i.id===it.id))) return; let c=yl.find(c=>c.cat===dc.cat); if(!c){ c={cat:dc.cat,items:[]}; yl.push(c); } c.items.push({...it}); }));  /* 第 14 版：旗時選物販售（照片圖示） */
   if((v.seed||0)<13) MENU_DEF.yl.forEach(dc=>dc.items.forEach(it=>{ if(!/^(yi|ys)-/.test(it.id)||yl.some(c=>c.items.some(i=>i.id===it.id))) return; let c=yl.find(c=>c.cat===dc.cat); if(!c){ c={cat:dc.cat,items:[]}; yl.push(c); } c.items.push({...it}); }));  /* 第 13 版：旗時台式證件照 */
@@ -675,7 +686,7 @@ function meAction(d){
 }
 async function saveMenu(){
   const cats=meDraft().map(c=>({cat:(c.cat||'').trim()||'未分類',items:c.items.filter(i=>(i.name||'').trim()).map(i=>{ const name=i.name.trim(); return {id:i.id||newId(),name,mark:((i.mark||'').trim()||name.slice(0,1)).slice(0,4),price:Math.max(0,Math.round(+i.price||0)),...(TONES[i.tone]&&i.tone?{tone:i.tone}:{}),...(i.img?{img:i.img}:{})}; })})).filter(c=>c.items.length||(CATS_DEF[BR]||[]).includes(c.cat));
-  const bad=cats.flatMap(c=>c.items).filter(i=>!i.price&&!i.id.startsWith('lu-')&&i.id!=='yg-bag-gift');  /* 盧經堂月結品項、滿額贈品本來就是 $0 */
+  const bad=cats.flatMap(c=>c.items).filter(i=>!i.price&&!i.id.startsWith('lu-')&&i.id!=='yg-bag-gift'&&!i.id.startsWith('ya-'));  /* 盧經堂月結品項、滿額贈品、旗時配件本來就是 $0 */
   if(bad.length&&!confirm(`${bad.map(i=>i.name).join('、')} 的價格是 0，確定要儲存嗎？`)) return;
   ME.busy=true; render();
   try{ await FB.fs.doc('misc/posmenu').set({[BR]:cats,updatedAt:new Date().toISOString(),by:W.name||''},{merge:true}); MENUS[BR]=cats; buildItems(); ME.draft=null; ME.busy=false; render(); toast('品項已儲存'); }
