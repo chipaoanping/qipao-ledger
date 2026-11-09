@@ -82,6 +82,11 @@ body.dragging .chip[data-cat]:not([data-cat=""]){border-style:dashed}
 .item .tile.t-klook{--tile:#ef6b2f;--tile-bg:#ef6b2f;--tile-ink:#fff;background-image:radial-gradient(circle at 80% 0,#5ccad3 0 28%,transparent 29%),radial-gradient(circle at 20% 115%,#f7c74a 0 38%,transparent 39%)}
 .item .tile.t-creamred{--tile:#f3e7da;--tile-bg:#f3e7da;--tile-ink:#8a3426}
 .item .tile.t-creamgreen{--tile:#f3e7da;--tile-bg:#f3e7da;--tile-ink:#1f4a25}
+.item .tile.t-idred{--tile:#8a2f24;--tile-bg:#f5e9d6;--tile-ink:#8a2f24}
+.item .tile.t-idteal{--tile:#3f8a7e;--tile-bg:#f5e9d6;--tile-ink:#8a2f24}
+.item .tile.t-idpink{--tile:#c9736a;--tile-bg:#c9736a;--tile-ink:#fff}
+.item .tile.t-salon{--tile:#5a3a33;--tile-bg:#f5e9d6;--tile-ink:#5a3a33}
+.item .tile.t-darkgreen{--tile:#2f4a45;--tile-bg:#2f4a45;--tile-ink:#fff}
 .item .tile.t-olive{--tile:#7e7d5c;--tile-bg:#7e7d5c;--tile-ink:#fff}
 .item .tile.t-bday{--tile:#fff;--tile-bg:#fff;--tile-ink:#b0602a;box-shadow:0 0 0 1px var(--rule);background-image:radial-gradient(circle at 88% 88%,#f6d23a 0 16%,transparent 17%)}
 .item .tile.t-pet{--tile:#ead8bf;--tile-bg:#ead8bf;--tile-ink:#1a1410;border-top:3px solid #8a6a4a}
@@ -338,11 +343,32 @@ const MENU_DEF={
     {id:'yr-razor', name:'刮鬍刀', mark:'刮鬍', price:20, tone:'white'},
     {id:'yr-mu-men', name:'男士彩妝', mark:'男士彩妝', price:900, tone:'white'},
     {id:'yr-wave', name:'指推波', mark:'指推', price:300, tone:'white'},
-    {id:'yr-venue', name:'場地租借', mark:'場地', price:1} ]} ]
+    {id:'yr-venue', name:'場地租借', mark:'場地', price:1} ]},
+  {cat:'台式證件照', items:[
+    {id:'yi-own', name:'自備服裝$790', mark:'790', price:790, tone:'idred'},
+    {id:'yi-qp', name:'旗袍證件照$1190', mark:'1190', price:1190, tone:'idred'},
+    {id:'yi-retouch', name:'精修加挑', mark:'精修', price:250, tone:'white'},
+    {id:'yi-qp-diff', name:'加價旗袍', mark:'旗袍差價', price:120, tone:'white'},
+    {id:'yi-diff', name:'證件照差價', mark:'證件差價', price:400, tone:'white'},
+    {id:'yi-print', name:'加印一張/4格', mark:'加洗', price:20, tone:'white'},
+    {id:'yi-frame', name:'加購相框', mark:'相框', price:200, tone:'white'},
+    {id:'yi-980', name:'台式證件照 $980', mark:'980', price:980, tone:'idteal'},
+    {id:'yi-kkday', name:'KKDAY 台式證件照', mark:'kkday', price:984, tone:'kkday'},
+    {id:'yi-duo', name:'✧期間限定｜雙人台式證件照', mark:'雙人', price:1960, tone:'idpink'} ]},
+  {cat:'台式沙龍照', items:[
+    {id:'ys-solo', name:'個人寫真', mark:'個人', price:7800, tone:'salon'},
+    {id:'ys-couple', name:'情侶寫真', mark:'情侶', price:9800, tone:'salon'},
+    {id:'ys-bff', name:'閨蜜寫真', mark:'閨蜜', price:13800, tone:'salon'},
+    {id:'ys-mu-up', name:'沙龍照彩妝升級', mark:'彩妝升級', price:1000, tone:'white'},
+    {id:'ys-all', name:'單套寫真全包', mark:'單套全包', price:2380, tone:'white'},
+    {id:'ys-buyout', name:'沙龍寫真買斷', mark:'買斷', price:3000},
+    {id:'ys-rush2', name:'沙龍寫真急件（雙人）', mark:'急件雙人', price:3800},
+    {id:'ys-rush1', name:'沙龍寫真急件（個人）', mark:'急件個人', price:2800},
+    {id:'ys-ship', name:'輸出品海外郵寄', mark:'海外郵寄', price:150, tone:'darkgreen'} ]} ]
 };
 const CATS_DEF={qp:['日租旗袍','平台費用','道具配件','彩妝和寫真','寫真加價項目','快閃寫真','商品販售','盧經堂合作體驗'],yl:['日租體驗','台式證件照','台式沙龍照','世界漂亮在台協會','選物販售','配件','二手旗袍','木子花花','D.ZACK','日日野餐','特殊活動','禮物派對']};  /* 預設分類 */
-const TONES={'':'預設',green:'綠框',copper:'銅框',red:'紅底',white:'白底',klook:'Klook',kkday:'KKday',creamred:'米底紅字',creamgreen:'米底綠字',creambrown:'米底咖啡字',bday:'生日',pet:'寵物',olive:'橄欖綠底白字'};
-const MENU_SEED=12;  /* 預設品項版本：舊的已存品項會補上新預設品項一次 */
+const TONES={'':'預設',green:'綠框',copper:'銅框',red:'紅底',white:'白底',klook:'Klook',kkday:'KKday',creamred:'米底紅字',creamgreen:'米底綠字',creambrown:'米底咖啡字',bday:'生日',pet:'寵物',olive:'橄欖綠底白字',idred:'紅框米底',idteal:'綠框米底',idpink:'粉紅底白字',salon:'咖啡框米底',darkgreen:'墨綠底白字'};
+const MENU_SEED=13;  /* 預設品項版本：舊的已存品項會補上新預設品項一次 */
 let MENUS=JSON.parse(JSON.stringify(MENU_DEF));
 function seedMenu(v){
   if((v.seed||0)>=MENU_SEED||!canEdit()) return;
@@ -350,6 +376,7 @@ function seedMenu(v){
   const add=['rent-mg','rent-wd','kid','tryon','deposit','acc-west','shoes','studio'];  /* 第 2 版新增的品項 */
   if((v.seed||0)<2) MENU_DEF.qp.forEach(dc=>dc.items.forEach(it=>{ if(!add.includes(it.id)||has.has(it.id)) return; let c=qp.find(c=>c.cat===dc.cat); if(!c){ c={cat:dc.cat,items:[]}; qp.push(c); } c.items.push({...it}); }));
   const yl=JSON.parse(JSON.stringify(MENUS.yl||[]));
+  if((v.seed||0)<13) MENU_DEF.yl.forEach(dc=>dc.items.forEach(it=>{ if(!/^(yi|ys)-/.test(it.id)||yl.some(c=>c.items.some(i=>i.id===it.id))) return; let c=yl.find(c=>c.cat===dc.cat); if(!c){ c={cat:dc.cat,items:[]}; yl.push(c); } c.items.push({...it}); }));  /* 第 13 版：旗時台式證件照 */
   if((v.seed||0)<12) MENU_DEF.yl.forEach(dc=>dc.items.forEach(it=>{ if(!it.id.startsWith('yr-')||yl.some(c=>c.items.some(i=>i.id===it.id))) return; let c=yl.find(c=>c.cat===dc.cat); if(!c){ c={cat:dc.cat,items:[]}; yl.unshift(c); } c.items.push({...it}); }));  /* 第 12 版：旗時日租體驗 */
   if((v.seed||0)<11) MENU_DEF.qp.forEach(dc=>dc.items.forEach(it=>{ if(!it.id.startsWith('lu-')||qp.some(c=>c.items.some(i=>i.id===it.id))) return; let c=qp.find(c=>c.cat===dc.cat); if(!c){ c={cat:dc.cat,items:[]}; qp.push(c); } c.items.push({...it}); }));  /* 第 11 版：盧經堂月結，$0 */
   if((v.seed||0)<10) MENU_DEF.qp.forEach(dc=>dc.items.forEach(it=>{ if(!it.id.startsWith('sh-')||qp.some(c=>c.items.some(i=>i.id===it.id))) return; let c=qp.find(c=>c.cat===dc.cat); if(!c){ c={cat:dc.cat,items:[]}; qp.push(c); } c.items.push({...it}); }));  /* 第 10 版：商品販售 */
