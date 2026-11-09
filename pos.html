@@ -79,6 +79,9 @@ body.dragging .chip[data-cat]:not([data-cat=""]){border-style:dashed}
 .item .tile{width:72px;height:72px;border-radius:10px;border:5px solid var(--tile);background:var(--tile-bg);color:var(--tile-ink);display:grid;place-items:center;font-family:var(--f-display);font-weight:900;font-size:34px}
 .item .nm{font-weight:600;font-size:19px}
 .item .pr{font-size:22px;font-weight:700;color:var(--wine)}
+.subcat{font-size:16px;font-weight:700;color:#6b5a50;margin:14px 0 8px}
+.subbar{display:flex;flex-wrap:wrap;gap:8px;margin:-4px 0 12px}
+.menu-body .chip.sm{border-radius:999px;padding:6px 14px;font-size:15px}
 .item .tile.photo{background-size:cover;background-position:center;border:1px solid var(--rule)}
 .item .stk{font-size:14px;color:#8a7a70;margin-top:-4px}
 .item.out .stk{color:#b0402f}
@@ -452,7 +455,7 @@ const vendUrl=t=>'https://chipaoanping.github.io/yongle-inventory/vendor.html?t=
 function vendItems(list,cat){
   const pre=cat===SEKAI_CAT?'':cat+'|';  /* 世界漂亮沿用原本的品項代碼 */
   return (list||[]).flatMap(v=>{ const base=String(v.name||'').trim(); if(!base) return [];
-    const one=(nm,qty,key)=>({id:skId(pre+key),name:nm,mark:[...base.replace(/\s+/g,'')].slice(0,4).join(''),price:Number(v.price||0),stock:Number(qty||0),img:v.image||'',ylSku:v.sku||'',ylName:base,ylVar:''});
+    const one=(nm,qty,key)=>({id:skId(pre+key),name:nm,mark:[...base.replace(/\s+/g,'')].slice(0,4).join(''),price:Number(v.price||0),stock:Number(qty||0),img:v.image||'',ylSku:v.sku||'',ylName:base,ylVar:'',sub:String(v.category||'').trim()});
     const vs=(v.variants||[]).filter(x=>x&&x.name);
     return vs.length?vs.map(x=>({...one(base+'（'+x.name+'）',x.qty,(v.sku||'')+'|'+base+'|'+x.name),ylVar:x.name})):[one(base,v.qty,(v.sku||'')+'|'+base)]; });
 }
@@ -591,7 +594,14 @@ function menuHTML(){
   const hint=canEdit()?'<p class="hint drag-hint">長按品項可以拖曳調整順序，拖到左邊分類放開就會移過去，拖到下方垃圾桶可以刪除</p>':'';
   const wrap=h=>chips?`<div class="menu-side">${chips}<div class="menu-body">${hint}${h}</div></div>`:hint+h;
   if(!shown.some(c=>c.items.length)) return wrap(`<p class="empty">「${esc(T.cat)}」還沒有品項${canEdit()?'，到「設定 → 品項管理」新增':''}</p>`);
-  return wrap(shown.filter(c=>c.items.length).map(c=>`<div class="cat">${esc(c.cat)}</div><div class="items" data-cat-items="${esc(c.cat)}">${c.items.map(i=>`<button class="item${i.id.startsWith('sk-')&&i.stock<=0?' out':''}" data-add="${i.id}">${i.img?`<span class="tile photo" style="background-image:url('${i.img}')"></span>`:`<span class="tile l${Math.min([...(i.mark||'')].length,3)}${TONES[i.tone]?' t-'+i.tone:''}">${esc(i.mark)}</span>`}<span class="nm">${esc(i.name)}</span><span class="pr num">$${fmt(i.price)}</span>${i.id.startsWith('sk-')?`<span class="stk">${i.stock>0?'庫存 '+i.stock:'庫存 0'}</span>`:''}${qtyOf(i.id)?`<span class="ct">${qtyOf(i.id)}</span>`:''}</button>`).join('')}</div>`).join(''));
+  const tile=i=>`<button class="item${i.id.startsWith('sk-')&&i.stock<=0?' out':''}" data-add="${i.id}">${i.img?`<span class="tile photo" style="background-image:url('${i.img}')"></span>`:`<span class="tile l${Math.min([...(i.mark||'')].length,3)}${TONES[i.tone]?' t-'+i.tone:''}">${esc(i.mark)}</span>`}<span class="nm">${esc(i.name)}</span><span class="pr num">$${fmt(i.price)}</span>${i.id.startsWith('sk-')?`<span class="stk">${i.stock>0?'庫存 '+i.stock:'庫存 0'}</span>`:''}${qtyOf(i.id)?`<span class="ct">${qtyOf(i.id)}</span>`:''}</button>`;
+  const subsOf=c=>[...new Set(c.items.map(i=>i.sub||'').filter(Boolean))];
+  /* 連到永樂庫存的分類：照永樂庫存裡的分類分組，選了這個分類時上面多一排小分類可以篩 */
+  const sel=T.cat&&shown[0]&&subsOf(shown[0]).length>1?subsOf(shown[0]):[]; if(!sel.includes(T.sub)) T.sub='';
+  const subbar=sel.length?`<nav class="subbar" aria-label="小分類">${['',...sel].map(n=>`<button class="chip sm" data-sub="${esc(n)}" aria-pressed="${(T.sub||'')===n}">${n?esc(n):'全部'}</button>`).join('')}</nav>`:'';
+  const block=c=>{ const plain=c.items.filter(i=>!i.sub), subs=subsOf(c).filter(n=>!T.sub||n===T.sub);
+    return `<div class="cat">${esc(c.cat)}</div>${subbar&&c===shown[0]?subbar:''}${plain.length&&!T.sub?`<div class="items" data-cat-items="${esc(c.cat)}">${plain.map(tile).join('')}</div>`:''}${subs.map(n=>`<div class="subcat">${esc(n)}</div><div class="items">${c.items.filter(i=>i.sub===n).map(tile).join('')}</div>`).join('')}`; };
+  return wrap(shown.filter(c=>c.items.length).map(block).join(''));
 }
 function cartHTML(){
   const ls=cartLines(), tot=cartTotal(), cash=!C.split&&C.pay==='cash';
@@ -855,7 +865,8 @@ document.addEventListener('click',ev=>{
   const t=ev.target.closest('button'); if(!t) return; const d=t.dataset;
   if(d.add&&Date.now()<DRAG.until) return;
   if(d.tab){ T.tab=d.tab; render(); scrollTo({top:0}); }
-  else if(d.cat!=null){ T.cat=d.cat||null; render(); }
+  else if(d.cat!=null){ T.cat=d.cat||null; T.sub=''; render(); }
+  else if(d.sub!=null){ T.sub=d.sub; render(); }
   else if(d.br){ if(d.br===BR) return; if(cartLines().length&&!confirm('切換分店會清除這一筆還沒結帳的品項，確定嗎？')) return; if(ME.dirty&&!confirm('品項管理還沒儲存，切換分店會放棄修改，確定嗎？')) return; BR=d.br; T.cat=null; CFG.branch=BR; saveCfg(); C=newCart(); ME.draft=null; buildItems(); render(); }
   else if(d.ylin){ ylInit(); const em=(($('#ylEm')||{}).value||'').trim(), pw=($('#ylPw')||{}).value||''; if(!em||!pw){ toast('請輸入永樂庫存的 Email 和密碼'); return; }
     YLA.auth.signInWithEmailAndPassword(em,pw).then(()=>toast('已登入永樂庫存')).catch(e=>toast(e&&/password|credential|user-not-found/.test(e.code||'')?'Email 或密碼不對':'登入失敗，請再試一次',3500)); }
