@@ -459,7 +459,10 @@ const SEKAI_CAT='世界漂亮在台協會', VEND_BR='yl';
 const VEND={};
 let VORD={};  /* 小分類格子的順序：misc/posmenu.vendOrder = {分類: [小分類,…]} */  /* 分類 -> {token,brand,items,err,unsub} */
 const YL_FB={apiKey:"AIzaSyDOsCh1jSjmT3hblwB__7d48BHft-fJ3i4",authDomain:"yongle-708a9.firebaseapp.com",projectId:"yongle-708a9",storageBucket:"yongle-708a9.firebasestorage.app",messagingSenderId:"324198441163",appId:"1:324198441163:web:5103ffcbec47a244c5bb4e"};
-const skId=s=>'sk-'+[...new TextEncoder().encode(s)].map(b=>b.toString(16).padStart(2,'0')).join('').slice(0,48);
+/* 品項代碼：整串（分類|貨號|品名）算雜湊，名字很長也不會撞號 */
+const skId=s=>{ let h1=0xdeadbeef, h2=0x41c6ce57; for(const ch of String(s)){ const c=ch.codePointAt(0); h1=Math.imul(h1^c,2654435761); h2=Math.imul(h2^c,1597334677); }
+  h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909); h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);
+  return 'sk-'+(h2>>>0).toString(36)+(h1>>>0).toString(36); };
 const vendUrl=t=>'https://chipaoanping.github.io/yongle-inventory/vendor.html?t='+t;
 function vendItems(list,cat){
   const pre=cat===SEKAI_CAT?'':cat+'|';  /* 世界漂亮沿用原本的品項代碼 */
