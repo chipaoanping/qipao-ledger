@@ -442,25 +442,31 @@ function seedMenu(v){
   MENUS.qp=qp; MENUS.yl=yl; FB.fs.doc('misc/posmenu').set({qp,yl,seed:MENU_SEED,updatedAt:new Date().toISOString(),by:W.name||''},{merge:true}).catch(()=>{});
 }
 const menuOf=(b=BR)=>MENUS[b]||[];
-/* 世界漂亮在台協會的品項直接讀永樂庫存（廠商庫存連結 vendorViews/{代碼}），不存在 POS 菜單裡 */
-const SEKAI_CAT='世界漂亮在台協會', SEKAI_BR='yl';
-const SEKAI={token:'',items:[],err:'',unsub:null};
+/* 旗時的寄售品牌分類（世界漂亮在台協會、木子花花…）直接讀永樂庫存的廠商庫存連結（vendorViews/{代碼}），不存在 POS 菜單裡
+   misc/posmenu.vendorTokens = {分類名稱: 代碼}；舊的 sekaiToken 當作世界漂亮在台協會的連結 */
+const SEKAI_CAT='世界漂亮在台協會', VEND_BR='yl';
+const VEND={};  /* 分類 -> {token,brand,items,err,unsub} */
 const YL_FB={apiKey:"AIzaSyDOsCh1jSjmT3hblwB__7d48BHft-fJ3i4",authDomain:"yongle-708a9.firebaseapp.com",projectId:"yongle-708a9",storageBucket:"yongle-708a9.firebasestorage.app",messagingSenderId:"324198441163",appId:"1:324198441163:web:5103ffcbec47a244c5bb4e"};
 const skId=s=>'sk-'+[...new TextEncoder().encode(s)].map(b=>b.toString(16).padStart(2,'0')).join('').slice(0,48);
-function sekaiItems(list){
+const vendUrl=t=>'https://chipaoanping.github.io/yongle-inventory/vendor.html?t='+t;
+function vendItems(list,cat){
+  const pre=cat===SEKAI_CAT?'':cat+'|';  /* 世界漂亮沿用原本的品項代碼 */
   return (list||[]).flatMap(v=>{ const base=String(v.name||'').trim(); if(!base) return [];
-    const one=(nm,qty,key)=>({id:skId(key),name:nm,mark:[...base.replace(/\s+/g,'')].slice(0,4).join(''),price:Number(v.price||0),stock:Number(qty||0),img:v.image||'',ylSku:v.sku||'',ylName:base,ylVar:''});
+    const one=(nm,qty,key)=>({id:skId(pre+key),name:nm,mark:[...base.replace(/\s+/g,'')].slice(0,4).join(''),price:Number(v.price||0),stock:Number(qty||0),img:v.image||'',ylSku:v.sku||'',ylName:base,ylVar:''});
     const vs=(v.variants||[]).filter(x=>x&&x.name);
     return vs.length?vs.map(x=>({...one(base+'（'+x.name+'）',x.qty,(v.sku||'')+'|'+base+'|'+x.name),ylVar:x.name})):[one(base,v.qty,(v.sku||'')+'|'+base)]; });
 }
-function subSekai(token){
+const vendTokens=v=>{ const t={...(v.vendorTokens||{})}; if(v.sekaiToken&&!(SEKAI_CAT in t)) t[SEKAI_CAT]=v.sekaiToken; return Object.fromEntries(Object.entries(t).filter(([k,x])=>k&&x)); };
+function vendRefresh(){ buildItems(); if(T.tab==='reg'&&!DRAG.on){ if(document.activeElement&&document.activeElement.matches('#cart input')) drawCart(); else render(); } else if(T.tab==='set'&&!ME.dirty) render(); }
+function subVendors(map){
   ylInit();
-  token=token||''; if(token===SEKAI.token) return; SEKAI.token=token; SEKAI.items=[]; SEKAI.err='';
-  if(SEKAI.unsub){ SEKAI.unsub(); SEKAI.unsub=null; }
-  if(!token){ buildItems(); return; }
-  try{ const app=firebase.apps.find(a=>a.name==='yongle')||firebase.initializeApp(YL_FB,'yongle');
-    SEKAI.unsub=firebase.firestore(app).doc('vendorViews/'+token).onSnapshot(d=>{ SEKAI.items=d.exists?sekaiItems(d.data().items):[]; SEKAI.err=d.exists?'':'找不到這個庫存連結'; buildItems(); if(T.tab==='reg'&&!DRAG.on){ if(document.activeElement&&document.activeElement.matches('#cart input')) drawCart(); else render(); } else if(T.tab==='set'&&!ME.dirty) render(); },()=>{ SEKAI.err='讀不到永樂庫存'; if(T.tab==='set'&&!ME.dirty) render(); });
-  }catch(e){ SEKAI.err='讀不到永樂庫存'; }
+  Object.keys(VEND).forEach(cat=>{ if(map[cat]!==VEND[cat].token){ if(VEND[cat].unsub) VEND[cat].unsub(); delete VEND[cat]; } });
+  Object.entries(map).forEach(([cat,token])=>{ if(VEND[cat]) return;
+    const V=VEND[cat]={token,brand:'',items:[],err:'',unsub:null};
+    try{ const app=firebase.apps.find(a=>a.name==='yongle')||firebase.initializeApp(YL_FB,'yongle');
+      V.unsub=firebase.firestore(app).doc('vendorViews/'+token).onSnapshot(d=>{ const x=d.exists?d.data():{}; V.brand=x.brand||''; V.items=d.exists?vendItems(x.items,cat):[]; V.err=d.exists?'':'找不到這個庫存連結'; vendRefresh(); },()=>{ V.err='讀不到永樂庫存'; if(T.tab==='set'&&!ME.dirty) render(); });
+    }catch(e){ V.err='讀不到永樂庫存'; } });
+  buildItems();
 }
 /* 用永樂庫存的店員帳號登入後，結帳會像永樂庫存 App 一樣扣庫存、記一筆售出（作廢時加回） */
 const YLA={auth:null,fs:null,user:null,items:[],err:'',unsub:null};
@@ -468,17 +474,18 @@ function ylInit(){
   if(YLA.auth) return;
   try{ const app=firebase.apps.find(a=>a.name==='yongle')||firebase.initializeApp(YL_FB,'yongle'); YLA.auth=firebase.auth(app); YLA.fs=firebase.firestore(app);
     YLA.auth.onAuthStateChanged(u=>{ YLA.user=u||null; YLA.err=''; if(YLA.unsub){ YLA.unsub(); YLA.unsub=null; } YLA.items=[];
-      if(u) YLA.unsub=YLA.fs.collection('items').where('brand','==',SEKAI_CAT).onSnapshot(q=>{ YLA.items=q.docs.map(d=>({id:d.id,...d.data()})); YLA.err=''; if(T.tab==='set'&&!ME.dirty) render(); },e=>{ YLA.err=e&&e.code==='permission-denied'?'這個帳號還不是永樂庫存的店員（請負責人核准）':'讀不到永樂庫存'; if(T.tab==='set'&&!ME.dirty) render(); });
+      if(u) YLA.unsub=YLA.fs.collection('items').onSnapshot(q=>{ YLA.items=q.docs.map(d=>({id:d.id,...d.data()})); YLA.err=''; if(T.tab==='set'&&!ME.dirty) render(); },e=>{ YLA.err=e&&e.code==='permission-denied'?'這個帳號還不是永樂庫存的店員（請負責人核准）':'讀不到永樂庫存'; if(T.tab==='set'&&!ME.dirty) render(); });
       if(T.tab==='set'&&!ME.dirty) render(); });
   }catch(e){ YLA.err='連不到永樂庫存'; }
 }
 const ylReady=()=>!!(YLA.user&&!YLA.err);
-const ylFind=l=>YLA.items.find(i=>(i.sku||'')===l.ylSku&&(i.name||'')===l.ylName);
+const ylBrand=cat=>(VEND[cat]&&VEND[cat].brand)||cat;
+const ylFind=l=>YLA.items.find(i=>(i.brand||'')===ylBrand(l.cat)&&(i.sku||'')===l.ylSku&&(i.name||'')===l.ylName);
 async function ylFresh(ref){ try{ const d=await ref.get(); return d.exists?d.data():null; }catch(e){ return null; } }
-/* 結帳後：每個世界漂亮的品項扣庫存並在永樂庫存記一筆售出 */
+/* 結帳後：每個永樂庫存寄售品項扣庫存並在永樂庫存記一筆售出 */
 async function ylRecordSale(o,lines){
   const sk=lines.filter(l=>l.id.startsWith('sk-')); if(!sk.length) return;
-  if(!ylReady()){ toast('這筆有世界漂亮的商品，但這台 iPad 還沒登入永樂庫存，沒有扣庫存，請到永樂庫存登記售出',6000); FB.fs.doc('posorders/'+o.id).update({ylErr:'未登入永樂庫存'}).catch(()=>{}); return; }
+  if(!ylReady()){ toast('這筆有永樂庫存的寄售商品，但這台 iPad 還沒登入永樂庫存，沒有扣庫存，請到永樂庫存登記售出',6000); FB.fs.doc('posorders/'+o.id).update({ylErr:'未登入永樂庫存'}).catch(()=>{}); return; }
   const pay=o.pay==='linepay'?'linepay':'cash', ids=[], miss=[];
   try{
     const b=YLA.fs.batch();
@@ -491,7 +498,7 @@ async function ylRecordSale(o,lines){
       const rate=Number(fresh.rate??it.rate??30), amount=l.amt, commission=Math.round(amount*rate/100);
       b.update(ref,upd);
       const mv=YLA.fs.collection('moves').doc(); ids.push(mv.id);
-      b.set(mv,{itemId:it.id,itemName:l.ylVar?`${it.name}（${l.ylVar}）`:it.name,variant:l.ylVar||'',sku:fresh.sku||it.sku||'',brand:it.brand||SEKAI_CAT,type:'sale',qty:n,price:l.price,amount,rate,commission,payout:amount-commission,pay,fee:0,charged:amount,photoId:'',after,note:`POS 收銀 ${o.date} 第 ${o.seq} 筆`,by:YLA.user.uid,at:Date.now(),posOrder:o.id});
+      b.set(mv,{itemId:it.id,itemName:l.ylVar?`${it.name}（${l.ylVar}）`:it.name,variant:l.ylVar||'',sku:fresh.sku||it.sku||'',brand:it.brand||ylBrand(l.cat),type:'sale',qty:n,price:l.price,amount,rate,commission,payout:amount-commission,pay,fee:0,charged:amount,photoId:'',after,note:`POS 收銀 ${o.date} 第 ${o.seq} 筆`,by:YLA.user.uid,at:Date.now(),posOrder:o.id});
     }
     if(ids.length){ await b.commit(); FB.fs.doc('posorders/'+o.id).update({ylMoves:ids}).catch(()=>{}); if(T.orders[o.id]) T.orders[o.id].ylMoves=ids; }
     if(miss.length){ toast(`${miss.join('、')} 在永樂庫存找不到或庫存不夠，沒有扣，請到永樂庫存處理`,6000); FB.fs.doc('posorders/'+o.id).update({ylErr:'沒扣：'+miss.join('、')}).catch(()=>{}); }
@@ -511,10 +518,10 @@ async function ylVoidSale(o){
     await b.commit(); toast('永樂庫存也已作廢、數量加回');
   }catch(e){ toast('永樂庫存沒有作廢到，請到永樂庫存作廢那幾筆售出',6000); }
 }
-/* 收銀畫面用：旗時的「世界漂亮在台協會」接上永樂庫存的品項 */
-const shownMenu=(b=BR)=>{ const ms=menuOf(b); if(b!==SEKAI_BR||!SEKAI.items.length) return ms;
-  const out=ms.map(c=>c.cat===SEKAI_CAT?{...c,items:[...c.items,...SEKAI.items]}:c);
-  if(!out.some(c=>c.cat===SEKAI_CAT)) out.push({cat:SEKAI_CAT,items:SEKAI.items});
+/* 收銀畫面用：旗時連到永樂庫存的分類，把那邊的品項接上來 */
+const shownMenu=(b=BR)=>{ const ms=menuOf(b), vs=Object.entries(VEND).filter(([c,V])=>V.items.length); if(b!==VEND_BR||!vs.length) return ms;
+  const out=ms.map(c=>VEND[c.cat]&&VEND[c.cat].items.length?{...c,items:[...c.items,...VEND[c.cat].items]}:c);
+  vs.forEach(([cat,V])=>{ if(!out.some(c=>c.cat===cat)) out.push({cat,items:V.items}); });
   return out; };
 let ITEMS={};
 const buildItems=()=>{ ITEMS=Object.fromEntries(shownMenu().flatMap(c=>c.items.map(i=>[i.id,{...i,cat:c.cat}]))); };
@@ -639,18 +646,21 @@ function todayHTML(){
       <div class="act">${o.void?'':`<button class="btn" data-reprint="${o.id}">補印</button><button class="btn danger" data-void="${o.id}">作廢</button>`}</div></div>`).join(''):'<p class="empty">今天還沒有交易</p>'}</section></div>`;
 }
 
-function sekaiSetHTML(){
-  const st=!SEKAI.token?'還沒連結':SEKAI.err?SEKAI.err:'已連結，'+SEKAI.items.length+' 個品項';
-  return `<section class="panel set"><div><b>世界漂亮在台協會：永樂庫存</b><p class="hint" style="margin:4px 0 0">貼上永樂庫存 App 裡世界漂亮在台協會的「廠商庫存連結」，收銀畫面就會直接列出它的商品、價錢和庫存。</p></div>
-    <label><span class="fl">廠商庫存連結</span><input class="tin" id="sekaiIn" value="${SEKAI.token?esc('https://chipaoanping.github.io/yongle-inventory/vendor.html?t='+SEKAI.token):''}" placeholder="https://chipaoanping.github.io/yongle-inventory/vendor.html?t=…"></label>
-    <div class="row2"><button class="btn" data-sekaisave="1">儲存連結</button><span class="hint">${esc(st)}</span></div>
-    <div style="margin-top:8px"><b>結帳自動扣永樂庫存</b><p class="hint" style="margin:4px 0 0">用一個永樂庫存的店員帳號登入（每台 iPad 登入一次），之後在這裡結帳世界漂亮的商品，會自動扣永樂庫存並記一筆售出，作廢時會加回。</p></div>
-    ${YLA.user?`<div class="row2"><span>${YLA.err?esc(YLA.err):'已登入：'+esc(YLA.user.email||'')+'（'+YLA.items.length+' 個商品）'}</span><button class="btn" data-ylout="1">登出永樂庫存</button></div>`
+function vendSetHTML(){
+  const linked=Object.entries(VEND), cats=[...new Set([...(CATS_DEF[VEND_BR]||[]),...menuOf(VEND_BR).map(c=>c.cat)])].filter(c=>!VEND[c]);
+  const pick=cats.includes('木子花花')?'木子花花':cats.includes(SEKAI_CAT)?SEKAI_CAT:cats[0];
+  return `<section class="panel set"><div><b>寄售品牌：永樂庫存</b><p class="hint" style="margin:4px 0 0">選一個分類，貼上永樂庫存 App 裡那個品牌的「廠商庫存連結」，收銀畫面的這個分類就會直接列出它的商品、價錢和庫存。</p></div>
+    ${linked.map(([cat,V])=>`<div class="row2"><span><b>${esc(cat)}</b>　${esc(V.err||('已連結'+(V.brand&&V.brand!==cat?'「'+V.brand+'」':'')+'，'+V.items.length+' 個品項'))}</span><button class="btn" data-vendoff="${esc(cat)}">取消連結</button></div>`).join('')}
+    ${cats.length?`<label><span class="fl">分類</span><select class="tin" id="vendCat">${cats.map(c=>`<option${c===pick?' selected':''}>${esc(c)}</option>`).join('')}</select></label>
+    <label><span class="fl">廠商庫存連結</span><input class="tin" id="vendIn" placeholder="${vendUrl('…')}"></label>
+    <div class="row2"><button class="btn" data-vendsave="1">連結這個分類</button></div>`:''}
+    <div style="margin-top:8px"><b>結帳自動扣永樂庫存</b><p class="hint" style="margin:4px 0 0">用一個永樂庫存的店員帳號登入（每台 iPad 登入一次），之後在這裡結帳上面這些分類的商品，會自動扣永樂庫存並記一筆售出，作廢時會加回。</p></div>
+    ${YLA.user?`<div class="row2"><span>${YLA.err?esc(YLA.err):'已登入：'+esc(YLA.user.email||'')}</span><button class="btn" data-ylout="1">登出永樂庫存</button></div>`
       :`<label><span class="fl">永樂庫存 Email</span><input class="tin" id="ylEm" type="email" autocomplete="username"></label><label><span class="fl">密碼</span><input class="tin" id="ylPw" type="password" autocomplete="current-password"></label><div class="row2"><button class="btn" data-ylin="1">登入永樂庫存</button><span class="hint">${esc(YLA.err||'還沒登入，結帳不會扣庫存')}</span></div>`}</section>`;
 }
 function setHTML(){
   const seg=(k,opts)=>`<div class="seg">${opts.map(([v,n])=>`<button data-cfg="${k}" data-v="${v}" aria-pressed="${String(CFG[k])===String(v)}">${n}</button>`).join('')}</div>`;
-  return `${canEdit()?menuEditHTML():''}${canEdit()&&BR===SEKAI_BR?sekaiSetHTML():''}<section class="panel set">
+  return `${canEdit()?menuEditHTML():''}${canEdit()&&BR===VEND_BR?vendSetHTML():''}<section class="panel set">
     <div><b>收據機設定</b><p class="hint" style="margin:4px 0 0">只存在這台 iPad 上。</p></div>
     <label><span class="fl">列印方式</span>${seg('printer',[['passprnt','Star PassPRNT App'],['browser','瀏覽器列印'],['off','不印收據']])}
       <span class="hint">收據機用線接 iPad 時，請先在 App Store 安裝 Star 的「PassPRNT」並在裡面選好收據機。</span></label>
@@ -850,9 +860,11 @@ document.addEventListener('click',ev=>{
   else if(d.ylin){ ylInit(); const em=(($('#ylEm')||{}).value||'').trim(), pw=($('#ylPw')||{}).value||''; if(!em||!pw){ toast('請輸入永樂庫存的 Email 和密碼'); return; }
     YLA.auth.signInWithEmailAndPassword(em,pw).then(()=>toast('已登入永樂庫存')).catch(e=>toast(e&&/password|credential|user-not-found/.test(e.code||'')?'Email 或密碼不對':'登入失敗，請再試一次',3500)); }
   else if(d.ylout){ if(YLA.auth) YLA.auth.signOut(); }
-  else if(d.sekaisave){ const raw=(($('#sekaiIn')||{}).value||'').trim(); let tok=raw; try{ tok=new URL(raw).searchParams.get('t')||''; }catch(e){} tok=tok.replace(/[^A-Za-z0-9_-]/g,'');
-    if(raw&&!tok){ toast('看不懂這個連結，請貼永樂庫存的廠商庫存連結',3500); return; }
-    FB.fs.doc('misc/posmenu').set({sekaiToken:tok,updatedAt:new Date().toISOString(),by:W.name||''},{merge:true}).then(()=>toast(tok?'已連到永樂庫存':'已取消連結')).catch(()=>toast('沒存成功，請再試一次',3500)); }
+  else if(d.vendsave){ const cat=(($('#vendCat')||{}).value||''), raw=(($('#vendIn')||{}).value||'').trim(); let tok=raw; try{ tok=new URL(raw).searchParams.get('t')||''; }catch(e){} tok=tok.replace(/[^A-Za-z0-9_-]/g,'');
+    if(!cat||!tok){ toast(raw?'看不懂這個連結，請貼永樂庫存的廠商庫存連結':'請貼上永樂庫存的廠商庫存連結',3500); return; }
+    FB.fs.doc('misc/posmenu').set({vendorTokens:{[cat]:tok},updatedAt:new Date().toISOString(),by:W.name||''},{merge:true}).then(()=>toast(`「${cat}」已連到永樂庫存`)).catch(()=>toast('沒存成功，請再試一次',3500)); }
+  else if(d.vendoff){ const cat=d.vendoff; if(!confirm(`取消「${cat}」和永樂庫存的連結？`)) return;
+    FB.fs.doc('misc/posmenu').set({vendorTokens:{[cat]:''},...(cat===SEKAI_CAT?{sekaiToken:''}:{}),updatedAt:new Date().toISOString(),by:W.name||''},{merge:true}).then(()=>toast('已取消連結')).catch(()=>toast('沒存成功，請再試一次',3500)); }
   else if(d.me) meAction(d);
   else if(d.add){ C.lines[d.add]=qtyOf(d.add)+1; drawCart(); }
   else if(d.qty){ C.lines[d.qty]=Math.max(0,qtyOf(d.qty)+(+d.d)); if(!C.lines[d.qty]) delete C.lines[d.qty]; if(C.people!=null&&C.people>cartQty()&&!cartQty()) C.people=null; drawCart(); }
@@ -909,7 +921,7 @@ function subOrders(){
 setInterval(()=>{ if(W.name) subOrders(); },60000);  /* 過了午夜自動換到新的一天 */
 function subMenu(){
   if(FB.menuUnsub) return;
-  FB.menuUnsub=FB.fs.doc('misc/posmenu').onSnapshot(d=>{ const v=d.exists?d.data():{}; MENUS={...JSON.parse(JSON.stringify(MENU_DEF)),...Object.fromEntries(Object.keys(B).filter(k=>Array.isArray(v[k])).map(k=>[k,v[k]]))}; seedMenu(v); subSekai(v.sekaiToken); buildItems();
+  FB.menuUnsub=FB.fs.doc('misc/posmenu').onSnapshot(d=>{ const v=d.exists?d.data():{}; MENUS={...JSON.parse(JSON.stringify(MENU_DEF)),...Object.fromEntries(Object.keys(B).filter(k=>Array.isArray(v[k])).map(k=>[k,v[k]]))}; seedMenu(v); subVendors(vendTokens(v)); buildItems();
     if(T.tab==='reg'){ if(document.activeElement&&document.activeElement.matches('#cart input')) drawCart(); else render(); } else if(T.tab==='set'&&!ME.dirty){ ME.draft=null; render(); } },()=>{});
 }
 function applyAuth(){
