@@ -396,7 +396,23 @@ const MENU_DEF={
     {id:'ya-bigfan', name:'大扇', mark:'大扇', price:0, tone:'white'},
     {id:'ya-hat', name:'帽子', mark:'帽子', price:0, tone:'white'},
     {id:'ya-glass', name:'眼鏡', mark:'眼鏡', price:0, tone:'white'},
-    {id:'ya-umb', name:'傘', mark:'傘', price:0, tone:'white'} ]} ]
+    {id:'ya-umb', name:'傘', mark:'傘', price:0, tone:'white'} ]},
+  {cat:'二手旗袍', items:[
+    {id:'yu-300', name:'二手旗袍$300', mark:'300', price:300, img:'img/yl/used-300.jpg'},
+    {id:'yu-500', name:'二手旗袍$500', mark:'500', price:500, img:'img/yl/used-500.jpg'},
+    {id:'yu-800', name:'二手旗袍$800', mark:'800', price:800, img:'img/yl/used-800.jpg'},
+    {id:'yu-1000', name:'二手旗袍$1000', mark:'1000', price:1000, img:'img/yl/used-1000.jpg'},
+    {id:'yu-1200', name:'二手旗袍$1200', mark:'1200', price:1200, img:'img/yl/used-1200.jpg'},
+    {id:'yu-1300', name:'二手旗袍$1300', mark:'1300', price:1300, img:'img/yl/used-1300.jpg'},
+    {id:'yu-1500', name:'二手旗袍$1500', mark:'1500', price:1500, img:'img/yl/used-1500.jpg'},
+    {id:'yu-1600', name:'二手旗袍$1600', mark:'1600', price:1600, img:'img/yl/used-1600.jpg'},
+    {id:'yu-1800', name:'二手旗袍$1800', mark:'1800', price:1800, img:'img/yl/used-1800.jpg'},
+    {id:'yu-1900', name:'二手旗袍$1900', mark:'1900', price:1900, img:'img/yl/used-1900.jpg'},
+    {id:'yu-2000', name:'二手旗袍$2000', mark:'2000', price:2000, img:'img/yl/used-2000.jpg'},
+    {id:'yu-2100', name:'二手旗袍$2100', mark:'2100', price:2100, img:'img/yl/used-2100.jpg'},
+    {id:'yu-2200', name:'二手旗袍$2200', mark:'2200', price:2200, img:'img/yl/used-2200.jpg'},
+    {id:'yu-mg500', name:'二手馬掛$500', mark:'馬掛', price:500, img:'img/yl/used-mg500.jpg'},
+    {id:'yu-other', name:'旗時 二手商品販售', mark:'二手', price:1, img:'img/yl/used-other.jpg'} ]} ]
 };
 const CATS_DEF={qp:['日租旗袍','平台費用','道具配件','彩妝和寫真','寫真加價項目','快閃寫真','商品販售','盧經堂合作體驗'],yl:['日租體驗','台式證件照','台式沙龍照','世界漂亮在台協會','選物販售','配件','二手旗袍','木子花花','D.ZACK','日日野餐','特殊活動','禮物派對']};  /* 預設分類 */
 const TONES={'':'預設',green:'綠框',copper:'銅框',red:'紅底',white:'白底',klook:'Klook',kkday:'KKday',creamred:'米底紅字',creamgreen:'米底綠字',creambrown:'米底咖啡字',bday:'生日',pet:'寵物',olive:'橄欖綠底白字',idred:'紅框米底',idteal:'綠框米底',idpink:'粉紅底白字',salon:'咖啡框米底',darkgreen:'墨綠底白字'};
@@ -408,7 +424,7 @@ function seedMenu(v){
   const add=['rent-mg','rent-wd','kid','tryon','deposit','acc-west','shoes','studio'];  /* 第 2 版新增的品項 */
   if((v.seed||0)<2) MENU_DEF.qp.forEach(dc=>dc.items.forEach(it=>{ if(!add.includes(it.id)||has.has(it.id)) return; let c=qp.find(c=>c.cat===dc.cat); if(!c){ c={cat:dc.cat,items:[]}; qp.push(c); } c.items.push({...it}); }));
   const yl=JSON.parse(JSON.stringify(MENUS.yl||[]));
-  if((v.seed||0)<16) MENU_DEF.yl.forEach(dc=>dc.items.forEach(it=>{ if(!it.id.startsWith('ya-')||yl.some(c=>c.items.some(i=>i.id===it.id))) return; let c=yl.find(c=>c.cat===dc.cat); if(!c){ c={cat:dc.cat,items:[]}; const od=n=>{ const k=CATS_DEF.yl.indexOf(n); return k<0?99:k; }, k=yl.findIndex(x=>od(x.cat)>od(dc.cat)); yl.splice(k<0?yl.length:k,0,c); } c.items.push({...it}); }));  /* 第 16 版：旗時配件 */
+  if((v.seed||0)<16) MENU_DEF.yl.forEach(dc=>dc.items.forEach(it=>{ if(!/^(ya|yu)-/.test(it.id)||yl.some(c=>c.items.some(i=>i.id===it.id))) return; let c=yl.find(c=>c.cat===dc.cat); if(!c){ c={cat:dc.cat,items:[]}; const od=n=>{ const k=CATS_DEF.yl.indexOf(n); return k<0?99:k; }, k=yl.findIndex(x=>od(x.cat)>od(dc.cat)); yl.splice(k<0?yl.length:k,0,c); } c.items.push({...it}); }));  /* 第 16 版：旗時配件、二手旗袍 */
   if((v.seed||0)<15) MENU_DEF.yl.forEach(dc=>dc.items.forEach(it=>{ if(!/^yg-(axu-note|fei|qiang|bag)/.test(it.id)||yl.some(c=>c.items.some(i=>i.id===it.id))) return; let c=yl.find(c=>c.cat===dc.cat); if(!c){ c={cat:dc.cat,items:[]}; yl.push(c); } c.items.push({...it}); }));  /* 第 15 版：選物販售第二批 */
   if((v.seed||0)<14) MENU_DEF.yl.forEach(dc=>dc.items.forEach(it=>{ if(!it.id.startsWith('yg-')||yl.some(c=>c.items.some(i=>i.id===it.id))) return; let c=yl.find(c=>c.cat===dc.cat); if(!c){ c={cat:dc.cat,items:[]}; yl.push(c); } c.items.push({...it}); }));  /* 第 14 版：旗時選物販售（照片圖示） */
   if((v.seed||0)<13) MENU_DEF.yl.forEach(dc=>dc.items.forEach(it=>{ if(!/^(yi|ys)-/.test(it.id)||yl.some(c=>c.items.some(i=>i.id===it.id))) return; let c=yl.find(c=>c.cat===dc.cat); if(!c){ c={cat:dc.cat,items:[]}; yl.push(c); } c.items.push({...it}); }));  /* 第 13 版：旗時台式證件照 */
