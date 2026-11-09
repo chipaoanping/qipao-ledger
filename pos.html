@@ -450,7 +450,8 @@ const menuOf=(b=BR)=>MENUS[b]||[];
 /* 旗時的寄售品牌分類（世界漂亮在台協會、木子花花…）直接讀永樂庫存的廠商庫存連結（vendorViews/{代碼}），不存在 POS 菜單裡
    misc/posmenu.vendorTokens = {分類名稱: 代碼}；舊的 sekaiToken 當作世界漂亮在台協會的連結 */
 const SEKAI_CAT='世界漂亮在台協會', VEND_BR='yl';
-const VEND={};  /* 分類 -> {token,brand,items,err,unsub} */
+const VEND={};
+let VORD={};  /* 小分類格子的順序：misc/posmenu.vendOrder = {分類: [小分類,…]} */  /* 分類 -> {token,brand,items,err,unsub} */
 const YL_FB={apiKey:"AIzaSyDOsCh1jSjmT3hblwB__7d48BHft-fJ3i4",authDomain:"yongle-708a9.firebaseapp.com",projectId:"yongle-708a9",storageBucket:"yongle-708a9.firebasestorage.app",messagingSenderId:"324198441163",appId:"1:324198441163:web:5103ffcbec47a244c5bb4e"};
 const skId=s=>'sk-'+[...new TextEncoder().encode(s)].map(b=>b.toString(16).padStart(2,'0')).join('').slice(0,48);
 const vendUrl=t=>'https://chipaoanping.github.io/yongle-inventory/vendor.html?t='+t;
@@ -609,7 +610,7 @@ function menuHTML(){
   const hint=canEdit()?'<p class="hint drag-hint">長按品項可以拖曳調整順序，拖到左邊分類放開就會移過去，拖到下方垃圾桶可以刪除</p>':'';
   const wrap=h=>chips?`<div class="menu-side">${chips}<div class="menu-body">${hint}${h}</div></div>`:hint+h;
   if(!shown.some(c=>c.items.length)) return wrap(`<p class="empty">「${esc(T.cat)}」還沒有品項${canEdit()?'，到「設定 → 品項管理」新增':''}</p>`);
-  const subsOf=c=>[...new Set(c.items.map(i=>i.sub||'').filter(Boolean))];
+  const subsOf=c=>{ const o=VORD[c.cat]||[], rk=n=>{ const k=o.indexOf(n); return k<0?1e6:k; }; return [...new Set(c.items.map(i=>i.sub||'').filter(Boolean))].sort((a,b)=>rk(a)-rk(b)); };
   /* 連到永樂庫存的分類：永樂庫存裡的每個分類是一格，點了跳出視窗選商品 */
   const block=c=>{ const plain=c.items.filter(i=>!i.sub), subs=subsOf(c);
     return `<div class="cat">${esc(c.cat)}</div><div class="items" data-cat-items="${esc(c.cat)}">${plain.map(itemTile).join('')}${subs.map(n=>subTile(c,n)).join('')}</div>`; };
@@ -824,7 +825,7 @@ document.body.insertAdjacentHTML('beforeend','<div id="dragTrash" aria-hidden="t
 const DRAG={on:false,timer:null,el:null,box:null,drop:null,trash:false,sx:0,sy:0,ox:0,oy:0,until:0,dirty:false};
 function dragCancelTimer(){ clearTimeout(DRAG.timer); DRAG.timer=null; }
 document.addEventListener('pointerdown',ev=>{
-  const el=ev.target.closest('.item[data-add]'); if(!el||!canEdit()||ev.button>0||el.dataset.add.startsWith('sk-')) return;  /* 永樂庫存的品項不能拖 */
+  const el=ev.target.closest('.item[data-add],.item[data-pick]'); if(!el||!canEdit()||ev.button>0||(el.dataset.add||'').startsWith('sk-')||!el.parentElement.dataset.catItems) return;  /* 永樂庫存的單一商品不能拖，小分類格子可以排順序 */
   DRAG.sx=ev.clientX; DRAG.sy=ev.clientY; dragCancelTimer();
   DRAG.timer=setTimeout(()=>{ const r=el.getBoundingClientRect(); Object.assign(DRAG,{on:true,el,box:el.parentElement,ox:DRAG.sx-r.left,oy:DRAG.sy-r.top,dirty:false}); el.classList.add('lifted'); document.body.classList.add('dragging'); if(navigator.vibrate) navigator.vibrate(15); },450);
 });
@@ -832,11 +833,11 @@ document.addEventListener('pointermove',ev=>{
   if(!DRAG.on){ if(DRAG.timer&&Math.hypot(ev.clientX-DRAG.sx,ev.clientY-DRAG.sy)>8) dragCancelTimer(); return; }
   ev.preventDefault();
   const el=DRAG.el; el.style.pointerEvents='none';
-  const over=document.elementFromPoint(ev.clientX,ev.clientY), tgt=over&&over.closest('.item[data-add]');
+  const over=document.elementFromPoint(ev.clientX,ev.clientY), tgt=over&&over.closest('.item[data-add],.item[data-pick]');
   el.style.pointerEvents='';
-  const chip=over&&over.closest('.chip[data-cat]'), drop=chip&&chip.dataset.cat&&chip.dataset.cat!==DRAG.box.dataset.catItems?chip:null;
+  const chip=el.dataset.pick==null&&over&&over.closest('.chip[data-cat]'), drop=chip&&chip.dataset.cat&&chip.dataset.cat!==DRAG.box.dataset.catItems?chip:null;
   if(drop!==DRAG.drop){ if(DRAG.drop) DRAG.drop.classList.remove('drop'); if(drop) drop.classList.add('drop'); DRAG.drop=drop; }
-  const trash=!!(over&&over.closest('#dragTrash')); if(trash!==DRAG.trash){ DRAG.trash=trash; $('#dragTrash').classList.toggle('hot',trash); }
+  const trash=el.dataset.pick==null&&!!(over&&over.closest('#dragTrash')); if(trash!==DRAG.trash){ DRAG.trash=trash; $('#dragTrash').classList.toggle('hot',trash); }
   if(tgt&&tgt!==el&&tgt.parentElement===DRAG.box){ const kids=[...DRAG.box.children]; DRAG.box.insertBefore(el,kids.indexOf(tgt)>kids.indexOf(el)?tgt.nextSibling:tgt); }
   el.style.transform=''; const r=el.getBoundingClientRect();
   el.style.transform=`translate(${ev.clientX-DRAG.ox-r.left}px,${ev.clientY-DRAG.oy-r.top}px) scale(1.05)`;
@@ -863,6 +864,12 @@ function dragEnd(){
       FB.fs.doc('misc/posmenu').set({[BR]:cats,updatedAt:new Date().toISOString(),by:W.name||''},{merge:true}).then(()=>toast(`「${it.name}」已移到${to}`)).catch(()=>toast('沒存成功，請再試一次',3500)); }
     render(); return;
   }
+  if(el.dataset.pick!=null){  /* 小分類格子：存順序 */
+    const cat=box.dataset.catItems, subs=[...box.querySelectorAll('.item[data-pick]')].map(b=>b.dataset.pick.split('\u0001')[1]);
+    if(subs.join('\u0001')!==(VORD[cat]||[]).join('\u0001')){ VORD={...VORD,[cat]:subs};
+      FB.fs.doc('misc/posmenu').set({vendOrder:{[cat]:subs},updatedAt:new Date().toISOString(),by:W.name||''},{merge:true}).then(()=>toast('順序已儲存')).catch(()=>toast('順序沒存成功，請再試一次',3500)); }
+    render(); return;
+  }
   const order=[...box.querySelectorAll('.item[data-add]')].map(b=>b.dataset.add), cat=box.dataset.catItems;
   const cats=JSON.parse(JSON.stringify(menuOf())), c=cats.find(c=>c.cat===cat);
   if(c&&order.join()!==c.items.map(i=>i.id).join()){
@@ -876,7 +883,7 @@ document.addEventListener('pointerup',dragEnd); document.addEventListener('point
 document.addEventListener('click',ev=>{
   if(ev.target.id==='pickBox'){ PICK=null; drawPick(); return; }
   const t=ev.target.closest('button'); if(!t) return; const d=t.dataset;
-  if(d.add&&Date.now()<DRAG.until) return;
+  if((d.add||d.pick!=null)&&Date.now()<DRAG.until) return;
   if(d.tab){ T.tab=d.tab; render(); scrollTo({top:0}); }
   else if(d.cat!=null){ T.cat=d.cat||null; render(); }
   else if(d.pick!=null){ PICK=d.pick; drawPick(); }
@@ -946,7 +953,7 @@ function subOrders(){
 setInterval(()=>{ if(W.name) subOrders(); },60000);  /* 過了午夜自動換到新的一天 */
 function subMenu(){
   if(FB.menuUnsub) return;
-  FB.menuUnsub=FB.fs.doc('misc/posmenu').onSnapshot(d=>{ const v=d.exists?d.data():{}; MENUS={...JSON.parse(JSON.stringify(MENU_DEF)),...Object.fromEntries(Object.keys(B).filter(k=>Array.isArray(v[k])).map(k=>[k,v[k]]))}; seedMenu(v); subVendors(vendTokens(v)); buildItems();
+  FB.menuUnsub=FB.fs.doc('misc/posmenu').onSnapshot(d=>{ const v=d.exists?d.data():{}; MENUS={...JSON.parse(JSON.stringify(MENU_DEF)),...Object.fromEntries(Object.keys(B).filter(k=>Array.isArray(v[k])).map(k=>[k,v[k]]))}; VORD=v.vendOrder||{}; seedMenu(v); subVendors(vendTokens(v)); buildItems();
     if(T.tab==='reg'){ if(document.activeElement&&document.activeElement.matches('#cart input')) drawCart(); else render(); } else if(T.tab==='set'&&!ME.dirty){ ME.draft=null; render(); } },()=>{});
 }
 function applyAuth(){
