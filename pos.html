@@ -69,6 +69,10 @@ button{cursor:pointer}
 .item{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
 .item.lifted{z-index:5;box-shadow:0 14px 34px rgba(0,0,0,.22);border-color:var(--mustard);transition:none;cursor:grabbing}
 body.dragging{-webkit-user-select:none;user-select:none}
+#dragTrash{position:fixed;left:50%;bottom:24px;transform:translate(-50%,140%);z-index:20;display:flex;align-items:center;gap:10px;padding:16px 30px;border-radius:999px;background:#fff;border:2px dashed #b0402f;color:#b0402f;font-size:19px;font-weight:700;box-shadow:0 10px 30px rgba(0,0,0,.18);transition:transform .18s,background .12s,color .12s;pointer-events:none}
+#dragTrash svg{width:26px;height:26px}
+body.dragging #dragTrash{transform:translate(-50%,0);pointer-events:auto}
+#dragTrash.hot{background:#b0402f;color:#fff;border-style:solid;transform:translate(-50%,0) scale(1.08)}
 body.dragging .chip[data-cat]:not([data-cat=""]){border-style:dashed}
 .chip.drop{background:var(--mustard)!important;border-color:var(--mustard)!important;border-style:solid!important;color:var(--ink)!important;transform:scale(1.04)}
 .drag-hint{margin:0 0 10px;font-size:13px}
@@ -533,7 +537,7 @@ function menuHTML(){
   if(T.cat&&!names.includes(T.cat)) T.cat=null;
   const chips=names.length>1?`<nav class="catbar" aria-label="分類">${['',...names].map(n=>`<button class="chip" data-cat="${esc(n)}" aria-pressed="${(T.cat||'')===n}">${n?esc(n):'全部'}</button>`).join('')}</nav>`:'';
   const shown=T.cat?ms.filter(c=>c.cat===T.cat):ms.filter(c=>c.items.length);
-  const hint=canEdit()?'<p class="hint drag-hint">長按品項可以拖曳調整順序，拖到左邊分類放開就會移過去</p>':'';
+  const hint=canEdit()?'<p class="hint drag-hint">長按品項可以拖曳調整順序，拖到左邊分類放開就會移過去，拖到下方垃圾桶可以刪除</p>':'';
   const wrap=h=>chips?`<div class="menu-side">${chips}<div class="menu-body">${hint}${h}</div></div>`:hint+h;
   if(!shown.some(c=>c.items.length)) return wrap(`<p class="empty">「${esc(T.cat)}」還沒有品項${canEdit()?'，到「設定 → 品項管理」新增':''}</p>`);
   return wrap(shown.filter(c=>c.items.length).map(c=>`<div class="cat">${esc(c.cat)}</div><div class="items" data-cat-items="${esc(c.cat)}">${c.items.map(i=>`<button class="item${i.id.startsWith('sk-')&&i.stock<=0?' out':''}" data-add="${i.id}">${i.img?`<span class="tile photo" style="background-image:url('${i.img}')"></span>`:`<span class="tile l${Math.min([...(i.mark||'')].length,3)}${TONES[i.tone]?' t-'+i.tone:''}">${esc(i.mark)}</span>`}<span class="nm">${esc(i.name)}</span><span class="pr num">$${fmt(i.price)}</span>${i.id.startsWith('sk-')?`<span class="stk">${i.stock>0?'庫存 '+i.stock:'庫存 0'}</span>`:''}${qtyOf(i.id)?`<span class="ct">${qtyOf(i.id)}</span>`:''}</button>`).join('')}</div>`).join(''));
@@ -740,7 +744,8 @@ async function voidOrder(id){
 
 /* ---------- 事件 ---------- */
 /* ---------- 長按品項拖曳排序（妃妃、郁雯） ---------- */
-const DRAG={on:false,timer:null,el:null,box:null,drop:null,sx:0,sy:0,ox:0,oy:0,until:0,dirty:false};
+document.body.insertAdjacentHTML('beforeend','<div id="dragTrash" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6"/></svg>拖到這裡刪除</div>');
+const DRAG={on:false,timer:null,el:null,box:null,drop:null,trash:false,sx:0,sy:0,ox:0,oy:0,until:0,dirty:false};
 function dragCancelTimer(){ clearTimeout(DRAG.timer); DRAG.timer=null; }
 document.addEventListener('pointerdown',ev=>{
   const el=ev.target.closest('.item[data-add]'); if(!el||!canEdit()||ev.button>0||el.dataset.add.startsWith('sk-')) return;  /* 永樂庫存的品項不能拖 */
@@ -755,6 +760,7 @@ document.addEventListener('pointermove',ev=>{
   el.style.pointerEvents='';
   const chip=over&&over.closest('.chip[data-cat]'), drop=chip&&chip.dataset.cat&&chip.dataset.cat!==DRAG.box.dataset.catItems?chip:null;
   if(drop!==DRAG.drop){ if(DRAG.drop) DRAG.drop.classList.remove('drop'); if(drop) drop.classList.add('drop'); DRAG.drop=drop; }
+  const trash=!!(over&&over.closest('#dragTrash')); if(trash!==DRAG.trash){ DRAG.trash=trash; $('#dragTrash').classList.toggle('hot',trash); }
   if(tgt&&tgt!==el&&tgt.parentElement===DRAG.box){ const kids=[...DRAG.box.children]; DRAG.box.insertBefore(el,kids.indexOf(tgt)>kids.indexOf(el)?tgt.nextSibling:tgt); }
   el.style.transform=''; const r=el.getBoundingClientRect();
   el.style.transform=`translate(${ev.clientX-DRAG.ox-r.left}px,${ev.clientY-DRAG.oy-r.top}px) scale(1.05)`;
@@ -765,6 +771,14 @@ function dragEnd(){
   dragCancelTimer(); if(!DRAG.on) return;
   const el=DRAG.el, box=DRAG.box; el.classList.remove('lifted'); el.style.transform=''; document.body.classList.remove('dragging');
   DRAG.on=false; DRAG.until=Date.now()+400;
+  if(DRAG.trash){  /* 拖到垃圾桶：確認後刪除這個品項 */
+    DRAG.trash=false; $('#dragTrash').classList.remove('hot'); if(DRAG.drop){ DRAG.drop.classList.remove('drop'); DRAG.drop=null; }
+    const id=el.dataset.add, cats=JSON.parse(JSON.stringify(menuOf())), c=cats.find(c=>c.items.some(i=>i.id===id)), it=c&&c.items.find(i=>i.id===id);
+    if(it&&confirm(`確定刪除「${it.name}」？`)){ c.items=c.items.filter(i=>i.id!==id); delete C.lines[id];
+      MENUS[BR]=cats; buildItems(); ME.draft=null;
+      FB.fs.doc('misc/posmenu').set({[BR]:cats,updatedAt:new Date().toISOString(),by:W.name||''},{merge:true}).then(()=>toast(`已刪除「${it.name}」`)).catch(()=>toast('沒刪除成功，請再試一次',3500)); }
+    render(); return;
+  }
   if(DRAG.drop){  /* 拖到分類按鈕：移到那個分類的最後面 */
     const to=DRAG.drop.dataset.cat, from=box.dataset.catItems, id=el.dataset.add; DRAG.drop.classList.remove('drop'); DRAG.drop=null;
     const cats=JSON.parse(JSON.stringify(menuOf())), fc=cats.find(c=>c.cat===from), it=fc&&fc.items.find(i=>i.id===id);
