@@ -79,6 +79,14 @@ body.dragging .chip[data-cat]:not([data-cat=""]){border-style:dashed}
 .item .tile{width:72px;height:72px;border-radius:10px;border:5px solid var(--tile);background:var(--tile-bg);color:var(--tile-ink);display:grid;place-items:center;font-family:var(--f-display);font-weight:900;font-size:34px}
 .item .nm{font-weight:600;font-size:19px}
 .item .pr{font-size:22px;font-weight:700;color:var(--wine)}
+#calBox{position:fixed;inset:0;z-index:30;background:rgba(40,28,22,.45);display:flex;align-items:center;justify-content:center;padding:16px}
+.cal-card{width:min(560px,100%)}
+.cal-list{display:grid;gap:8px}
+.cal-row{display:flex;align-items:center;gap:14px;text-align:left;border:1px solid var(--rule);background:var(--paper);border-radius:12px;padding:12px 14px;font:inherit;color:inherit;cursor:pointer}
+.cal-row:hover{background:var(--hover)}
+.cal-row .tm{font-weight:700;min-width:48px}
+.cal-row .who{display:grid;gap:2px;flex:1;min-width:0}
+.cal-row .who .hint{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #pickBox{position:fixed;inset:0;z-index:30;background:rgba(40,28,22,.45);display:flex;align-items:center;justify-content:center;padding:16px}
 .pick-card{background:var(--paper);border-radius:16px;width:min(760px,100%);max-height:calc(100vh - 32px);overflow:auto;padding:18px 20px 22px;box-shadow:0 20px 50px rgba(0,0,0,.25)}
 .pick-h{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;position:sticky;top:-18px;background:var(--paper);padding:6px 0}
@@ -569,7 +577,7 @@ const P={staff:null,loaded:false};
 const A={name:null,mode:'login',err:'',busy:false};
 const FB={auth:null,fs:null,unsub:null,day:null};
 const T={tab:'reg',orders:{},loaded:false};
-const newCart=()=>({lines:{},pay:'cash',paid:'',split:false,sel:[],amt:{},people:null,foreign:0,returning:0,note:'',busy:false});
+const newCart=()=>({lines:{},pay:'cash',paid:'',split:false,sel:[],amt:{},people:null,foreign:0,returning:0,note:'',cust:{name:'',phone:'',bk:''},busy:false});
 let C=newCart();
 
 const hexOf=s=>[...new TextEncoder().encode(s)].map(b=>b.toString(16).padStart(2,'0')).join('');
@@ -611,6 +619,32 @@ const pickItems=k=>{ const [cat,sub]=String(k||'').split('\u0001'); return Objec
 const pickQty=k=>pickItems(k).reduce((a,i)=>a+qtyOf(i.id),0);
 function subTile(c,n){ const its=c.items.filter(i=>i.sub===n), k=pickKey(c.cat,n), img=(its.find(i=>i.img)||{}).img, q=pickQty(k), mk=[...n.replace(/\s+/g,'')].slice(0,4).join(''), left=its.filter(i=>i.stock>0).length;
   return `<button class="item pick${left?'':' out'}" data-pick="${esc(k)}">${img?`<span class="tile photo" style="background-image:url('${esc(img)}')"></span>`:`<span class="tile l${Math.min([...mk].length,3)}">${esc(mk)}</span>`}<span class="nm">${esc(n)}</span><span class="stk">${its.length} 件商品 ›</span>${q?`<span class="ct">${q}</span>`:''}</button>`; }
+/* ---------- 今日預約（Google 日曆，經由 apps-script/pos-calendar.gs） ---------- */
+const CAL={url:'',list:null,err:'',loading:false,open:false};
+const calTxt=d=>String(d||'').replace(/<br\s*\/?>/gi,'\n').replace(/<[^>]+>/g,'').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&nbsp;/g,' ');
+function calParse(ev){  /* TinyBook 的預約有「顧客：」「聯絡電話：」；自己建的預約用標題「姓名｜說明」 */
+  const d=calTxt(ev.desc), f=k=>{ const m=d.match(new RegExp('^\\s*'+k+'\\s*[:：]\\s*(.+)$','m')); return m?m[1].trim():''; };
+  const parts=String(ev.title||'').split(/\s*[|｜]\s*/);
+  let name=f('顧客'); if(!name||name==='訪客') name=parts[0]||'';
+  let phone=f('聯絡電話')||f('電話')||f('手機'); if(!phone){ const m=d.match(/(?:\+?886|0)9\d{2}[-\s]?\d{3}[-\s]?\d{3}/); if(m) phone=m[0]; }
+  return {id:ev.id,time:ev.start||'全天',name:name.trim(),phone:phone.replace(/[\s-]/g,''),item:f('項目')||parts.slice(1).filter(x=>!/^預約編號/.test(x)).join('｜'),no:f('預訂編號')};
+}
+async function calLoad(){
+  if(!CAL.url){ CAL.err='還沒設定預約日曆（設定 → 預約日曆）'; CAL.list=null; drawCal(); return; }
+  CAL.loading=true; CAL.err=''; drawCal();
+  try{ const r=await fetch(CAL.url+(CAL.url.includes('?')?'&':'?')+'br='+BR+'&date='+todayStr()); const j=await r.json();
+    if(j.error) throw new Error(j.error==='key'?'日曆連結的 key 不對':j.error==='calendar'?'這個帳號讀不到這家店的日曆':'日曆連結有問題');
+    CAL.list=(j.events||[]).map(calParse); }
+  catch(e){ CAL.list=null; CAL.err=e&&e.message&&!/fetch|json|network/i.test(e.message)?e.message:'讀不到日曆，請確認網路或日曆連結'; }
+  CAL.loading=false; drawCal();
+}
+function drawCal(){ let el=$('#calBox'); if(!CAL.open){ if(el) el.remove(); return; }
+  const used=new Set(dayOrders().filter(o=>!o.void&&o.cust&&o.cust.bk).map(o=>o.cust.bk));
+  const body=CAL.loading?'<p class="hint">讀取中…</p>':CAL.err?`<p class="hint">${esc(CAL.err)}</p>`:!CAL.list||!CAL.list.length?'<p class="empty">今天沒有預約</p>'
+    :`<div class="cal-list">${CAL.list.map((b,i)=>`<button class="cal-row" data-calpick="${i}"><span class="num tm">${esc(b.time)}</span><span class="who"><b>${esc(b.name||'（沒有姓名）')}</b>${b.phone?`<span class="num">${esc(b.phone)}</span>`:''}<span class="hint">${esc(b.item)}</span></span>${used.has(b.id)?'<span class="tag">已結帳</span>':''}</button>`).join('')}</div>`;
+  const h=`<div class="pick-card cal-card" role="dialog" aria-modal="true" aria-label="今日預約"><div class="pick-h"><div><span class="hint">${esc(B[BR]?B[BR].name||'':'')}</span><b>今日預約</b></div><div class="row2" style="gap:8px"><button class="btn" data-calreload="1">重新整理</button><button class="btn" data-calclose="1">關閉</button></div></div>${body}</div>`;
+  if(!el) document.body.insertAdjacentHTML('beforeend',`<div id="calBox">${h}</div>`); else el.innerHTML=h; }
+
 /* 小分類的選商品視窗 */
 let PICK=null;
 function drawPick(){ let el=$('#pickBox'); if(!PICK){ if(el) el.remove(); return; }
@@ -645,6 +679,8 @@ function cartHTML(){
       <div class="step"><button data-qty="${l.id}" data-d="-1" aria-label="減少">−</button><span class="num">${l.qty}</span><button data-qty="${l.id}" data-d="1" aria-label="增加">+</button></div>
       <div class="amt num">$${fmt(l.amt)}</div></div>`).join(''):'<p class="empty">點左邊的品項加入</p>'}
     ${ls.length?`
+    <div class="sec"><div class="row2" style="justify-content:space-between"><span class="lab">顧客</span>${CAL.url?'<button class="btn ghost" style="padding:2px 6px;font-size:14px" data-cal="1">今日預約</button>':''}</div>
+      <div class="row2"><input class="tin" id="custName" maxlength="40" placeholder="姓名" autocomplete="off" value="${esc(C.cust.name)}"><input class="tin num" id="custPhone" maxlength="20" inputmode="tel" placeholder="電話" autocomplete="off" value="${esc(C.cust.phone)}"></div></div>
     <div class="sec"><span class="lab">來客</span><div class="cnts">
       <div class="cnt">人數${step('people',peopleOf(),1)}</div>
       <div class="cnt">外國旅客${step('foreign',C.foreign,0)}</div>
@@ -656,7 +692,7 @@ function cartHTML(){
       <div class="quick">${[...new Set([tot,Math.ceil(tot/500)*500,Math.ceil(tot/1000)*1000,Math.ceil(tot/1000)*1000+1000])].filter(v=>v>=tot).slice(0,4).map(v=>`<button data-paid="${v}">${v===tot?'剛好':'$'+fmt(v)}</button>`).join('')}</div>
       <div class="chg" id="chg">${chgHTML()}</div>`:''}
       ${(C.split?C.sel.includes('linepay'):C.pay==='linepay')?'<p class="hint" style="margin:0">LINE Pay 目前請用店裡的收款碼收款，這裡只記錄金額。</p>':''}</div>
-    <div class="sec"><span class="lab">備註</span><input class="tin" id="noteIn" maxlength="80" placeholder="例：顧客姓名、團體" value="${esc(C.note)}"></div>`:''}
+    <div class="sec"><span class="lab">備註</span><input class="tin" id="noteIn" maxlength="80" placeholder="例：團體、加購" value="${esc(C.note)}"></div>`:''}
   </div>
   <div class="cart-f"><div class="tot"><span>合計 ${ls.length?cartQty()+' 件':''}</span><b class="num">$${fmt(tot)}</b></div>
     <button class="btn primary go" data-checkout="1" ${ok?'':'disabled'}>${C.busy?'處理中…':'完成結帳'}${CFG.auto&&CFG.printer!=='off'?'並印收據':''}</button></div>`;
@@ -683,7 +719,7 @@ function todayHTML(){
     </section>
     <section class="panel orders">${os.length?os.slice().reverse().map(o=>`<div class="ord${o.void?' void':''}">
       <div><div class="no num">#${o.seq}</div><div class="t num">${hm(o.at)}</div></div>
-      <div class="it">${o.items.map(i=>`${esc(i.name)} × ${i.qty}`).join('、')}<span class="tag">${esc(payLabel(o))}</span>${o.void?'<span class="tag">已作廢</span>':''}<div class="t">${esc(o.staff)}${o.note?'・'+esc(o.note):''}${o.void?`・${esc(o.void.by)} 作廢`:''}</div></div>
+      <div class="it">${o.items.map(i=>`${esc(i.name)} × ${i.qty}`).join('、')}<span class="tag">${esc(payLabel(o))}</span>${o.void?'<span class="tag">已作廢</span>':''}<div class="t">${esc(o.staff)}${o.cust?'・'+esc([o.cust.name,o.cust.phone].filter(Boolean).join(' ')):''}${o.note?'・'+esc(o.note):''}${o.void?`・${esc(o.void.by)} 作廢`:''}</div></div>
       <div class="am num">$${fmt(o.total)}</div>
       <div class="act">${o.void?'':`<button class="btn" data-reprint="${o.id}">補印</button><button class="btn danger" data-void="${o.id}">作廢</button>`}</div></div>`).join(''):'<p class="empty">今天還沒有交易</p>'}</section></div>`;
 }
@@ -702,7 +738,10 @@ function vendSetHTML(){
 }
 function setHTML(){
   const seg=(k,opts)=>`<div class="seg">${opts.map(([v,n])=>`<button data-cfg="${k}" data-v="${v}" aria-pressed="${String(CFG[k])===String(v)}">${n}</button>`).join('')}</div>`;
-  return `${canEdit()?menuEditHTML():''}${canEdit()&&BR===VEND_BR?vendSetHTML():''}<section class="panel set">
+  const calSet=canEdit()?`<section class="panel set"><div><b>預約日曆</b><p class="hint" style="margin:4px 0 0">結帳時按「今日預約」，從 Google 日曆帶入今天預約的姓名和電話。貼上 Apps Script 的網址（含 ?key=…），做法見 GitHub 的 docs/calendar.md。兩家店一起套用，各自讀自己店的日曆。</p></div>
+    <label><span class="fl">日曆連結</span><input class="tin" id="calUrl" autocomplete="off" placeholder="https://script.google.com/macros/s/…/exec?key=…" value="${esc(CAL.url)}"></label>
+    <div class="row2"><button class="btn" data-calsave="1">儲存</button><span class="hint">${CAL.url?'已設定':'還沒設定'}</span></div></section>`:'';
+  return `${canEdit()?menuEditHTML():''}${canEdit()&&BR===VEND_BR?vendSetHTML():''}${calSet}<section class="panel set">
     <div><b>收據機設定</b><p class="hint" style="margin:4px 0 0">只存在這台 iPad 上。</p></div>
     <label><span class="fl">列印方式</span>${seg('printer',[['passprnt','Star PassPRNT App'],['browser','瀏覽器列印'],['off','不印收據']])}
       <span class="hint">收據機用線接 iPad 時，請先在 App Store 安裝 Star 的「PassPRNT」並在裡面選好收據機。</span></label>
@@ -818,7 +857,7 @@ async function checkout(){
   const id=`${BR}-${date}-${pad(seq).padStart(3,'0')}-${Math.random().toString(36).slice(2,6)}`;
   const o={id,branch:BR,date,month:date.slice(0,7),seq,at:now.toISOString(),
     items:ls.map(l=>({id:l.id,name:l.name,cat:l.cat,price:l.price,qty:l.qty,amt:l.amt})),
-    total:tot,pay:C.split?'split':C.pay,pays,paid,people:peopleOf(),foreign:C.foreign,returning:C.returning,
+    total:tot,pay:C.split?'split':C.pay,pays,paid,people:peopleOf(),foreign:C.foreign,returning:C.returning,cust:(C.cust.name.trim()||C.cust.phone.trim())?{name:C.cust.name.trim(),phone:C.cust.phone.trim(),bk:C.cust.bk||''}:null,
     note:C.note.trim(),staff:W.name,by:W.uid,void:null};
   C.busy=true; drawCart();
   /* 沒有網路時 Firestore 會先存在這台 iPad，連線後自動上傳；不讓結帳卡住 */
@@ -901,8 +940,15 @@ document.addEventListener('pointerup',dragEnd); document.addEventListener('point
 
 document.addEventListener('click',ev=>{
   if(ev.target.id==='pickBox'){ PICK=null; drawPick(); return; }
+  if(ev.target.id==='calBox'){ CAL.open=false; drawCal(); return; }
   const t=ev.target.closest('button'); if(!t) return; const d=t.dataset;
   if((d.add||d.pick!=null)&&Date.now()<DRAG.until) return;
+  if(d.cal){ CAL.open=true; drawCal(); calLoad(); return; }
+  if(d.calclose){ CAL.open=false; drawCal(); return; }
+  if(d.calreload){ calLoad(); return; }
+  if(d.calpick!=null){ const b=CAL.list&&CAL.list[+d.calpick]; if(b){ C.cust={name:b.name,phone:b.phone,bk:b.id}; } CAL.open=false; drawCal(); drawCart(); return; }
+  if(d.calsave){ const v=(($('#calUrl')||{}).value||'').trim(); if(v&&!/^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec\?key=\w+$/.test(v)){ toast('連結格式不對，應該是 https://script.google.com/macros/s/…/exec?key=…',4500); return; }
+    FB.fs.doc('misc/poscal').set({url:v,updatedAt:new Date().toISOString(),by:W.name||''},{merge:true}).then(()=>toast(v?'預約日曆已儲存':'已取消預約日曆')).catch(()=>toast('沒存成功，請再試一次',3500)); return; }
   if(d.tab){ T.tab=d.tab; render(); scrollTo({top:0}); }
   else if(d.cat!=null){ T.cat=d.cat||null; render(); }
   else if(d.pick!=null){ PICK=d.pick; drawPick(); }
@@ -941,6 +987,7 @@ document.addEventListener('input',ev=>{
   if(t.id==='paidIn'){ C.paid=t.value; const c=$('#chg'); if(c) c.innerHTML=chgHTML(); const g=$('[data-checkout]'); if(g) g.disabled=!payOK(); }
   else if(t.dataset.amt){ C.amt[t.dataset.amt]=t.value; const r=$('#splitRem'); if(r) r.innerHTML=remHTML(); const g=$('[data-checkout]'); if(g) g.disabled=!payOK(); }
   else if(t.id==='noteIn') C.note=t.value;
+  else if(t.id==='custName'||t.id==='custPhone'){ C.cust={...C.cust,[t.id==='custName'?'name':'phone']:t.value}; }
   else if(t.dataset.mec!=null){ meDraft()[+t.dataset.mec].cat=t.value; meDirty(); }
   else if(t.dataset.mei){ const [ci,ii]=t.dataset.mei.split('.').map(Number); meDraft()[ci].items[ii][t.dataset.k]=t.dataset.k==='price'?t.value:t.value; meDirty(); }
   else if(t.id==='cfgHead'){ CFG.head=t.value; saveCfg(); }
@@ -977,13 +1024,18 @@ function subMenu(){
   FB.menuUnsub=FB.fs.doc('misc/posmenu').onSnapshot(d=>{ const v=d.exists?d.data():{}; MENUS={...JSON.parse(JSON.stringify(MENU_DEF)),...Object.fromEntries(Object.keys(B).filter(k=>Array.isArray(v[k])).map(k=>[k,v[k]]))}; VORD=v.vendOrder||{}; VFLAT={'日日野餐':true,...(v.vendFlat||{})}; seedMenu(v); subVendors(vendTokens(v)); buildItems();
     if(T.tab==='reg'){ if(document.activeElement&&document.activeElement.matches('#cart input')) drawCart(); else render(); } else if(T.tab==='set'&&!ME.dirty){ ME.draft=null; render(); } },()=>{});
 }
+function subCal(){
+  if(FB.calUnsub) return;
+  FB.calUnsub=FB.fs.doc('misc/poscal').onSnapshot(d=>{ const u=(d.exists&&d.data().url)||''; if(u===CAL.url) return; CAL.url=u; CAL.list=null;
+    if(T.tab==='reg') drawCart(); else if(T.tab==='set'&&!ME.dirty) render(); },()=>{});
+}
 function applyAuth(){
   const u=FB.auth.currentUser;
-  if(!u){ W.name=null; W.admin=false; if(FB.unsub){FB.unsub();FB.unsub=null;FB.day=null;} if(FB.menuUnsub){FB.menuUnsub();FB.menuUnsub=null;} render(); return; }
+  if(!u){ W.name=null; W.admin=false; if(FB.unsub){FB.unsub();FB.unsub=null;FB.day=null;} if(FB.menuUnsub){FB.menuUnsub();FB.menuUnsub=null;} if(FB.calUnsub){FB.calUnsub();FB.calUnsub=null;} CAL.url=''; CAL.open=false; drawCal(); render(); return; }
   if(!P.loaded||!P.staff||A.busy) return;
   const n=nameOfEmail(u.email);
   if(!n){ FB.auth.signOut(); A.err='這個帳號已被移除或重設密碼，請重新選擇名字登入'; return; }
-  const was=W.name; W.name=n; W.uid=u.uid; W.admin=!!(P.staff&&P.staff.bossEmail===u.email); subOrders(); subMenu(); if(!was) render(); else renderWho();
+  const was=W.name; W.name=n; W.uid=u.uid; W.admin=!!(P.staff&&P.staff.bossEmail===u.email); subOrders(); subMenu(); subCal(); if(!was) render(); else renderWho();
 }
 setNet();
 (function(){
