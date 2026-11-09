@@ -79,9 +79,11 @@ body.dragging .chip[data-cat]:not([data-cat=""]){border-style:dashed}
 .item .tile{width:72px;height:72px;border-radius:10px;border:5px solid var(--tile);background:var(--tile-bg);color:var(--tile-ink);display:grid;place-items:center;font-family:var(--f-display);font-weight:900;font-size:34px}
 .item .nm{font-weight:600;font-size:19px}
 .item .pr{font-size:22px;font-weight:700;color:var(--wine)}
-.subcat{font-size:16px;font-weight:700;color:#6b5a50;margin:14px 0 8px}
-.subbar{display:flex;flex-wrap:wrap;gap:8px;margin:-4px 0 12px}
-.menu-body .chip.sm{border-radius:999px;padding:6px 14px;font-size:15px}
+#pickBox{position:fixed;inset:0;z-index:30;background:rgba(40,28,22,.45);display:flex;align-items:center;justify-content:center;padding:16px}
+.pick-card{background:var(--paper);border-radius:16px;width:min(760px,100%);max-height:calc(100vh - 32px);overflow:auto;padding:18px 20px 22px;box-shadow:0 20px 50px rgba(0,0,0,.25)}
+.pick-h{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;position:sticky;top:-18px;background:var(--paper);padding:6px 0}
+.pick-h b{display:block;font-family:var(--f-display);font-size:22px}
+.item.pick .stk{color:var(--ink-2)}
 .item .tile.photo{background-size:cover;background-position:center;border:1px solid var(--rule)}
 .item .stk{font-size:14px;color:#8a7a70;margin-top:-4px}
 .item.out .stk{color:#b0402f}
@@ -460,7 +462,7 @@ function vendItems(list,cat){
     return vs.length?vs.map(x=>({...one(base+'（'+x.name+'）',x.qty,(v.sku||'')+'|'+base+'|'+x.name),ylVar:x.name})):[one(base,v.qty,(v.sku||'')+'|'+base)]; });
 }
 const vendTokens=v=>{ const t={...(v.vendorTokens||{})}; if(v.sekaiToken&&!(SEKAI_CAT in t)) t[SEKAI_CAT]=v.sekaiToken; return Object.fromEntries(Object.entries(t).filter(([k,x])=>k&&x)); };
-function vendRefresh(){ buildItems(); if(T.tab==='reg'&&!DRAG.on){ if(document.activeElement&&document.activeElement.matches('#cart input')) drawCart(); else render(); } else if(T.tab==='set'&&!ME.dirty) render(); }
+function vendRefresh(){ buildItems(); if(PICK) drawPick(); if(T.tab==='reg'&&!DRAG.on){ if(document.activeElement&&document.activeElement.matches('#cart input')) drawCart(); else render(); } else if(T.tab==='set'&&!ME.dirty) render(); }
 function subVendors(map){
   ylInit();
   Object.keys(VEND).forEach(cat=>{ if(map[cat]!==VEND[cat].token){ if(VEND[cat].unsub) VEND[cat].unsub(); delete VEND[cat]; } });
@@ -584,7 +586,20 @@ function render(){
   else if(T.tab==='set') $('#main').innerHTML=setHTML();
   else { $('#main').innerHTML=`<div class="reg"><section class="panel menu">${menuHTML()}</section><aside class="panel cart" id="cart">${cartHTML()}</aside></div>`; }
 }
-const drawCart=()=>{ const el=$('#cart'); if(el) el.innerHTML=cartHTML(); document.querySelectorAll('.item').forEach(b=>{ const q=qtyOf(b.dataset.add); const c=b.querySelector('.ct'); if(q&&!c) b.insertAdjacentHTML('beforeend',`<span class="ct">${q}</span>`); else if(c){ if(q) c.textContent=q; else c.remove(); } }); };
+const itemTile=i=>`<button class="item${i.id.startsWith('sk-')&&i.stock<=0?' out':''}" data-add="${i.id}">${i.img?`<span class="tile photo" style="background-image:url('${i.img}')"></span>`:`<span class="tile l${Math.min([...(i.mark||'')].length,3)}${TONES[i.tone]?' t-'+i.tone:''}">${esc(i.mark)}</span>`}<span class="nm">${esc(i.name)}</span><span class="pr num">$${fmt(i.price)}</span>${i.id.startsWith('sk-')?`<span class="stk">${i.stock>0?'庫存 '+i.stock:'庫存 0'}</span>`:''}${qtyOf(i.id)?`<span class="ct">${qtyOf(i.id)}</span>`:''}</button>`;
+const pickKey=(cat,sub)=>cat+'\u0001'+sub;
+const pickItems=k=>{ const [cat,sub]=String(k||'').split('\u0001'); return Object.values(ITEMS).filter(i=>i.cat===cat&&i.sub===sub); };
+const pickQty=k=>pickItems(k).reduce((a,i)=>a+qtyOf(i.id),0);
+function subTile(c,n){ const its=c.items.filter(i=>i.sub===n), k=pickKey(c.cat,n), img=(its.find(i=>i.img)||{}).img, q=pickQty(k), mk=[...n.replace(/\s+/g,'')].slice(0,4).join(''), left=its.filter(i=>i.stock>0).length;
+  return `<button class="item pick${left?'':' out'}" data-pick="${esc(k)}">${img?`<span class="tile photo" style="background-image:url('${esc(img)}')"></span>`:`<span class="tile l${Math.min([...mk].length,3)}">${esc(mk)}</span>`}<span class="nm">${esc(n)}</span><span class="stk">${its.length} 件商品 ›</span>${q?`<span class="ct">${q}</span>`:''}</button>`; }
+/* 小分類的選商品視窗 */
+let PICK=null;
+function drawPick(){ let el=$('#pickBox'); if(!PICK){ if(el) el.remove(); return; }
+  const its=pickItems(PICK), [cat,sub]=PICK.split('\u0001');
+  if(!its.length){ PICK=null; if(el) el.remove(); return; }
+  const h=`<div class="pick-card" role="dialog" aria-modal="true" aria-label="${esc(sub)}"><div class="pick-h"><div><span class="hint">${esc(cat)}</span><b>${esc(sub)}</b></div><button class="btn" data-pickclose="1">完成</button></div><div class="items">${its.map(itemTile).join('')}</div></div>`;
+  if(!el){ document.body.insertAdjacentHTML('beforeend',`<div id="pickBox">${h}</div>`); } else el.innerHTML=h; }
+const drawCart=()=>{ const el=$('#cart'); if(el) el.innerHTML=cartHTML(); document.querySelectorAll('.item').forEach(b=>{ const q=b.dataset.pick!=null?pickQty(b.dataset.pick):qtyOf(b.dataset.add); const c=b.querySelector('.ct'); if(q&&!c) b.insertAdjacentHTML('beforeend',`<span class="ct">${q}</span>`); else if(c){ if(q) c.textContent=q; else c.remove(); } }); };
 function menuHTML(){
   const ms=shownMenu(); if(!ms.some(c=>c.items.length)) return `<p class="empty">${esc(B[BR].name)}還沒有品項${canEdit()?'，請到「設定 → 品項管理」新增':'，請找妃妃到「設定」新增'}</p>`;
   const names=[...ms.map(c=>c.cat),...(CATS_DEF[BR]||[]).filter(n=>!ms.some(c=>c.cat===n))];
@@ -594,13 +609,10 @@ function menuHTML(){
   const hint=canEdit()?'<p class="hint drag-hint">長按品項可以拖曳調整順序，拖到左邊分類放開就會移過去，拖到下方垃圾桶可以刪除</p>':'';
   const wrap=h=>chips?`<div class="menu-side">${chips}<div class="menu-body">${hint}${h}</div></div>`:hint+h;
   if(!shown.some(c=>c.items.length)) return wrap(`<p class="empty">「${esc(T.cat)}」還沒有品項${canEdit()?'，到「設定 → 品項管理」新增':''}</p>`);
-  const tile=i=>`<button class="item${i.id.startsWith('sk-')&&i.stock<=0?' out':''}" data-add="${i.id}">${i.img?`<span class="tile photo" style="background-image:url('${i.img}')"></span>`:`<span class="tile l${Math.min([...(i.mark||'')].length,3)}${TONES[i.tone]?' t-'+i.tone:''}">${esc(i.mark)}</span>`}<span class="nm">${esc(i.name)}</span><span class="pr num">$${fmt(i.price)}</span>${i.id.startsWith('sk-')?`<span class="stk">${i.stock>0?'庫存 '+i.stock:'庫存 0'}</span>`:''}${qtyOf(i.id)?`<span class="ct">${qtyOf(i.id)}</span>`:''}</button>`;
   const subsOf=c=>[...new Set(c.items.map(i=>i.sub||'').filter(Boolean))];
-  /* 連到永樂庫存的分類：照永樂庫存裡的分類分組，選了這個分類時上面多一排小分類可以篩 */
-  const sel=T.cat&&shown[0]&&subsOf(shown[0]).length>1?subsOf(shown[0]):[]; if(!sel.includes(T.sub)) T.sub='';
-  const subbar=sel.length?`<nav class="subbar" aria-label="小分類">${['',...sel].map(n=>`<button class="chip sm" data-sub="${esc(n)}" aria-pressed="${(T.sub||'')===n}">${n?esc(n):'全部'}</button>`).join('')}</nav>`:'';
-  const block=c=>{ const plain=c.items.filter(i=>!i.sub), subs=subsOf(c).filter(n=>!T.sub||n===T.sub);
-    return `<div class="cat">${esc(c.cat)}</div>${subbar&&c===shown[0]?subbar:''}${plain.length&&!T.sub?`<div class="items" data-cat-items="${esc(c.cat)}">${plain.map(tile).join('')}</div>`:''}${subs.map(n=>`<div class="subcat">${esc(n)}</div><div class="items">${c.items.filter(i=>i.sub===n).map(tile).join('')}</div>`).join('')}`; };
+  /* 連到永樂庫存的分類：永樂庫存裡的每個分類是一格，點了跳出視窗選商品 */
+  const block=c=>{ const plain=c.items.filter(i=>!i.sub), subs=subsOf(c);
+    return `<div class="cat">${esc(c.cat)}</div><div class="items" data-cat-items="${esc(c.cat)}">${plain.map(itemTile).join('')}${subs.map(n=>subTile(c,n)).join('')}</div>`; };
   return wrap(shown.filter(c=>c.items.length).map(block).join(''));
 }
 function cartHTML(){
@@ -862,11 +874,13 @@ function dragEnd(){
 document.addEventListener('pointerup',dragEnd); document.addEventListener('pointercancel',dragEnd);
 
 document.addEventListener('click',ev=>{
+  if(ev.target.id==='pickBox'){ PICK=null; drawPick(); return; }
   const t=ev.target.closest('button'); if(!t) return; const d=t.dataset;
   if(d.add&&Date.now()<DRAG.until) return;
   if(d.tab){ T.tab=d.tab; render(); scrollTo({top:0}); }
-  else if(d.cat!=null){ T.cat=d.cat||null; T.sub=''; render(); }
-  else if(d.sub!=null){ T.sub=d.sub; render(); }
+  else if(d.cat!=null){ T.cat=d.cat||null; render(); }
+  else if(d.pick!=null){ PICK=d.pick; drawPick(); }
+  else if(d.pickclose){ PICK=null; drawPick(); }
   else if(d.br){ if(d.br===BR) return; if(cartLines().length&&!confirm('切換分店會清除這一筆還沒結帳的品項，確定嗎？')) return; if(ME.dirty&&!confirm('品項管理還沒儲存，切換分店會放棄修改，確定嗎？')) return; BR=d.br; T.cat=null; CFG.branch=BR; saveCfg(); C=newCart(); ME.draft=null; buildItems(); render(); }
   else if(d.ylin){ ylInit(); const em=(($('#ylEm')||{}).value||'').trim(), pw=($('#ylPw')||{}).value||''; if(!em||!pw){ toast('請輸入永樂庫存的 Email 和密碼'); return; }
     YLA.auth.signInWithEmailAndPassword(em,pw).then(()=>toast('已登入永樂庫存')).catch(e=>toast(e&&/password|credential|user-not-found/.test(e.code||'')?'Email 或密碼不對':'登入失敗，請再試一次',3500)); }
